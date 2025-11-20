@@ -1,0 +1,17 @@
+<div class="container-sm">
+    <div class="row align-items-center g-lg-5 py-5">
+        <div class="col-md-10 mx-auto col-lg-5">
+            <form [formGroup]="addcontactForm" (ngSubmit)="addContact()" class="p-4 p-md-5 border rounded-3 bg-light">
+                <div class="mb-3">
+                    <label for="target" class="form-label">Nom</label>
+                    <input type="email" class="form-control" formControlName="target" aria-describedby="createContactHelp" placeholder="Marie Claude">
+                </div>
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Clé publique</label>
+                    <input formControlName="amount" class="form-control" type="text" placeholder="Un truc à 66 caractères">
+                </div>
+                <button type="submit" class="btn btn-primary">Enregistrer</button>
+            </form>
+        </div>
+    </div>
+</div>

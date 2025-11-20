@@ -1,0 +1,29 @@
+<div class="row-fluid">
+    <div>
+        <h2>Encaisser des billets</h2>
+    </div>
+    <div class="">
+        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+            <ng-container matColumnDef="id">
+                <th mat-header-cell *matHeaderCellDef> id </th>
+                <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="emitter">
+                <th mat-header-cell *matHeaderCellDef> Emetteur </th>
+                <td mat-cell *matCellDef="let element"> {{element.emitter}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef> Montant </th>
+                <td mat-cell *matCellDef="let element"> {{element.amount}} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+    </div>
+    <button class="btn btn-primary" type="button"><i class="bi bi-patch-plus"></i> Ajouter un billet</button>
+    <button class="btn btn-primary" type="button"><i class="bi bi-cash-coin"></i> Encaisser</button>
+</div>

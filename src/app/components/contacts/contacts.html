@@ -1,0 +1,24 @@
+<div class="row-fluid">
+    <div>
+        <h2>Contacts</h2>
+    </div>
+    <div class="">
+        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+
+            <ng-container matColumnDef="name">
+                <th mat-header-cell *matHeaderCellDef> Nom </th>
+                <td mat-cell *matCellDef="let element"> {{element.name}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="pk">
+                <th mat-header-cell *matHeaderCellDef> Clé </th>
+                <td mat-cell *matCellDef="let element"> {{element.pk}} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+    </div>
+    <a routerLink="/addcontact" class="btn btn-primary" type="button"><i class="bi bi-person-lines-fill"></i>
+                    Nouveau contact</a>
+</div>

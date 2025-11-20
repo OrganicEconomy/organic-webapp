@@ -1,0 +1,35 @@
+<div class="container-sm">
+    <div class="row align-items-center g-lg-5 py-5">
+        <div class="col-md-10 mx-auto col-lg-5">
+            <h1 class="display-4 fw-bold lh-1 mb-3">Payer</h1>
+            <form [formGroup]="payForm" (ngSubmit)="pay()" class="p-4 p-md-5 border rounded-3 bg-light">
+                <div class="mb-3">
+                    <label for="target" class="form-label"> Destinataire </label>
+                    <select class="form-select" aria-label="Default select example">
+                        <option selected>Qui est-ce qu'on paye ?</option>
+                        <option value="1">One</option>
+                        <option value="2">Two</option>
+                        <option value="3">Three</option>
+                    </select>
+
+
+
+                    <a routerLink="/addcontact" class="form-text" type="button"><i class="bi bi-person-lines-fill"></i>
+                        Nouveau contact</a>
+                </div>
+                <div class="mb-3">
+                    <label for="amount" class="form-label">Combien ?</label>
+                    <input type="range" class="form-range">
+                    <input formControlName="amount" class="form-control" type="text"
+                        placeholder="102 000 ? C'est beaucoup">
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" formControlName="validation">
+                    <label class="form-check-label" for="validation">J'ai compris qu'en cliquant sur "Payer" je ne
+                        reviendrai pas en arrière.</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Payer</button>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,33 @@
+{
+  "signupUsersList": [
+    {
+      "email": "bolu@gmail.com",
+      "password": "1234",
+      "id": "2643"
+    },
+    {
+      "id": "d46e",
+      "email": "",
+      "name": "",
+      "password": ""
+    },
+    {
+      "id": "1f43",
+      "email": "",
+      "name": "",
+      "password": ""
+    },
+    {
+      "id": "377a",
+      "email": "azaz",
+      "name": "aaa",
+      "password": "azazazaz"
+    },
+    {
+      "id": "02e5",
+      "email": "a@a.a",
+      "name": "Gus Bub",
+      "password": "aaaa"
+    }
+  ]
+}

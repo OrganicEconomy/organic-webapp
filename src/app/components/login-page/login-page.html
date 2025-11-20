@@ -1,0 +1,27 @@
+<div class="container-sm">
+    <div class="row align-items-center g-lg-5 py-5">
+        <div class="col-lg-7 text-center text-lg-start">
+            <h1 class="display-4 fw-bold lh-1 mb-3">Hey, ça fait plasir de vous revoir !</h1>
+        </div>
+        <div class="col-md-10 mx-auto col-lg-5">
+            <form [formGroup]="loginForm" (ngSubmit)="login()" class="p-4 p-md-5 border rounded-3 bg-light">
+                <div class="mb-3">
+                    <label for="inputmail" class="form-label">Addresse mail</label>
+                    <input type="email" class="form-control" formControlName="email" aria-describedby="emailHelp">
+                </div>
+                <div class="mb-3">
+                    <label for="inputpassword" class="form-label">Mot de passe</label>
+                    <input type="password" class="form-control" formControlName="password">
+                </div>
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" formControlName="stayConnected">
+                    <label class="form-check-label" for="stayConnected">Rester connecté</label>
+                </div>
+                <div class="mb-3">
+                    <a href="/signup">Créer un compte.</a>
+                </div>
+                <button type="submit" class="btn btn-primary">Se connecter</button>
+            </form>
+        </div>
+    </div>
+</div>
