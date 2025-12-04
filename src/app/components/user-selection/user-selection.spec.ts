@@ -1,20 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
 
-import { Contacts } from './contacts';
+import { UserSelection } from './user-selection';
 
-describe('Contacts', () => {
-  let component: Contacts;
-  let fixture: ComponentFixture<Contacts>;
+describe('UserSelection', () => {
+  let component: UserSelection;
+  let fixture: ComponentFixture<UserSelection>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [Contacts],
-      providers: [provideRouter([])],
+      imports: [UserSelection]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(Contacts);
+    fixture = TestBed.createComponent(UserSelection);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

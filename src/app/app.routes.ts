@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 
 import { LoginPage } from './components/login-page/login-page';
-import { SignupPage } from    './components/signup-page/signup-page';
+import { SignupPage } from './components/signup-page/signup-page';
 import { Home } from './components/home/home';
 import { AccountDetails } from './components/account-details/account-details';
 import { AddContact } from './components/add-contact/add-contact';
@@ -12,20 +12,22 @@ import { Logout } from './components/logout/logout';
 import { Pay } from './components/pay/pay';
 import { PrintPapers } from './components/print-papers/print-papers';
 import { TransactionList } from './components/transaction-list/transaction-list';
+import { UserSelection } from './components/user-selection/user-selection';
 
 
 export const routes: Routes = [
-    {path:"", redirectTo:"login", pathMatch:"full"},
-    {path:"login", component:LoginPage},
-    {path:"logout", component:Logout},
-    {path:"signup", component:SignupPage},
-    {path:"account", component:AccountDetails},
-    {path:"addcontact", component:AddContact},
-    {path:"cashpapers", component:CashPapers},
-    {path:"cashpayment", component:CashPayment},
-    {path:"contacts", component:Contacts},
-    {path:"pay", component:Pay},
-    {path:"printpapers", component:PrintPapers},
-    {path:"transactions", component:TransactionList},
-    {path:"home", component:Home},
+    { path: "", redirectTo: "user-selection", pathMatch: "full" },
+    { path: "login", component:LoginPage},
+    { path: "logout", component: Logout },
+    { path: "user-selection", component: UserSelection },
+    { path: "signup", component: SignupPage },
+    { path: "account", component: AccountDetails },
+    { path: "addcontact", component: AddContact },
+    { path: "cashpapers", component: CashPapers },
+    { path: "cashpayment", component: CashPayment },
+    { path: "contacts", component: Contacts },
+    { path: "pay", component: Pay },
+    { path: "printpapers", component: PrintPapers },
+    { path: "transactions", component: TransactionList },
+    { path: "home", component: Home },
 ];

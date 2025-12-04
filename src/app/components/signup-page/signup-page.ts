@@ -26,7 +26,8 @@ export class SignupPage {
   }
 
   signup() {
-    this.http.post<any>("http://127.0.0.1:3000/signupUsersList", this.signupForm.value)
+    console.log(this.signupForm.value)
+    this.http.post<any>("https://127.0.0.1:3000/register", this.signupForm.value)
       .subscribe({
         next: res => {
           alert('SIGNUP SUCCESSFUL');

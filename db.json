@@ -1,33 +1,36 @@
 {
-  "signupUsersList": [
+  "users": [
     {
-      "email": "bolu@gmail.com",
-      "password": "1234",
-      "id": "2643"
+      "pk": "02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3",
+      "name": "alice",
+      "email": "alice@gmail.com",
+      "password": "hashedpassword",
+      "sk": "crypted-sk",
+      "bc": {}
     },
     {
-      "id": "d46e",
-      "email": "",
-      "name": "",
-      "password": ""
+      "pk": "03cbe4edbfbbc99dfbae83e8c591fafdd6a82d61589be6f60775e3fe2a4677ef46",
+      "name": "bob",
+      "email": "bob@hotmail.com",
+      "password": "hashedpassword",
+      "sk": "crypted-sk",
+      "bc": {}
     },
     {
-      "id": "1f43",
-      "email": "",
-      "name": "",
-      "password": ""
-    },
-    {
-      "id": "377a",
-      "email": "azaz",
-      "name": "aaa",
-      "password": "azazazaz"
-    },
-    {
-      "id": "02e5",
-      "email": "a@a.a",
-      "name": "Gus Bub",
-      "password": "aaaa"
+      "pk": "02f126a536777e95f23b5798b1e357dc2a4f5b1869b739c290b4b2efbc18eca6fd",
+      "name": "cesar",
+      "email": "cesar@protonmail.com",
+      "password": "hashedpassword",
+      "sk": "crypted-sk",
+      "bc": {}
     }
-  ]
+  ],
+  "papers": {
+    "12": {
+      "used": false
+    },
+    "19": {
+      "used": true
+    }
+  }
 }

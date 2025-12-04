@@ -27,7 +27,7 @@ export class LoginPage {
   }
 
   login() {
-    this.http.get<any>("http://127.0.0.1:3000/signupUsersList")
+    this.http.get<any>("http://127.0.0.1:3000/users")
       .subscribe({
         next: res => {
           const user = res.find((a:any)=>{
