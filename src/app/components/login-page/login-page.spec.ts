@@ -20,4 +20,10 @@ describe('LoginPage', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('should raise an error when login fails', () => {
+    component.loginForm.value.email = "toto@toto.com"
+    component.loginForm.value.password = "totospassword"
+    expect(component.login());
+  })
 });

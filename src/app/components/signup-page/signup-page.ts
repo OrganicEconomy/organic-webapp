@@ -1,7 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormGroup, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { ServerConnexionService } from '../../services/server-connection.service';
 
 
 
@@ -15,27 +15,35 @@ import { HttpClient } from '@angular/common/http';
 })
 export class SignupPage {
   public signupForm !: FormGroup
-  constructor(private formBuilder: FormBuilder, private http: HttpClient, private router: Router) { }
+  server = inject(ServerConnexionService);
+  constructor(private formBuilder: FormBuilder, private router: Router) { }
 
   ngOnInit(): void {
     this.signupForm = this.formBuilder.group({
       email: [""],
       name: [""],
-      password: [""]
+      password: [""],
+      birthdate: [""]
     })
   }
 
-  signup() {
-    console.log(this.signupForm.value)
-    this.http.post<any>("https://127.0.0.1:3000/register", this.signupForm.value)
-      .subscribe({
-        next: res => {
-          alert('SIGNUP SUCCESSFUL');
-          this.signupForm.reset();
-          this.router.navigate(["login"])
+  async signup() {
+    const monthIndex = this.signupForm.value.birthdate.slice(2, 4) - 1
+    const day = this.signupForm.value.birthdate.slice(0, 2)
+    const year = this.signupForm.value.birthdate.slice(4, 8)
+    const birthdate = new Date(year, monthIndex, day)
+
+    const res = await this.server.signupNewUser(
+      this.signupForm.value.name,
+      this.signupForm.value.email,
+      this.signupForm.value.password,
+      birthdate)
+    res.subscribe({
+        next: (res) => {
+          console.log(res)
         },
-        error: err => {
-          alert("Something went wrong")
+        error: (err) => {
+          alert("Utilisateur ou mot de passe invalide")
         }
       })
   }

@@ -1,65 +1,55 @@
 import { Injectable } from '@angular/core';
+import localforage from 'localforage';
 
 @Injectable({
     providedIn: 'root',
 })
 export class IndexedDBService {
     private dbName = 'OrganicMoney';
-    private storeName = 'users';
-    private db!: IDBDatabase;
     constructor() {
         this.initDB();
     }
-    initDB() {
-        const request = indexedDB.open(this.dbName, 1);
-        request.onupgradeneeded = (event: any) => {
-            this.db = event.target.result;
-            if (!this.db.objectStoreNames.contains(this.storeName)) {
-                this.db.createObjectStore(this.storeName, { keyPath: 'pk' });
-            }
-        };
-        request.onsuccess = (event: any) => {
-            this.db = event.target.result;
-            console.log('Database initialized successfully');
-        };
-        request.onerror = (event: any) => {
-            console.error('Error initializing database:', event.target.error);
-        };
-    }
-    addData(data: any): Promise<number> {
-        return new Promise((resolve, reject) => {
-            const store = this.db.transaction(this.storeName, 'readwrite')
-                .objectStore(this.storeName);
-            const request = store.add(data);
-            request.onsuccess = () => resolve(request.result as number);
-            request.onerror = () => reject(request.error);
+
+    private initDB() {
+        localforage.config({
+            name: this.dbName
         });
     }
-    getAllData(): Promise<any[]> {
-        return new Promise((resolve, reject) => {
-            const request = this.db.transaction(this.storeName, 'readonly')
-                .objectStore(this.storeName)
-                .getAll();
-            request.onsuccess = () => resolve(request.result);
-            request.onerror = () => reject(request.error);
-        });
+
+    public async getUserList(): Promise<[]> {
+        const result: any = []
+        try {
+            await localforage.iterate((value, key, iterationNumber) => {
+                result.push([key, value]);
+            })
+        } catch (err) {
+            console.log(err);
+        }
+        return result
     }
-    updateData(data: any): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const request = this.db.transaction(this.storeName, 'readwrite')
-                .objectStore(this.storeName)
-                .put(data);
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-        });
-    }
-    deleteData(pk: number): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const request = this.db.transaction(this.storeName, 'readwrite')
-                .objectStore(this.storeName)
-                .delete(pk);
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-        });
+
+    /**
+     * 
+     * @param pk 
+     * @param data: name, bc, isuptodate, contacts
+     */
+    public async saveUser(pk: string, data?: any) {
+        let user: any
+        try {
+            user = await localforage.getItem(pk)
+        } catch (err) {
+            console.log(err);
+        }
+
+        if (data.name) { user.name = data.name }
+        if (data.bc) { user.bc = data.bc }
+        if (data.isuptodate) { user.isuptodate = data.isuptodate }
+        if (data.contacts) { user.contacts = data.contacts }
+
+        try {
+            await localforage.setItem(pk, user)
+        } catch (err) {
+            console.log(err);
+        }
     }
 }

@@ -1,6 +1,10 @@
 # OrganicWebapp
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 20.3.10.
+First thing first:
+
+```bash
+npm install
+```
 
 ## Development server
 
@@ -11,6 +15,43 @@ ng serve
 ```
 
 Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+
+## Database access
+
+### Distant server
+
+The distant server is there essentialy to save things, in case local data would be lost.
+The second usage is to sign some transactions (papers), while server is the only one authorized to do so.
+
+* `/register` to create a new citizen : create a brand new unique blockchain;
+* `/users/save` to save the last block;
+* `/users/sign` to save and sign the last block;
+* `/users/login` to get the blockchain and secret key of given mail/password combination;
+* `/tx/send` to send the transaction to it's target;
+* `/tx/list` to get the list of transactions I should receive;
+* `/papers/cash` to cash a list of papers.
+
+### Local database
+
+For most usages, we use a local database with Localforage.
+It saves those informations:
+
+```json
+{
+  pk: {                  // the user public key 
+    name: "user name"    // only for display
+    bc: { ... },         // the user's blockchain
+    isuptodate: false,   // Boolean saving if blockchain is up to date with the server
+    contacts: [
+        {
+            pk,          // Contact public key
+            name         // Contact name (for display)
+        },
+        ...
+    ]
+  }
+}
+```
 
 ## Code scaffolding
 
@@ -53,7 +94,3 @@ ng e2e
 ```
 
 Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
