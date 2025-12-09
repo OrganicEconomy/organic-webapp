@@ -25,7 +25,7 @@ export class ServerConnexionService {
       name: name,
       mail: mail,
       password: password,
-      secretkey: sk, // user's secret key should be encrypted with password
+      secretkey: sk, // TODO user's secret key should be encrypted with password
       blocks: blocks
     })
   }
@@ -54,7 +54,7 @@ export class ServerConnexionService {
       })
   }
 
-  public login(mail: string, password: string) {
+  public login(mail: string, password: string): any {
     return this.http.get(`${webserverurl}/users/login`, {
       params: { mail, password }
     })

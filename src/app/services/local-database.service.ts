@@ -1,13 +1,13 @@
-import { Injectable } from '@angular/core';
-import localforage from 'localforage';
+import { Injectable } from '@angular/core'
+import localforage from 'localforage'
 
 @Injectable({
     providedIn: 'root',
 })
-export class IndexedDBService {
-    private dbName = 'OrganicMoney';
+export class LocalDatabaseService {
+    private dbName = 'OrganicMoney'
     constructor() {
-        this.initDB();
+        this.initDB()
     }
 
     private initDB() {
@@ -20,10 +20,10 @@ export class IndexedDBService {
         const result: any = []
         try {
             await localforage.iterate((value, key, iterationNumber) => {
-                result.push([key, value]);
+                result.push(value)
             })
         } catch (err) {
-            console.log(err);
+            console.log(err)
         }
         return result
     }
@@ -35,21 +35,36 @@ export class IndexedDBService {
      */
     public async saveUser(pk: string, data?: any) {
         let user: any
-        try {
-            user = await localforage.getItem(pk)
-        } catch (err) {
-            console.log(err);
+        user = await localforage.getItem(pk)
+        if (! user) {
+            user = {
+                name: "",
+                blocks: [],
+                isuptodate: false,
+                contacts: []
+            }
         }
 
         if (data.name) { user.name = data.name }
-        if (data.bc) { user.bc = data.bc }
+        if (data.blocks) { user.blocks = data.blocks }
         if (data.isuptodate) { user.isuptodate = data.isuptodate }
         if (data.contacts) { user.contacts = data.contacts }
 
         try {
             await localforage.setItem(pk, user)
         } catch (err) {
-            console.log(err);
+            console.log(err)
+        }
+        return user
+    }
+
+    public async getUser(pk: string): Promise<any> {
+        try {
+            const user = await localforage.getItem(pk)
+            return user
+        } catch (err) {
+            console.log(err)
+            return null
         }
     }
 }

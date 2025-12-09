@@ -1,15 +1,29 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { LocalDatabaseService } from '../../services/local-database.service'
+import { ConnectedUserService } from '../../services/connected-user.service'
 
 @Component({
   selector: 'app-user-selection',
-  imports: [],
+  imports: [
+    RouterLink
+  ],
   templateUrl: './user-selection.html',
   styleUrl: './user-selection.css',
 })
 export class UserSelection {
-  users: string[] = []
+  localDB = inject(LocalDatabaseService)
+  userService = inject(ConnectedUserService)
+  users: any[] = []
 
-  ngOnInit(): void {
-    
+  constructor (private router: Router) {}
+
+  async ngOnInit() {
+    this.users = await this.localDB.getUserList()
+  }
+
+  selectUser(index: number) {
+    this.userService.setConnectedUser(this.users[index])
+    this.router.navigate(['/home']);
   }
 }
