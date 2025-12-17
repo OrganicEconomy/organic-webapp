@@ -41,7 +41,9 @@ export class LocalDatabaseService {
                 name: "",
                 blocks: [],
                 isuptodate: false,
-                contacts: []
+                contacts: [],
+                secretkey: "",
+                password: ""
             }
         }
 
@@ -49,6 +51,8 @@ export class LocalDatabaseService {
         if (data.blocks) { user.blocks = data.blocks }
         if (data.isuptodate) { user.isuptodate = data.isuptodate }
         if (data.contacts) { user.contacts = data.contacts }
+        if (data.secretkey) { user.secretkey = data.secretkey }
+        if (data.password) { user.password = data.password }
 
         try {
             await localforage.setItem(pk, user)
