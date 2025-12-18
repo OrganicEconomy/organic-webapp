@@ -10,7 +10,7 @@
 
                 <h2>Solde : <span class="">{{ solde }} </span><i class="bi bi-cookie"></i></h2>
 
-                <button class="btn btn-primary" type="button" (click)="createDailyMoney()"><i class="bi bi-piggy-bank"></i> Créer ma monnaie du
+                <button class="btn btn-primary" type="button" (click)="createDailyMoney()" [disabled]="isDailyMoneyCreated"><i class="bi bi-piggy-bank"></i> Créer ma monnaie du
                     jour</button>
 
                 <a routerLink="/pay" class="btn btn-primary" type="button"><i class="bi bi-send"></i> Payer</a>
