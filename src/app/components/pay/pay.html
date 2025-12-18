@@ -4,18 +4,18 @@
             <h1 class="display-4 fw-bold lh-1 mb-3">Payer</h1>
             <form [formGroup]="payForm" (ngSubmit)="pay()" class="p-4 p-md-5 border rounded-3 bg-light">
                 <div class="mb-3">
-                    <label for="target" class="form-label"> Destinataire </label>
-                    <select class="form-select" aria-label="Default select example">
-                        <option selected>Qui est-ce qu'on paye ?</option>
-                        <option value="1">One</option>
-                        <option value="2">Two</option>
-                        <option value="3">Three</option>
-                    </select>
+                    <mat-form-field>
+                        <mat-select placeholder="Qui est-ce qu'on paye ?">
+                            @for (contact of contacts; track contact) {
+                            <mat-option [value]="contact.pk">{{contact.name}}</mat-option>
+                            }
+                        </mat-select>
+                    </mat-form-field>
 
 
-
-                    <a routerLink="/addcontact" class="form-text" type="button"><i class="bi bi-person-lines-fill"></i>
-                        Nouveau contact</a>
+                    <a routerLink="/addcontact" class="form-text" type="button">
+                        <i class="bi bi-person-lines-fill"></i>Nouveau contact
+                    </a>
                 </div>
                 <div class="mb-3">
                     <label for="amount" class="form-label">Combien ?</label>
