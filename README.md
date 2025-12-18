@@ -39,9 +39,12 @@ It saves those informations:
 ```json
 {
   pk: {                  // the user public key 
-    name: "user name"    // only for display
+    publickey: "...",
+    name: "user name",    // only for display
     bc: { ... },         // the user's blockchain
     isuptodate: false,   // Boolean saving if blockchain is up to date with the server
+    password: "...",     // password hash
+    secretkey: "...",    // aes crypted secretkey
     contacts: [
         {
             pk,          // Contact public key

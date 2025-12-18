@@ -35,7 +35,7 @@ export class LoginPage {
         next: (res: any) => {
           console.log(res)
           res.isuptodate = true
-          let user = this.localDB.saveUser(res.publickey, res)
+          let user = this.localDB.saveUser(res)
           this.userService.setConnectedUser(user)
           this.router.navigate(['/home']);
         },

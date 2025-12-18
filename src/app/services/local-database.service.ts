@@ -31,13 +31,14 @@ export class LocalDatabaseService {
     /**
      * 
      * @param pk 
-     * @param data: name, bc, isuptodate, contacts
+     * @param data: publickey, name, blocks, isuptodate, contacts, secretkey, password
      */
-    public async saveUser(pk: string, data?: any) {
+    public async saveUser(data: any) {
         let user: any
-        user = await localforage.getItem(pk)
+        user = await localforage.getItem(data.publickey)
         if (! user) {
             user = {
+                publickey: data.publickey,
                 name: "",
                 blocks: [],
                 isuptodate: false,
@@ -55,7 +56,7 @@ export class LocalDatabaseService {
         if (data.password) { user.password = data.password }
 
         try {
-            await localforage.setItem(pk, user)
+            await localforage.setItem(user.publickey, user)
         } catch (err) {
             console.log(err)
         }

@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { RouterLink, Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
+import { ConnectedUserService } from '../../services/connected-user.service';
 
 @Component({
   selector: 'app-contacts',
@@ -14,11 +15,16 @@ import { MatButtonModule } from '@angular/material/button';
   styleUrl: './contacts.css',
 })
 export class Contacts {
-  displayedColumns: string[] = ['name', 'pk']
-  dataSource = [
-    {
-      name: "Michelle",
-      pk: "02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3"
+  userService = inject(ConnectedUserService)
+  user = this.userService.getConnectedUser()
+
+  constructor(private router: Router) {
+    if (this.user === null) {
+      this.router.navigate(['/user-selection']);
+      return
     }
-  ]
+  }
+
+  displayedColumns: string[] = ['name', 'pk']
+  dataSource = this.user.contacts
 }

@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { CitizenBlockchain } from 'organic-money/src/index.js';
+import { LocalDatabaseService } from '../../services/local-database.service';
 
 @Component({
   selector: 'app-home',
@@ -13,6 +14,7 @@ import { CitizenBlockchain } from 'organic-money/src/index.js';
 })
 export class Home {
   userService = inject(ConnectedUserService)
+  localDB = inject(LocalDatabaseService)
 
   blockchain: any
   user: any
@@ -36,13 +38,12 @@ export class Home {
     this.solde = this.blockchain.getAvailableMoneyAmount()
     this.level = this.blockchain.getLevel()
     this.percent = this.blockchain.getMoneyBeforeNextLevel(true)
-    console.log(this.user.blocks)
   }
 
   public createDailyMoney() {
     const result = this.blockchain.createMoneyAndInvests(this.user.secretkey)
-    console.log(result)
     this.update()
+    this.localDB.saveUser(this.user)
   }
 
 }
