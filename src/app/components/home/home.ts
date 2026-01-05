@@ -18,12 +18,11 @@ export class Home {
   userService = inject(ConnectedUserService)
   localDB = inject(LocalDatabaseService)
 
-  blockchain: any
   user: any
   solde = 0
   level = 0
   percent = 0
-  isDailyMoneyCreated = true
+  isDailyMoneyCreated = false
   password: any
 
   constructor(private router: Router) {
@@ -32,18 +31,18 @@ export class Home {
       this.router.navigate(['/user-selection']);
       return
     }
-    this.blockchain = new CitizenBlockchain(this.user.blocks)
+    this.user.blockchain
     this.update()
   }
 
   update() {
-    this.solde = this.blockchain.getAvailableMoneyAmount()
-    this.level = this.blockchain.getLevel()
-    this.percent = this.blockchain.getMoneyBeforeNextLevel(true)
+    this.solde = this.user.blockchain.getAvailableMoneyAmount()
+    this.level = this.user.blockchain.getLevel()
+    this.percent = this.user.blockchain.getMoneyBeforeNextLevel(true)
   }
 
   public createDailyMoney() {
-    const result = this.blockchain.createMoneyAndInvests(this.user.secretkey)
+    const result = this.user.blockchain.createMoneyAndInvests(this.user.secretkey)
     this.update()
     this.localDB.saveUser(this.user)
   }

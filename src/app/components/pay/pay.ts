@@ -75,6 +75,8 @@ export class Pay {
     }
     try {
       const tx = this.user.blockchain.pay(this.user.secretkey, this.target, this.amount)
+      console.log(tx)
+      console.log(this.user.blockchain.lastblock)
       this.localDB.saveUser(this.user)
       this.serverDB.saveLastBlock(this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock)
       this.displayMessage("Paiement enregistré et envoyé avec succès.")
