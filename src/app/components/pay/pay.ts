@@ -60,6 +60,10 @@ export class Pay {
     this.target = event.value
   }
 
+  itIsMe(pk: string) {
+    return pk === this.user.blockchain.getMyPublicKey()
+  }
+
   pay(): void {
     if (!this.target) {
       this.displayMessage("Le  champs 'Qui est-ce qu'on paye ?' est obligatoire.")
@@ -75,12 +79,15 @@ export class Pay {
     }
     try {
       const tx = this.user.blockchain.pay(this.user.secretkey, this.target, this.amount)
-      console.log(tx)
-      console.log(this.user.blockchain.lastblock)
+      
       this.localDB.saveUser(this.user)
       this.serverDB.saveLastBlock(this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock)
+      if (!this.itIsMe(tx.target)) {
+        this.serverDB.sendTransaction(tx)
+      }
+
       this.displayMessage("Paiement enregistré et envoyé avec succès.")
-      this.router.navigate(['/home']);
+      //this.router.navigate(['/home']);
     } catch (err) {
       console.log(err)
       this.displayMessage("Une erreur est survenue oO")

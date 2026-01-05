@@ -9,7 +9,7 @@ export class ServerConnexionService {
 
   private http = inject(HttpClient);
 
-  public async signupNewUser(name: string, mail: string, password: string, birthdate: Date) {
+  public signupNewUser(name: string, mail: string, password: string, birthdate: Date) {
 
     const bc = new CitizenBlockchain()
     const sk = Blockchain.randomPrivateKey()
@@ -30,7 +30,7 @@ export class ServerConnexionService {
     })
   }
 
-  public async saveLastBlock(publickey: string, block: any) {
+  public saveLastBlock(publickey: string, block: any) {
     this.http.put<any>(`${webserverurl}/users/save`, { publickey, block })
       .subscribe({
         next: res => {
@@ -42,7 +42,7 @@ export class ServerConnexionService {
       })
   }
 
-  public async signLastBlock(publickey: string, block: any) {
+  public signLastBlock(publickey: string, block: any) {
     this.http.put<any>(`${webserverurl}/users/sign`, { publickey, block })
       .subscribe({
         next: res => {
@@ -61,24 +61,21 @@ export class ServerConnexionService {
   }
 
   public async sendTransaction(tx: {}) {
-    return this.http.put<any>(`${webserverurl}/tx/send`, { tx })
-  }
-
-  public async getTransactionList(publickey: string) {
-    this.http.get(`${webserverurl}/tx/list`, {
-      params: {
-        publickey
-      }
-    })
+    return this.http.post<any>(`${webserverurl}/tx/send`, { tx })
       .subscribe({
-        next: data => {
-          console.log('LIST SUCCESSFUL');
-          console.log(data);
+        next: res => {
+          console.log('SIGN SUCCESSFUL');
         },
         error: err => {
           console.log("Something went wrong")
         }
       })
+  }
+
+  public getTransactionList(publickey: string) {
+    return this.http.get(`${webserverurl}/tx/list`, {
+      params: { publickey }
+    })
   }
 
   public async cashPapers(paperlist: []) {
