@@ -1,23 +1,38 @@
-<div class="container-sm">
-    <div class="row align-items-center g-lg-5 py-5">
-        <div class="col-md-10 mx-auto col-lg-5">
-            <h1 class="display-4 fw-bold lh-1 mb-3"> Qui est là ? </h1>
+<mat-card class="" appearance="outlined">
+    <mat-card-header>
+        <mat-card-title>Qui est là ?</mat-card-title>
+        <mat-card-subtitle>(C'est batmaaaaaaan ! Nanananananananana...) </mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+        Choisi une utilisatrice / un utilisateur :
+        <mat-list>
             @for (user of users; track user.name) {
-                
+            <mat-list-item role="listitem">
                 <button matButton="outlined" (click)="selectUser($index)">
                     {{ user.name }}
                 </button>
-                
-                <mat-divider/>
+            </mat-list-item>
             } @empty {
-                Aucun utilisateur ni aucune utilisatrice n'est connecté.
+            <mat-list-item role="listitem">
+                Il n'y a personne ici ! Il faut se connecter ou créer un compte, mon chou.
+            </mat-list-item>
             }
-        </div>
-        
-        <div class="col-md-10 mx-auto col-lg-5">
-            <a routerLink="/signup">Créer un compte.</a>
-            <h3>ou</h3>
-            <a routerLink="/login">Se connecter.</a>
-        </div>
-    </div>
-</div>
+        </mat-list>
+    </mat-card-content>
+
+    <mat-card-actions>
+        <mat-list>
+            <mat-list-item role="listitem">
+                <a matButton="outlined" routerLink="/login" type="button">Ou bien connecte-toi,</a>
+            </mat-list-item>
+            <mat-list-item role="listitem">
+                <a matButton="outlined" routerLink="/signup" type="button">Ou alors crée ton compte !!!</a>
+            </mat-list-item>
+        </mat-list>
+    </mat-card-actions>
+
+    <mat-card-actions>
+        <p>Et si tu ne sais même pas ce que tu fais ici, tu peux toujours aller lire <a href="https://economie-organique.fr/">Le site de l'économie organique</a> pour tout comprendre et quitter (en douceur) ce capitalisme de bouze !</p>
+    </mat-card-actions>
+</mat-card>

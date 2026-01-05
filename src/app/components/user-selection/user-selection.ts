@@ -5,8 +5,11 @@ import { ConnectedUserService } from '../../services/connected-user.service'
 import { Dialog, DialogRef, DIALOG_DATA, DialogModule } from '@angular/cdk/dialog';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import {MatButtonModule} from '@angular/material/button';
-import {MatDividerModule} from '@angular/material/divider';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatListModule } from '@angular/material/list';
+import { MatCardModule } from '@angular/material/card';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 export interface DialogData {
   password: string;
@@ -17,7 +20,12 @@ export interface DialogData {
     RouterLink,
     DialogModule,
     MatButtonModule,
-    MatDividerModule
+    MatDividerModule,
+    MatButtonModule,
+    MatProgressBarModule,
+    MatCardModule,
+    MatDividerModule,
+    MatListModule
   ],
   templateUrl: './user-selection.html',
   styleUrl: './user-selection.css',

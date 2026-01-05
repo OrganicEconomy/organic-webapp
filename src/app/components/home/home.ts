@@ -1,15 +1,22 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { CitizenBlockchain } from 'organic-money/src/index.js';
 import { LocalDatabaseService } from '../../services/local-database.service';
-import {MatButtonModule} from '@angular/material/button';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatCardModule } from '@angular/material/card';
+import {MatListModule} from '@angular/material/list';
 
 @Component({
   selector: 'app-home',
   imports: [
     RouterLink,
-    MatButtonModule
+    MatButtonModule,
+    MatProgressBarModule,
+    MatCardModule,
+    MatDividerModule,
+    MatListModule
   ],
   templateUrl: './home.html',
   styleUrl: './home.css',
