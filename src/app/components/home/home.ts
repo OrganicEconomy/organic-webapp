@@ -31,7 +31,6 @@ export class Home {
       this.router.navigate(['/user-selection']);
       return
     }
-    this.user.blockchain
     this.update()
   }
 
