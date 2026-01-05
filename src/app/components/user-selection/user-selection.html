@@ -3,13 +3,17 @@
         <div class="col-md-10 mx-auto col-lg-5">
             <h1 class="display-4 fw-bold lh-1 mb-3"> Qui est là ? </h1>
             @for (user of users; track user.name) {
-                <button (click)="selectUser($index)">
+                
+                <button matButton="outlined" (click)="selectUser($index)">
                     {{ user.name }}
                 </button>
+                
+                <mat-divider/>
             } @empty {
                 Aucun utilisateur ni aucune utilisatrice n'est connecté.
             }
         </div>
+        
         <div class="col-md-10 mx-auto col-lg-5">
             <a routerLink="/signup">Créer un compte.</a>
             <h3>ou</h3>

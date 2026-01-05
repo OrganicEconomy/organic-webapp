@@ -3,11 +3,13 @@ import { Router, RouterLink } from '@angular/router';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { CitizenBlockchain } from 'organic-money/src/index.js';
 import { LocalDatabaseService } from '../../services/local-database.service';
+import {MatButtonModule} from '@angular/material/button';
 
 @Component({
   selector: 'app-home',
   imports: [
     RouterLink,
+    MatButtonModule
   ],
   templateUrl: './home.html',
   styleUrl: './home.css',

@@ -1,35 +1,41 @@
-<div class="container-sm">
-    <div class="row align-items-center g-lg-5 py-5">
-        <div class="col-md-10 mx-auto col-lg-5">
-            <h1 class="display-4 fw-bold lh-1 mb-3">Payer</h1>
-            <form [formGroup]="payForm" (ngSubmit)="pay()" class="p-4 p-md-5 border rounded-3 bg-light">
-                <div class="mb-3">
-                    <mat-form-field>
-                        <mat-select placeholder="Qui est-ce qu'on paye ?">
-                            @for (contact of contacts; track contact) {
-                            <mat-option [value]="contact.pk">{{contact.name}}</mat-option>
-                            }
-                        </mat-select>
-                    </mat-form-field>
+<mat-card>
+    <mat-card-content>
+        <h1>Payer</h1>
+        <section>
+            <mat-form-field>
+                <mat-select placeholder="Qui est-ce qu'on paye ?" (selectionChange)="selectedValue($event)" required>
+                    @for (contact of contacts; track contact) {
+                    <mat-option [value]="contact.pk">{{contact.name}}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
 
+            <a matButton="outlined" routerLink="/addcontact" type="button">
+                <i class="bi bi-person-lines-fill"></i>Nouveau contact
+            </a>
+        </section>
 
-                    <a routerLink="/addcontact" class="form-text" type="button">
-                        <i class="bi bi-person-lines-fill"></i>Nouveau contact
-                    </a>
-                </div>
-                <div class="mb-3">
-                    <label for="amount" class="form-label">Combien ?</label>
-                    <input type="range" class="form-range">
-                    <input formControlName="amount" class="form-control" type="text"
-                        placeholder="102 000 ? C'est beaucoup">
-                </div>
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" formControlName="validation">
-                    <label class="form-check-label" for="validation">J'ai compris qu'en cliquant sur "Payer" je ne
-                        reviendrai pas en arrière.</label>
-                </div>
-                <button type="submit" class="btn btn-primary">Payer</button>
-            </form>
-        </div>
-    </div>
-</div>
+        <section>
+            <mat-form-field>
+                <mat-label>Combien ?</mat-label>
+                <input matInput type="number" [(ngModel)]="amount" [max]="max" required>
+            </mat-form-field>
+        </section>
+
+        <section>
+            <mat-slider [max]="max" [min]=0 [step]=1 [showTickMarks]=true>
+                <input matSliderThumb [(ngModel)]="amount" #slider>
+            </mat-slider>
+        </section>
+
+        <section>
+            <input type="checkbox" name="validation" [(ngModel)]="validated">
+            <label for="validation">J'ai compris qu'en cliquant sur "Payer" je ne
+                reviendrai pas en arrière.</label>
+        </section>
+
+        <section>
+            <button matButton="outlined" type="submit" (click)="pay()">Payer</button>
+        </section>
+    </mat-card-content>
+</mat-card>

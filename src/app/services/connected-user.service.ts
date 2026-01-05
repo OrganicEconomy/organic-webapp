@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core'
+import { CitizenBlockchain } from 'organic-money/src/index.js';
 
 @Injectable({
     providedIn: 'root',

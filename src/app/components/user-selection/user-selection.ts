@@ -5,6 +5,8 @@ import { ConnectedUserService } from '../../services/connected-user.service'
 import { Dialog, DialogRef, DIALOG_DATA, DialogModule } from '@angular/cdk/dialog';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import {MatButtonModule} from '@angular/material/button';
+import {MatDividerModule} from '@angular/material/divider';
 
 export interface DialogData {
   password: string;
@@ -13,7 +15,9 @@ export interface DialogData {
   selector: 'app-user-selection',
   imports: [
     RouterLink,
-    DialogModule
+    DialogModule,
+    MatButtonModule,
+    MatDividerModule
   ],
   templateUrl: './user-selection.html',
   styleUrl: './user-selection.css',

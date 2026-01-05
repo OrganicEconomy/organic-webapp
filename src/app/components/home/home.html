@@ -10,22 +10,54 @@
 
                 <h2>Solde : <span class="">{{ solde }} </span><i class="bi bi-cookie"></i></h2>
 
-                <button class="btn btn-primary" type="button" (click)="createDailyMoney()" [disabled]="isDailyMoneyCreated"><i class="bi bi-piggy-bank"></i> Créer ma monnaie du
-                    jour</button>
+                <section>
+                    <button matButton="outlined" (click)="createDailyMoney()" [disabled]="isDailyMoneyCreated"><i
+                            class="bi bi-piggy-bank"></i> Créer ma monnaie du
+                        jour</button>
+                </section>
 
-                <a routerLink="/pay" class="btn btn-primary" type="button"><i class="bi bi-send"></i> Payer</a>
-                <a routerLink="/cashpayment" class="btn btn-primary" type="button"><i class="bi bi-router"></i> Recevoir un
-                    paiement</a>
-                <a routerLink="/cashpapers" class="btn btn-primary" type="button"><i class="bi bi-qr-code-scan"></i> Encaisser
-                    des billets</a>
-                <a routerLink="/printpapers" class="btn btn-primary" type="button"><i class="bi bi-printer"></i> Imprimer des
-                    billets</a>
-                <a routerLink="/transactions" class="btn btn-primary" type="button"><i class="bi bi-card-list"></i> Historique
-                    de transactions</a>
-                <a routerLink="/contacts" class="btn btn-primary" type="button"><i class="bi bi-person-lines-fill"></i>
-                    Contacts</a>
-                <a routerLink="/account" class="btn btn-primary" type="button"><i class="bi bi-person"></i> Mon compte</a>
-                <a routerLink="/logout" class="btn btn-primary" type="button"><i class="bi bi-power"></i> Déconnexion</a>
+                <section>
+                    <a matButton="outlined" routerLink="/pay"><i class="bi bi-send"></i> Payer</a>
+                </section>
+
+                <section>
+                    <a matButton="outlined" routerLink="/cashpayment" type="button"><i class="bi bi-router"></i>
+                        Recevoir un
+                        paiement</a>
+                </section>
+
+                <section>
+                    <a matButton="outlined" routerLink="/cashpapers" type="button"><i class="bi bi-qr-code-scan"></i>
+                        Encaisser
+                        des billets</a>
+                </section>
+
+                <section>
+                    <a matButton="outlined" routerLink="/printpapers" type="button"><i class="bi bi-printer"></i>
+                        Imprimer des
+                        billets</a>
+                </section>
+
+                <section>
+                    <a matButton="outlined" routerLink="/transactions" type="button"><i class="bi bi-card-list"></i>
+                        Historique
+                        de transactions</a>
+                </section>
+
+                <section>
+                    <a matButton="outlined" routerLink="/contacts" type="button"><i class="bi bi-person-lines-fill"></i>
+                        Contacts</a>
+                </section>
+
+                <section>
+                    <a matButton="outlined" routerLink="/account" class="btn btn-primary" type="button"><i
+                            class="bi bi-person"></i> Mon compte</a>
+                </section>
+
+                <section>
+                    <a matButton="outlined" routerLink="/logout" type="button"><i class="bi bi-power"></i>
+                        Déconnexion</a>
+                </section>
             </div>
         </div>
     </div>
