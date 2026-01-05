@@ -11,6 +11,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ServerConnexionService } from '../../services/server-connection.service';
 
 @Component({
   selector: 'app-pay',
@@ -31,6 +32,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 export class Pay {
   userService = inject(ConnectedUserService)
   localDB = inject(LocalDatabaseService)
+  serverDB = inject(ServerConnexionService)
   user = this.userService.getConnectedUser()
   contacts: any = []
   amount = 0;
@@ -73,9 +75,13 @@ export class Pay {
     }
     try {
       const tx = this.user.blockchain.pay(this.user.secretkey, this.target, this.amount)
+      this.localDB.saveUser(this.user)
+      this.serverDB.saveLastBlock(this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock)
+      this.displayMessage("Paiement enregistré et envoyé avec succès.")
       this.router.navigate(['/home']);
     } catch (err) {
       console.log(err)
+      this.displayMessage("Une erreur est survenue oO")
     }
   }
 

@@ -9,6 +9,7 @@ export class ConnectedUserService {
 
     public setConnectedUser(user: any) {
         this.connectedUser = user
+        user.blockchain = new CitizenBlockchain(user.blocks)
     }
 
     public getConnectedUser() : any {

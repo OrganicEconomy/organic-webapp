@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core'
 import localforage from 'localforage'
+import { CitizenBlockchain } from 'organic-money/src/index.js';
 
 @Injectable({
     providedIn: 'root',
@@ -49,11 +50,15 @@ export class LocalDatabaseService {
         }
 
         if (data.name) { user.name = data.name }
-        if (data.blocks) { user.blocks = data.blocks }
         if (data.isuptodate) { user.isuptodate = data.isuptodate }
         if (data.contacts) { user.contacts = data.contacts }
         if (data.secretkey) { user.secretkey = data.secretkey }
         if (data.password) { user.password = data.password }
+        if (data.blockchain) {
+            user.blocks = data.blockchain.blocks
+        } else if (data.blocks) {
+            user.blocks = data.blocks
+        }
 
         try {
             await localforage.setItem(user.publickey, user)
@@ -65,7 +70,8 @@ export class LocalDatabaseService {
 
     public async getUser(pk: string): Promise<any> {
         try {
-            const user = await localforage.getItem(pk)
+            const user: any = await localforage.getItem(pk)
+            user.blockchain = new CitizenBlockchain(user.blocks)
             return user
         } catch (err) {
             console.log(err)

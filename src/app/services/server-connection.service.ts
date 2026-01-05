@@ -30,26 +30,26 @@ export class ServerConnexionService {
     })
   }
 
-  public async saveLastBlock(pk: string, block: any) {
-    this.http.put<any>(`${webserverurl}/users/save`, { pk, block })
+  public async saveLastBlock(publickey: string, block: any) {
+    this.http.put<any>(`${webserverurl}/users/save`, { publickey, block })
       .subscribe({
         next: res => {
-          alert('SAVE SUCCESSFUL');
+          console.log('SAVE SUCCESSFUL');
         },
         error: err => {
-          alert("Something went wrong")
+          console.log("Something went wrong")
         }
       })
   }
 
-  public async signLastBlock(pk: string, block: any) {
-    this.http.put<any>(`${webserverurl}/users/sign`, { pk, block })
+  public async signLastBlock(publickey: string, block: any) {
+    this.http.put<any>(`${webserverurl}/users/sign`, { publickey, block })
       .subscribe({
         next: res => {
-          alert('SIGN SUCCESSFUL');
+          console.log('SIGN SUCCESSFUL');
         },
         error: err => {
-          alert("Something went wrong")
+          console.log("Something went wrong")
         }
       })
   }
@@ -72,11 +72,11 @@ export class ServerConnexionService {
     })
       .subscribe({
         next: data => {
-          alert('LIST SUCCESSFUL');
-          alert(data);
+          console.log('LIST SUCCESSFUL');
+          console.log(data);
         },
         error: err => {
-          alert("Something went wrong")
+          console.log("Something went wrong")
         }
       })
   }
@@ -87,19 +87,11 @@ export class ServerConnexionService {
     })
       .subscribe({
         next: res => {
-          alert('CASHING SUCCESSFUL');
+          console.log('CASHING SUCCESSFUL');
         },
         error: err => {
-          alert("Something went wrong")
+          console.log("Something went wrong")
         }
       })
   }
-}
-
-export interface User {
-  pk: string
-  name: string
-  sk: string
-  blockchain: any
-  contacts: any[]
 }
