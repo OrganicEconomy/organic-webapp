@@ -2,7 +2,9 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Blockchain, CitizenBlockchain } from 'organic-money/src/index.js';
 
-const webserverurl = 'https://127.0.0.1:6868/api'
+import { environment } from '../../../src/environments/environment';
+
+const webserverurl = environment.apiURL
 
 @Injectable({ providedIn: 'root' })
 export class ServerConnexionService {

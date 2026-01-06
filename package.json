@@ -36,6 +36,7 @@
     "bootstrap-icons": "^1.13.1",
     "buffer": "^6.0.3",
     "idb": "^8.0.3",
+    "jspdf": "^4.0.0",
     "localforage": "^1.10.0",
     "ngx-cookie-service": "^21.1.0",
     "organic-money": "^0.1.9",

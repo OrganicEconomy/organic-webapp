@@ -1,0 +1,13 @@
+<mat-grid-list cols="2" rowHeight="2:1">
+    @for (paper of papers; track paper) {
+    <mat-grid-list cols="4" rowHeight="100px">
+        <mat-grid-tile [colspan]="3" [rowspan]="1">{{ paper.editor }}</mat-grid-tile>
+        <mat-grid-tile [colspan]="3" [rowspan]="1">{{ paper.editor_key }}</mat-grid-tile>
+        <mat-grid-tile [colspan]="3" [rowspan]="1">{{ paper.valid_date }}</mat-grid-tile>
+        <mat-grid-tile [colspan]="3" [rowspan]="1">{{ paper.id }}</mat-grid-tile>
+        <mat-grid-tile [colspan]="1" [rowspan]="3">{{ paper.amount }}</mat-grid-tile>
+        <mat-grid-tile [colspan]="1" [rowspan]="3">{{ paper.qrcode }}</mat-grid-tile>
+    </mat-grid-list>
+    }
+    <mat-grid-tile>1</mat-grid-tile>
+</mat-grid-list>

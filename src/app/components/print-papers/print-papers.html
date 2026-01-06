@@ -1,106 +1,129 @@
-<div class="container-sm">
-    <div class="row align-items-center g-lg-5 py-5">
-        <div class="col-md-10 mx-auto col-lg-5">
-            
-            <div class="d-grid gap-2 col-6 mx-auto">
-                <h3>Imprimer des billets </h3>
-                <div class="input-group mb-3">
-                    <select class="form-select">
-                        <option selected value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                        <option value="20">20</option>
-                    </select>
-                    <span class="input-group-text" id="basic-addon2">x 1 <i class="bi bi-cookie"></i></span>
-                </div>
+<mat-card class="" appearance="outlined">
+    <mat-card-header>
+        <mat-card-title>Imprimer des billets</mat-card-title>
+        <mat-card-subtitle>Pour aller faire les soooooldes !</mat-card-subtitle>
+    </mat-card-header>
 
-                <div class="input-group mb-3">
-                    <select class="form-select">
-                        <option selected value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                        <option value="20">20</option>
-                    </select>
-                    <span class="input-group-text" id="basic-addon2">x 3 <i class="bi bi-cookie"></i></span>
-                </div>
+    <mat-divider [inset]="true"></mat-divider>
 
-                <div class="input-group mb-3">
-                    <select class="form-select">
-                        <option selected value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                        <option value="20">20</option>
-                    </select>
-                    <span class="input-group-text" id="basic-addon2">x 10 <i class="bi bi-cookie"></i></span>
-                </div>
+    <mat-card-content>
+        <mat-list>
+            <mat-list-item role="listitem">
+                <mat-select placeholder="Combien de billets de 1 ?" (selectionChange)="selectedValue($event, 1)"
+                    required>
+                    <mat-option selected value="0">0</mat-option>
+                    <mat-option selected value="1">1 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="2">2 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="3">3 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="4">4 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="5">5 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="6">6 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="7">7 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="8">8 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="9">9 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="10">10 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="15">15 x 1 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="20">20 x 1 <i class="bi bi-cookie"></i></mat-option>
+                </mat-select>
+                <span>x 1 <i class="bi bi-cookie"></i></span>
+            </mat-list-item>
 
-                <div class="input-group mb-3">
-                    <select class="form-select">
-                        <option selected value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                        <option value="20">20</option>
-                    </select>
-                    <span class="input-group-text" id="basic-addon2">x 20 <i class="bi bi-cookie"></i></span>
-                </div>
+            <mat-list-item role="listitem">
+                <mat-select placeholder="Combien de billets de 3 ?" (selectionChange)="selectedValue($event, 3)"
+                    required>
+                    <mat-option selected value="0">0</mat-option>
+                    <mat-option selected value="1">1 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="2">2 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="3">3 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="4">4 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="5">5 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="6">6 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="7">7 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="8">8 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="9">9 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="10">10 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="15">15 x 3 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="20">20 x 3 <i class="bi bi-cookie"></i></mat-option>
+                </mat-select>
+            </mat-list-item>
 
-                <div class="input-group mb-3">
-                    <select class="form-select">
-                        <option selected value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="15">15</option>
-                        <option value="20">20</option>
-                    </select>
-                    <span class="input-group-text" id="basic-addon2">x 34 <i class="bi bi-cookie"></i></span>
-                </div>
+            <mat-list-item role="listitem">
+                <mat-select placeholder="Combien de billets de 10 ?" (selectionChange)="selectedValue($event, 10)"
+                    required>
+                    <mat-option selected value="0">0</mat-option>
+                    <mat-option selected value="1">1 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="2">2 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="3">3 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="4">4 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="5">5 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="6">6 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="7">7 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="8">8 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="9">9 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="10">10 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="15">15 x 10 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="20">20 x 10 <i class="bi bi-cookie"></i></mat-option>
+                </mat-select>
+            </mat-list-item>
 
-                <button matButton="outlined" type="button"><i class="bi bi-printer"></i> Générer PDF </button>
-            </div>
-        </div>
-    </div>
+            <mat-list-item role="listitem">
+                <mat-select placeholder="Combien de billets de 20 ?" (selectionChange)="selectedValue($event, 20)"
+                    required>
+                    <mat-option selected value="0">0</mat-option>
+                    <mat-option selected value="1">1 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="2">2 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="3">3 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="4">4 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="5">5 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="6">6 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="7">7 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="8">8 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="9">9 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="10">10 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="15">15 x 20 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="20">20 x 20 <i class="bi bi-cookie"></i></mat-option>
+                </mat-select>
+            </mat-list-item>
+
+            <mat-list-item role="listitem">
+                <mat-select placeholder="Combien de billets de 34 ?" (selectionChange)="selectedValue($event, 34)"
+                    required>
+                    <mat-option selected value="0">0</mat-option>
+                    <mat-option selected value="1">1 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="2">2 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="3">3 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="4">4 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="5">5 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="6">6 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="7">7 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="8">8 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="9">9 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="10">10 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="15">15 x 34 <i class="bi bi-cookie"></i></mat-option>
+                    <mat-option selected value="20">20 x 34 <i class="bi bi-cookie"></i></mat-option>
+                </mat-select>
+            </mat-list-item>
+
+            <mat-list-item role="listitem">
+                <p> Total : {{ total }} / {{ max }}<i class="bi bi-cookie"></i>
+                @if (!canGenerate) {
+                    <span> C'est trop, tu n'as pas les moyens !</span>
+                }
+                </p>
+            </mat-list-item>
+
+        </mat-list>
+    </mat-card-content>
+
+    <mat-card-actions>
+        <button matButton="outlined" type="button" (click)="generatePDF()" [disabled]="!canGenerate"><i class="bi bi-printer"></i> Générer PDF</button>
+    </mat-card-actions>
+</mat-card>
+
+<div id="qrcodes">
+    @for (paper of papers; track paper.id) {
+    <p>
+        <qrcode id="qrcode-{{paper.id}}" [qrdata]="paper.id" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
+    </p>
+    }
 </div>
