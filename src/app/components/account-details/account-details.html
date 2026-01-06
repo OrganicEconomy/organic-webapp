@@ -1,31 +1,27 @@
-<div class="container-sm">
-    <div class="card text-center">
-        <div class="card-header">
-            <h2>Mon compte </h2>
-        </div>
-        <div class="card-body">
-            <div class="d-grid gap-2 col-6 mx-auto ">
-                <h4>Email</h4>
-                <p>monemail@toto.com</p>
 
-                <h4>Nom & prénom</h4>
-                <p>Mary Poppins</p>
+<mat-card class="" appearance="outlined">
+    <mat-card-header>
+        <mat-card-title>Mon compte </mat-card-title>
+        <mat-card-subtitle>Inscrit(e) depuis le {{ inscription_date }}</mat-card-subtitle>
+    </mat-card-header>
 
-                <h4>Clé publique</h4>
-                <div class="input-group">
-                    <button class="btn btn-outline-secondary" type="button" id="button-addon1"><i
-                            class="bi bi-copy"></i> </button>
-                    <input type="text" class="form-control" placeholder="" aria-label="Example text with button addon"
-                        aria-describedby="button-addon1" disabled>
-                </div>
-                <p></p>
+    <mat-divider [inset]="true"></mat-divider>
 
-                <h4>QR Code de mes infos</h4>
-                <img src="..." class="rounded mx-auto d-block" alt="Mon QR code">
+    <mat-card-content>
+        <mat-list>
+            <mat-list-item role="listitem">
+                <p>Nom & prénom : {{ name }}</p>
+            </mat-list-item>
+            <mat-list-item role="listitem">
+                <p>Clé : {{ publickey }}</p>
+            </mat-list-item>
+        </mat-list>
+    </mat-card-content>
 
+    <qrcode [qrdata]="publickey" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
 
-
-            </div>
-        </div>
-    </div>
-</div>
+    <mat-card-actions>
+        <a matButton routerLink="/user-selection" type="button"><i class="bi bi-power"></i>
+            Déconnexion</a>
+    </mat-card-actions>
+</mat-card>
