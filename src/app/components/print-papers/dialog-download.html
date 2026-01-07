@@ -1,0 +1,15 @@
+<h2 mat-dialog-title>Génération en cours...</h2>
+
+<mat-dialog-content>
+    <div>
+        <mat-label [hidden]="isReady">On fait rouler la planche à billets...</mat-label>
+<div [hidden]="isReady">
+        <mat-spinner ></mat-spinner>
+</div>
+        <mat-label [hidden]="!isReady">C'est bon ! Il n'y a plus qu'à cliquer sur télécharger.</mat-label>
+    </div>
+</mat-dialog-content>
+
+<mat-dialog-actions>
+    <button matButton="outlined" [hidden]="!isReady" (click)="dialogRef.close()">Télécharger</button>
+</mat-dialog-actions>

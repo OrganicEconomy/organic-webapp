@@ -10,6 +10,11 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { MatCardModule } from '@angular/material/card';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import {
+  MatDialogActions,
+  MatDialogContent,
+  MatDialogTitle,
+} from '@angular/material/dialog';
 
 export interface DialogData {
   password: string;
@@ -43,7 +48,7 @@ export class UserSelection {
   }
 
   selectUser(index: number) {
-    const dialogRef = this.dialog.open<string>(PasswordDialog, {
+    const dialogRef = this.dialog.open(PasswordDialog, {
       width: '250px',
       data: {}
     });
@@ -67,7 +72,10 @@ export class UserSelection {
   styleUrl: 'password-dialog.css',
   imports: [
     FormsModule,
-    MatFormFieldModule
+    MatFormFieldModule,
+    MatDialogTitle,
+    MatDialogContent,
+    MatDialogActions,
   ],
 })
 export class PasswordDialog {

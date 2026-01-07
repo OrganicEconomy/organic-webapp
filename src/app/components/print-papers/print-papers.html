@@ -106,24 +106,32 @@
 
             <mat-list-item role="listitem">
                 <p> Total : {{ total }} / {{ max }}<i class="bi bi-cookie"></i>
-                @if (!canGenerate) {
+                    @if (isTooMuch()) {
                     <span> C'est trop, tu n'as pas les moyens !</span>
-                }
+                    }
                 </p>
+            </mat-list-item>
+
+            <mat-list-item role="listitem">
+                <mat-checkbox [(ngModel)]="validated" (click)="validationCheck()">
+                    J'ai compris qu'en cliquant sur "Générer" je ne reviendrai pas en arrière.
+                </mat-checkbox>
             </mat-list-item>
 
         </mat-list>
     </mat-card-content>
 
     <mat-card-actions>
-        <button matButton="outlined" type="button" (click)="generatePDF()" [disabled]="!canGenerate"><i class="bi bi-printer"></i> Générer PDF</button>
+        <button matButton="outlined" type="button" (click)="generatePapers()" [disabled]="!canGenerate"><i
+                class="bi bi-printer"></i> Générer PDF</button>
+        <a matButton="outlined" routerLink="/home"><i class="bi bi-house"></i> Acceuil</a>
     </mat-card-actions>
 </mat-card>
 
 <div id="qrcodes">
-    @for (paper of papers; track paper.id) {
+    @for (paper of papers; track paper.hash) {
     <p>
-        <qrcode id="qrcode-{{paper.id}}" [qrdata]="paper.id" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
+        <qrcode id="qrcode-{{paper.hash}}" [qrdata]="paper.hash" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
     </p>
     }
 </div>
