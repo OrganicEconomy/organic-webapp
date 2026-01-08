@@ -131,7 +131,7 @@
 <div id="qrcodes">
     @for (paper of papers; track paper.hash) {
     <p>
-        <qrcode id="qrcode-{{paper.hash}}" [qrdata]="paper.hash" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
+        <qrcode id="qrcode-{{paper.hash}}" [qrdata]="getPaperTx(paper)" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
     </p>
     }
 </div>

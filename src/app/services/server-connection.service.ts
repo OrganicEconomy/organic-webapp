@@ -19,9 +19,6 @@ export class ServerConnexionService {
     const pk = bc.getMyPublicKey()
     const blocks = bc.blocks
 
-    console.log(sk)
-    console.log(blocks)
-
     return this.http.post<any>(`${webserverurl}/users/register`, {
       publickey: pk,
       name: name,

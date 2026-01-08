@@ -29,6 +29,10 @@ import { ServerConnexionService } from '../../services/server-connection.service
 export interface DialogData {
   waitFunction: any
 }
+
+const ROW_HEIGHT: number = 33;
+const PAPER_PER_COL: number = 8;
+const COL_PER_PAGE: number = 2;
 @Component({
   selector: 'app-print-papers',
   imports: [
@@ -107,62 +111,67 @@ export class PrintPapers {
 
   drawHorizontalLine(doc: jsPDF, col: number, row: number) {
     doc.setLineDashPattern([2.5], 0)
-    doc.line(10 + 105 * col, 10 + 25 * row, 100 + 105 * col, 10 + 25 * row)
+    doc.line(10 + 105 * col, 10 + ROW_HEIGHT * row, 100 + 105 * col, 10 + ROW_HEIGHT * row)
   }
 
-  drawQRCode(paperHash: string, doc: jsPDF, col: number, row: number) {
-    const qrcode = document.getElementById('qrcode-' + paperHash);
+  drawQRCode(paper: any, doc: jsPDF, col: number, row: number) {
+    const qrcode = document.getElementById('qrcode-' + paper.hash);
     if (qrcode) {
       if (qrcode.firstChild) {
         if (qrcode.firstChild.firstChild) {
           let imageData: any = this.getBase64Image(qrcode.firstChild.firstChild);
-          doc.addImage(imageData, "JPG", 72 + 105 * col, 10 + 25 * row, 25, 25)
+          doc.addImage(imageData, "JPG", 67 + 105 * col, 10 + ROW_HEIGHT * row, 32, 32)
         }
       }
     }
   }
 
+  getPaperTx(paper: any) {
+    return JSON.stringify(paper)
+  }
+
   drawText(paper: any, doc: jsPDF, col: number, row: number) {
     // Emitter informations
-    doc.setFontSize(6)
-    doc.text("Emetteur :", 10 + col * 105, 14 + row * 25)
-    doc.setFontSize(10)
-    doc.text(this.user.name.slice(0, 26), 21 + col * 105, 14 + row * 25)
+    doc.setFontSize(8)
+    doc.text("Emetteur :", 10 + col * 105, 15 + row * ROW_HEIGHT)
+    doc.setFontSize(12)
+    doc.text(this.user.name.slice(0, 26), 24 + col * 105, 15 + row * ROW_HEIGHT)
     doc.setFontSize(5)
-    doc.text("("+paper.signer.slice(0, 32), 10 + col * 105, 18 + row * 25)
-    doc.text(paper.signer.slice(32, 66)+")", 10 + col * 105, 20 + row * 25)
+    doc.text("("+paper.signer.slice(0, 32), 10 + col * 105, 18 + row * ROW_HEIGHT)
+    doc.text(paper.signer.slice(32, 66)+")", 10 + col * 105, 20 + row * ROW_HEIGHT)
     
     // Date
     doc.setFontSize(6)
-    doc.text("Valable jusqu'au", 10 + col * 105, 25 + row * 25)
+    doc.text("Valable jusqu'au", 10 + col * 105, 24 + row * ROW_HEIGHT)
     doc.setFontSize(10)
     let d = new Date(Blockchain.intToDate(paper.date))
     d.setDate(d.getDate() + 30);
-    doc.text(d.toLocaleDateString("fr-FR"), 27 + col * 105, 25 + row * 25)
+    doc.text(d.toLocaleDateString("fr-FR"), 10 + col * 105, 28 + row * ROW_HEIGHT)
     
     // Amount
     doc.setFontSize(20)
-    doc.text(""+paper.money.length+"—", 52 + col * 105, 20 + row * 25)
+    doc.text(""+paper.money.length+"—", 46 + col * 105, 20 + row * ROW_HEIGHT)
 
     // Signature zone
     doc.setFontSize(6)
-    doc.text("Signature", 52 + col * 105, 25 + row * 25)
+    doc.text("Signature", 45 + col * 105, 25 + row * ROW_HEIGHT)
     doc.setLineDashPattern([], 0)
-    doc.rect(52 + col * 105, 23 + row * 25, 20, 10)
+    doc.rect(45 + col * 105, 23 + row * ROW_HEIGHT, 20, 10)
 
     // ID (=hash)
     doc.setFontSize(5)
-    doc.text("Code :", 10 + col * 105, 29 + row * 25)
-    doc.text(paper.hash.slice(0, 33), 10 + col * 105, 31 + row * 25)
-    doc.text(paper.hash.slice(33, 66), 10 + col * 105, 33 + row * 25)
+    doc.text("Code :", 10 + col * 105, 34 + row * ROW_HEIGHT)
+    doc.text(paper.hash.slice(0, 47), 10 + col * 105, 36 + row * ROW_HEIGHT)
+    doc.text(paper.hash.slice(47, 2*47), 10 + col * 105, 38 + row * ROW_HEIGHT)
+    doc.text(paper.hash.slice(2*47, -1), 10 + col * 105, 40 + row * ROW_HEIGHT)
   }
 
   endOfRowReached(row: number) {
-    return row === 11
+    return row >= PAPER_PER_COL
   }
 
   endOfPageReached(col: number, row: number) {
-    return row === 11 && col === 1
+    return this.endOfRowReached(row) && col >= COL_PER_PAGE - 1
   }
 
   openDialog() {
@@ -198,7 +207,7 @@ export class PrintPapers {
     let col = 0;
     this.drawVerticalLine(doc)
     for (let paper of this.papers) {
-      this.drawQRCode(paper.hash, doc, col, row)
+      this.drawQRCode(paper, doc, col, row)
       this.drawText(paper, doc, col, row)
       this.drawHorizontalLine(doc, col, row)
       row++
@@ -217,6 +226,7 @@ export class PrintPapers {
     this.drawHorizontalLine(doc, col, row)
 
     doc.save('FirstPdf.pdf');
+    this.router.navigate(['/home']);
   }
 
 }
@@ -236,8 +246,6 @@ export class PrintPapers {
 })
 export class DialogDownload {
   dialogRef = inject<DialogRef<string>>(DialogRef<string>);
-  //data = inject(MAT_DIALOG_DATA);
-  //waitFunction = this.data.waitFunction;
 
   isReady = false
 

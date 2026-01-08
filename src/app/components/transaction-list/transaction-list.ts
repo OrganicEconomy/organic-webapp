@@ -40,6 +40,9 @@ export class TransactionList {
 
     const tx_types: any = this.tx_types
     const getContactName = (pk: string) => {
+      if (!pk) {
+        return "-"
+      }
       const contact: any = this.user.contacts.find((contact: any) => contact.pk === pk)
       if (!contact) {
         return pk.slice(-15)
