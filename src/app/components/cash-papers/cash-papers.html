@@ -1,29 +1,39 @@
-<div class="row-fluid">
-    <div>
-        <h2>Encaisser des billets</h2>
-    </div>
-    <div class="">
-        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+<mat-card>
+    <mat-card-content>
+        <mat-card-header>
+            <mat-card-title>Encaisse tes billets </mat-card-title>
+            <mat-card-subtitle>en scannant les QR-Codes</mat-card-subtitle>
+        </mat-card-header>
 
+        <zxing-scanner (scanSuccess)="scanSuccessHandler($event)"></zxing-scanner>
+
+        <table mat-table [dataSource]="paper_list" class="mat-elevation-z8">
             <ng-container matColumnDef="id">
                 <th mat-header-cell *matHeaderCellDef> id </th>
-                <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+                <td mat-cell *matCellDef="let paper"> {{paper.hash.slice(0, 10)}} </td>
             </ng-container>
 
             <ng-container matColumnDef="emitter">
                 <th mat-header-cell *matHeaderCellDef> Emetteur </th>
-                <td mat-cell *matCellDef="let element"> {{element.emitter}} </td>
+                <td mat-cell *matCellDef="let paper"> {{getContactName(paper.source)}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef> Date de création </th>
+                <td mat-cell *matCellDef="let paper"> {{paper.date}} </td>
             </ng-container>
 
             <ng-container matColumnDef="amount">
                 <th mat-header-cell *matHeaderCellDef> Montant </th>
-                <td mat-cell *matCellDef="let element"> {{element.amount}} </td>
+                <td mat-cell *matCellDef="let paper"> {{paper.money.length}}— </td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
         </table>
-    </div>
-    <button matButton="outlined" type="button"><i class="bi bi-patch-plus"></i> Ajouter un billet</button>
-    <button matButton="outlined" type="button"><i class="bi bi-cash-coin"></i> Encaisser</button>
-</div>
+
+    </mat-card-content>
+    <mat-card-actions>
+        <button matButton="outlined" (click)="cashPapers()"><i class="bi bi-cash-coin"></i> Encaisser la thune</button>
+    </mat-card-actions>
+</mat-card>
