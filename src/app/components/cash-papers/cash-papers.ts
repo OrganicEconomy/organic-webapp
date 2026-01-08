@@ -23,7 +23,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatCardSubtitle,
     MatCardHeader,
     MatCardTitle,
-],
+  ],
   templateUrl: './cash-papers.html',
   styleUrl: './cash-papers.css',
 })
@@ -62,11 +62,24 @@ export class CashPapers {
     const isDuplicate = this.paper_list.find((element: any) => element.hash === paper.hash)
     if (isDuplicate) { return }
 
-    this.paper_list.push(paper)
-    this.displayMessage("QR code scanné avec succès.")
-    if (this.table) {
-      this.table.renderRows();
-    }
+    const query = this.serverDB.isPaperAlreadyCashed(paper.hash)
+    query.subscribe({
+      next: isCashed => {
+        console.log(isCashed)
+        if (isCashed === false) {
+          this.paper_list.push(paper)
+          this.displayMessage("QR code scanné avec succès.")
+          if (this.table) {
+            this.table.renderRows();
+          }
+        } else {
+          this.displayMessage("Ce billet a déjà été utilisé tantôt.")
+        }
+      },
+      error: err => {
+        console.log("Something went wrong")
+      }
+    })
   }
 
   getContactName(pk: string) {
@@ -82,10 +95,14 @@ export class CashPapers {
 
   cashPapers() {
     const failedPapers = []
+    const okPapers: any = []
     for (let paper of this.paper_list) {
       try {
         this.user.blockchain.cashPaper(paper)
+        this.serverDB.cashPaper(paper.hash)
         this.displayMessage("Paf, j'encaisse " + paper.money.length)
+        console.log(paper, paper.hash)
+        okPapers.push(paper.hash)
       } catch (err) {
         this.displayMessage("Le billet de " + paper.money.length + "— dont le code commence pas '" + paper.hash.slice(0, 8) + "' n'a pas pu être encaissé (doublons ou invalide).")
         failedPapers.push(paper)

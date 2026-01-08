@@ -77,12 +77,13 @@ export class ServerConnexionService {
     })
   }
 
-  public async cashPapers(paperlist: []) {
-    this.http.post<any>(`${webserverurl}/papers/send`, {
-      papers: paperlist
+  public async cashPaper(paperHash: []) {
+    this.http.post<any>(`${webserverurl}/papers/cash`, {
+      paperHash: paperHash
     })
       .subscribe({
         next: res => {
+          console.log(res)
           console.log('CASHING SUCCESSFUL');
         },
         error: err => {
@@ -90,4 +91,11 @@ export class ServerConnexionService {
         }
       })
   }
+
+  public isPaperAlreadyCashed(paperHash: string) {
+    return this.http.get<any>(`${webserverurl}/papers/isCashed`, {
+      params: { paper: paperHash }
+    })
+  }
+
 }
