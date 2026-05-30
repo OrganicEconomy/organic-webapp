@@ -1,0 +1,45 @@
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+  box-sizing: border-box;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 1rem;
+}
+
+mat-card-header {
+  margin-bottom: 1rem;
+}
+
+mat-card-content form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding-top: 0.5rem;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.stay-connected {
+  margin: 0.25rem 0 0.5rem;
+}
+
+.submit-btn {
+  margin-top: 0.75rem;
+  height: 48px;
+  font-size: 1rem;
+  letter-spacing: 0.03em;
+}
+
+mat-card-actions {
+  padding: 0.5rem 1rem 1rem;
+  gap: 0.25rem;
+}

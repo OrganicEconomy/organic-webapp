@@ -1,24 +1,23 @@
-section {
-    display: flex;
-    align-items: center;
+mat-card {
+  max-width: 480px;
+  margin: 2rem auto;
 }
 
-.example-label {
-    font-size: 14px;
-    margin: 0 16px 0 8px;
-    min-width: 120px;
+mat-list-item button,
+mat-list-item a {
+  width: 100%;
 }
 
-.example-button-row {
-    max-width: 600px;
+mat-card-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  flex-wrap: wrap;
 }
 
-.example-button-row .mat-mdc-button-base {
-    margin: 8px 8px 8px 0;
-}
-
-.example-flex-container {
-    display: flex;
-    justify-content: space-between;
-    flex-wrap: wrap;
+.footer-text {
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 0;
 }

@@ -1,68 +1,63 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { LocalDatabaseService } from '../../services/local-database.service'
-import { ConnectedUserService } from '../../services/connected-user.service'
-import { Dialog, DialogRef, DIALOG_DATA, DialogModule } from '@angular/cdk/dialog';
 import { FormsModule } from '@angular/forms';
+import { LocalDatabaseService } from '../../services/local-database.service';
+import { ConnectedUserService } from '../../services/connected-user.service';
+
+// Angular Material
+import { MatDialog, MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { MatCardModule } from '@angular/material/card';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import {
-  MatDialogActions,
-  MatDialogContent,
-  MatDialogTitle,
-} from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
 
 export interface DialogData {
   password: string;
 }
+
 @Component({
   selector: 'app-user-selection',
   imports: [
     RouterLink,
-    DialogModule,
     MatButtonModule,
-    MatDividerModule,
-    MatButtonModule,
-    MatProgressBarModule,
     MatCardModule,
     MatDividerModule,
-    MatListModule
+    MatListModule,
   ],
   templateUrl: './user-selection.html',
   styleUrl: './user-selection.css',
 })
 export class UserSelection {
-  localDB = inject(LocalDatabaseService)
-  userService = inject(ConnectedUserService)
-  dialog = inject(Dialog);
-  users: any[] = []
+  localDB = inject(LocalDatabaseService);
+  userService = inject(ConnectedUserService);
+  dialog = inject(MatDialog);
+  users: any[] = [];
 
   constructor(private router: Router) { }
 
   async ngOnInit() {
-    this.users = await this.localDB.getUserList()
+    this.users = await this.localDB.getUserList();
   }
 
   selectUser(index: number) {
     const dialogRef = this.dialog.open(PasswordDialog, {
-      width: '250px',
-      data: {}
+      width: '320px',
+      data: { password: '' }
     });
 
-    dialogRef.closed.subscribe(result => {
-      if (this.passwordIsOk(this.users[index], result)) {
-        this.userService.setConnectedUser(this.users[index])
+    dialogRef.afterClosed().subscribe(result => {
+      if (result !== undefined && this.passwordIsOk(this.users[index], result)) {
+        this.userService.setConnectedUser(this.users[index]);
         this.router.navigate(['/home']);
       }
     });
   }
 
   passwordIsOk(user: any, password: any): boolean {
-    return user.password === password
+    return user.password === password;
   }
 }
 
@@ -73,13 +68,13 @@ export class UserSelection {
   imports: [
     FormsModule,
     MatFormFieldModule,
-    MatDialogTitle,
-    MatDialogContent,
-    MatDialogActions,
+    MatInputModule,
+    MatButtonModule,
+    MatIconModule,
+    MatDialogModule,
   ],
 })
 export class PasswordDialog {
-  dialogRef = inject<DialogRef<string>>(DialogRef<string>);
-  data = inject(DIALOG_DATA);
+  dialogRef = inject<MatDialogRef<PasswordDialog>>(MatDialogRef<PasswordDialog>);
+  data = inject<DialogData>(MAT_DIALOG_DATA);
 }
-

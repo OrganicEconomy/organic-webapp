@@ -1,25 +1,41 @@
-<div class="container-sm">
-    <div class="row align-items-center g-lg-5 py-5">
-        <div class="col-md-10 mx-auto col-lg-5">
-            <h1 class="display-4 fw-bold lh-1 mb-3"> Connexion </h1>
-            <form [formGroup]="loginForm" (ngSubmit)="login()" class="p-4 p-md-5 border rounded-3 bg-light">
-                <div class="mb-3">
-                    <label for="inputmail" class="form-label">Addresse mail</label>
-                    <input type="email" class="form-control" formControlName="email" aria-describedby="emailHelp">
-                </div>
-                <div class="mb-3">
-                    <label for="inputpassword" class="form-label">Mot de passe</label>
-                    <input type="password" class="form-control" formControlName="password">
-                </div>
-                <div class="mb-3 form-check">
-                    <input type="checkbox" class="form-check-input" formControlName="stayConnected">
-                    <label class="form-check-label" for="stayConnected">Rester connecté</label>
-                </div>
-                <div class="mb-3">
-                    <a routerLink="/signup">Créer un compte.</a>
-                </div>
-                <button matButton="outlined" type="submit">Se connecter</button>
-            </form>
-        </div>
-    </div>
+<div class="login-wrapper">
+  <mat-card appearance="outlined" class="login-card">
+    <mat-card-header>
+      <mat-card-title>Connexion</mat-card-title>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="loginForm" (ngSubmit)="login()">
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Adresse mail</mat-label>
+          <input matInput type="email" formControlName="email" placeholder="turlututu@chapeau.tu">
+          <mat-icon matSuffix>email</mat-icon>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Mot de passe</mat-label>
+          <input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password">
+          <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword"
+            [attr.aria-label]="'Afficher le mot de passe'" [attr.aria-pressed]="!hidePassword">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+        </mat-form-field>
+
+        <mat-checkbox formControlName="stayConnected" class="stay-connected">
+          Rester connecté
+        </mat-checkbox>
+
+        <button mat-flat-button color="primary" type="submit" class="full-width submit-btn">
+          Se connecter
+        </button>
+
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions>
+      <span class="mat-body-2">Pas encore de compte ?</span>
+      <a mat-button color="primary" routerLink="/signup">Créer un compte</a>
+    </mat-card-actions>
+  </mat-card>
 </div>
