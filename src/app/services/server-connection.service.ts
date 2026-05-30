@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Blockchain, CitizenBlockchain } from 'organic-money/src/index.js';
+import { CitizenBlockchain } from 'organic-money/src/index.js';
 
 import { environment } from '../../../src/environments/environment';
 
@@ -14,8 +14,7 @@ export class ServerConnexionService {
   public signupNewUser(name: string, mail: string, password: string, birthdate: Date) {
 
     const bc = new CitizenBlockchain()
-    const sk = Blockchain.randomPrivateKey()
-    bc.makeBirthBlock(sk, birthdate, name, new Date())
+    const sk = bc.makeBirthBlock(name, birthdate)
     const pk = bc.getMyPublicKey()
     const blocks = bc.blocks
 
