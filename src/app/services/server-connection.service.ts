@@ -16,7 +16,7 @@ export class ServerConnexionService {
     const bc = new CitizenBlockchain()
     const sk = bc.makeBirthBlock(name, birthdate)
     const pk = bc.getMyPublicKey()
-    const blocks = bc.blocks
+    const blocks = bc.export()
 
     return this.http.post<any>(`${webserverurl}/users/register`, {
       publickey: pk,

@@ -1,24 +1,26 @@
-<div class="row-fluid">
-    <div>
-        <h2>Contacts</h2>
-    </div>
-    <div class="">
-        <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+<mat-card appearance="outlined">
+    <mat-card-content>
+        <h1>Contacts</h1>
 
+        <table mat-table [dataSource]="dataSource">
             <ng-container matColumnDef="name">
-                <th mat-header-cell *matHeaderCellDef> Nom </th>
-                <td mat-cell *matCellDef="let element"> {{element.name}} </td>
+                <th mat-header-cell *matHeaderCellDef>Nom</th>
+                <td mat-cell *matCellDef="let element">{{ element.name }}</td>
             </ng-container>
 
             <ng-container matColumnDef="pk">
-                <th mat-header-cell *matHeaderCellDef> Clé </th>
-                <td mat-cell *matCellDef="let element"> {{element.pk}} </td>
+                <th mat-header-cell *matHeaderCellDef>Clé publique</th>
+                <td mat-cell *matCellDef="let element" class="pk-cell">{{ truncate(element.pk) }}</td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
             <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
         </table>
-    </div>
-    <a matButton="outlined" routerLink="/addcontact" type="button"><i class="bi bi-person-lines-fill"></i>
-                    Nouveau contact</a>
-</div>
+
+        <div class="actions">
+            <a mat-stroked-button routerLink="/addcontact">
+                <i class="bi bi-person-plus"></i> Nouveau contact
+            </a>
+        </div>
+    </mat-card-content>
+</mat-card>

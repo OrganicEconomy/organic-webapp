@@ -1,41 +1,42 @@
-<mat-card>
+<mat-card appearance="outlined">
     <mat-card-content>
         <h1>Payer</h1>
+
         <section>
             <mat-form-field>
                 <mat-select placeholder="Qui est-ce qu'on paye ?" (selectionChange)="selectedValue($event)" required>
                     @for (contact of contacts; track contact) {
-                    <mat-option [value]="contact.pk">{{contact.name}}</mat-option>
+                    <mat-option [value]="contact.pk">{{ contact.name }}</mat-option>
                     }
                 </mat-select>
             </mat-form-field>
 
-            <a matButton="outlined" routerLink="/addcontact" type="button">
-                <i class="bi bi-person-lines-fill"></i>Nouveau contact
+            <a mat-stroked-button routerLink="/addcontact">
+                <i class="bi bi-person-plus"></i> Nouveau contact
             </a>
         </section>
 
         <section>
             <mat-form-field>
                 <mat-label>Combien ?</mat-label>
-                <input matInput type="number" [(ngModel)]="amount" [max]="max" required>
+                <input matInput type="number" [(ngModel)]="amount" [max]="max" min="0" required>
             </mat-form-field>
         </section>
 
         <section>
-            <mat-slider [max]="max" [min]=0 [step]=1 [showTickMarks]=true>
-                <input matSliderThumb [(ngModel)]="amount" #slider>
+            <mat-slider [max]="max" [min]="0" [step]="1" [showTickMarks]="true">
+                <input matSliderThumb [(ngModel)]="amount">
             </mat-slider>
         </section>
 
         <section>
-            <input type="checkbox" name="validation" [(ngModel)]="validated">
+            <input id="validation" type="checkbox" name="validation" [(ngModel)]="validated">
             <label for="validation">J'ai compris qu'en cliquant sur "Payer" je ne
                 reviendrai pas en arrière.</label>
         </section>
 
         <section>
-            <button matButton="outlined" type="submit" (click)="pay()">Payer</button>
+            <button mat-flat-button (click)="pay()">Payer</button>
         </section>
     </mat-card-content>
 </mat-card>

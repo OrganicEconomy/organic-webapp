@@ -2,6 +2,8 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatIconButton } from '@angular/material/button';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { Blockchain } from 'organic-money/src/index.js';
 import { ServerConnexionService } from '../../services/server-connection.service';
@@ -11,7 +13,8 @@ import { LocalDatabaseService } from '../../services/local-database.service';
   selector: 'app-cash-payment',
   imports: [
     MatTableModule,
-    MatButtonModule
+    MatButtonModule,
+    MatCardModule,
   ],
   templateUrl: './cash-payment.html',
   styleUrl: './cash-payment.css',
@@ -22,7 +25,7 @@ export class CashPayment {
   localDB = inject(LocalDatabaseService)
 
   user: any
-  displayedColumns: string[] = ['date', 'id', 'source', 'amount', 'cash']
+  displayedColumns: string[] = ['date', 'source', 'amount', 'cash']
   dataSource: any = []
   tx_list = []
 
@@ -58,23 +61,20 @@ export class CashPayment {
     this.tx_list = data.map((rawData: any) => rawData.tx)
 
     this.dataSource = this.tx_list.map((tx: any) => {
-        return {
-          date: Blockchain.intToDate(tx.date).toLocaleDateString("fr-FR"),
-          id: "..." + tx.hash.slice(-15),
-          source: getContactName(tx.source),
-          amount: tx.money.length,
-          hash: tx.hash
-        }
-      })
+      return {
+        date: Blockchain.intToDate(tx.date).toLocaleDateString("fr-FR"),
+        id: "..." + tx.hash.slice(-8),
+        source: getContactName(tx.source),
+        amount: tx.money.length,
+        hash: tx.hash
+      }
+    })
   }
 
   cash(hash: string) {
-    const tx = this.tx_list.find((tx: any) => {
-      return tx.hash === hash
-    })
-    if (!tx) {
-      return;
-    }
+    const tx = this.tx_list.find((tx: any) => tx.hash === hash)
+    if (!tx) return;
+
     this.user.blockchain.income(tx)
     this.localDB.saveUser(this.user)
     this.serverDB.saveLastBlock(this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock)

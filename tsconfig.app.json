@@ -3,10 +3,7 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "outDir": "./out-tsc/app",
-    "types": [
-      "mocha"
-    ]
+    "types": []
   },
   "include": [
     "src/**/*.ts"

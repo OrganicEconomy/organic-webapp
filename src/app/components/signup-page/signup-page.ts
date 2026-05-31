@@ -63,6 +63,7 @@ export class SignupPage {
       },
       error: (err) => {
         alert("Utilisateur ou mot de passe invalide")
+        console.log(err)
       }
     })
   }

@@ -1,54 +1,65 @@
-
-<mat-card class="" appearance="outlined">
+<mat-card appearance="outlined">
     <mat-card-header>
-        <mat-card-title>{{ user.name }} - Niveau {{ level }}</mat-card-title>
-        <mat-card-subtitle>Solde : <span class="">{{ solde }} </span><i class="bi bi-cookie"></i></mat-card-subtitle>
+        <mat-card-title>{{ user.name }} — Niveau {{ level }}</mat-card-title>
+        <mat-card-subtitle>
+            Solde : <span>{{ solde }}</span> <i class="bi bi-cookie"></i>
+        </mat-card-subtitle>
     </mat-card-header>
 
     <mat-card-header>
-        <mat-progress-bar mode="determinate" value="{{ percent }}"></mat-progress-bar>
+        <mat-progress-bar mode="determinate" [value]="percent"></mat-progress-bar>
     </mat-card-header>
 
     <mat-divider [inset]="true"></mat-divider>
 
     <mat-card-content>
         <mat-list>
-            <mat-list-item role="listitem">
-                <button matButton="outlined" (click)="createDailyMoney()" [disabled]="isDailyMoneyCreated"><i
-                    class="bi bi-piggy-bank"></i> Créer ma monnaie du jour</button>
+            <mat-list-item>
+                <button mat-stroked-button (click)="createDailyMoney()" [disabled]="isDailyMoneyCreated">
+                    <i class="bi bi-piggy-bank"></i> Créer ma monnaie du jour
+                </button>
             </mat-list-item>
-            <mat-list-item role="listitem">
-                <a matButton="outlined" routerLink="/pay"><i class="bi bi-send"></i> Payer</a>
+            <mat-list-item>
+                <a mat-stroked-button routerLink="/pay">
+                    <i class="bi bi-send"></i> Payer
+                </a>
             </mat-list-item>
-            <mat-list-item role="listitem">
-                <a matButton="outlined" routerLink="/cashpayment" type="button"><i class="bi bi-router"></i>
-                Recevoir un paiement</a>
+            <mat-list-item>
+                <a mat-stroked-button routerLink="/cashpayment">
+                    <i class="bi bi-router"></i> Recevoir un paiement
+                </a>
             </mat-list-item>
-            <mat-list-item role="listitem">
-                <a matButton="outlined" routerLink="/cashpapers" type="button"><i class="bi bi-qr-code-scan"></i>
-                Encaisser des billets</a>
+            <mat-list-item>
+                <a mat-stroked-button routerLink="/cashpapers">
+                    <i class="bi bi-qr-code-scan"></i> Encaisser des billets
+                </a>
             </mat-list-item>
-            <mat-list-item role="listitem">
-                <a matButton="outlined" routerLink="/printpapers" type="button"><i class="bi bi-printer"></i>
-                Imprimer des billets</a>
+            <mat-list-item>
+                <a mat-stroked-button routerLink="/printpapers">
+                    <i class="bi bi-printer"></i> Imprimer des billets
+                </a>
             </mat-list-item>
-            <mat-list-item role="listitem">
-                <a matButton="outlined" routerLink="/transactions" type="button"><i class="bi bi-card-list"></i>
-                Historique de transactions</a>
+            <mat-list-item>
+                <a mat-stroked-button routerLink="/transactions">
+                    <i class="bi bi-card-list"></i> Historique de transactions
+                </a>
             </mat-list-item>
-            <mat-list-item role="listitem">
-                <a matButton="outlined" routerLink="/contacts" type="button"><i class="bi bi-person-lines-fill"></i>
-                Contacts</a>
+            <mat-list-item>
+                <a mat-stroked-button routerLink="/contacts">
+                    <i class="bi bi-person-lines-fill"></i> Contacts
+                </a>
             </mat-list-item>
-            <mat-list-item role="listitem">
-                <a matButton="outlined" routerLink="/account" class="btn btn-primary" type="button"><i
-                    class="bi bi-person"></i> Mon compte</a>
+            <mat-list-item>
+                <a mat-stroked-button routerLink="/account">
+                    <i class="bi bi-person"></i> Mon compte
+                </a>
             </mat-list-item>
         </mat-list>
     </mat-card-content>
-    
+
     <mat-card-actions>
-        <a matButton routerLink="/user-selection" type="button"><i class="bi bi-power"></i>
-            Déconnexion</a>
+        <a mat-button routerLink="/user-selection">
+            <i class="bi bi-power"></i> Déconnexion
+        </a>
     </mat-card-actions>
 </mat-card>

@@ -1,0 +1,94 @@
+:host {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 24px 16px;
+    box-sizing: border-box;
+}
+
+mat-card {
+    width: 100%;
+    max-width: 480px;
+    border-radius: 16px !important;
+}
+
+mat-card-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+mat-card-subtitle span {
+    font-weight: 700;
+    color: var(--mat-sys-primary);
+}
+
+mat-progress-bar {
+    width: 100%;
+    margin: 4px 0 8px 0;
+    border-radius: 4px;
+}
+
+mat-card-header:last-of-type {
+    display: block;
+    padding: 0 16px;
+}
+
+mat-list {
+    padding: 0 !important;
+}
+
+mat-list-item {
+    height: auto !important;
+    padding: 4px 0 !important;
+}
+
+mat-list-item a,
+mat-list-item button {
+    width: 100%;
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-start;
+    padding: 10px 16px !important;
+    font-size: 0.95rem;
+    border-radius: 8px !important;
+    height: 44px;
+    box-sizing: border-box;
+}
+
+mat-list-item i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
+}
+
+mat-card-actions {
+    display: flex;
+    justify-content: center;
+    padding: 8px 16px 16px !important;
+}
+
+mat-card-actions a {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    color: var(--mat-sys-error) !important;
+}
+
+@media (max-width: 599px) {
+    :host {
+        padding: 12px 8px;
+        align-items: flex-start;
+    }
+
+    mat-card {
+        border-radius: 12px !important;
+    }
+
+    mat-list-item a,
+    mat-list-item button {
+        font-size: 0.9rem;
+        height: 48px;
+    }
+}

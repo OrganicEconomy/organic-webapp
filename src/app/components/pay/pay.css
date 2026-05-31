@@ -1,0 +1,124 @@
+:host {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 24px 16px;
+    box-sizing: border-box;
+}
+
+mat-card {
+    width: 100%;
+    max-width: 480px;
+    border-radius: 16px !important;
+}
+
+mat-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px !important;
+}
+
+h1 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+}
+
+section {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+/* Ligne contact + bouton "Nouveau contact" */
+section:first-of-type {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
+
+section:first-of-type mat-form-field {
+    flex: 1;
+    min-width: 0;
+}
+
+section:first-of-type a {
+    flex-shrink: 0;
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    height: 44px;
+    padding: 0 14px !important;
+    font-size: 0.875rem;
+    border-radius: 8px !important;
+    white-space: nowrap;
+}
+
+mat-form-field {
+    width: 100%;
+}
+
+mat-slider {
+    width: 100%;
+}
+
+/* Checkbox + label */
+section:has(input[type="checkbox"]) {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+section:has(input[type="checkbox"]) input {
+    margin-top: 3px;
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: var(--mat-sys-primary);
+}
+
+section:has(input[type="checkbox"]) label {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: var(--mat-sys-on-surface-variant);
+    cursor: pointer;
+}
+
+/* Bouton Payer */
+section:last-of-type {
+    margin-top: 4px;
+}
+
+section:last-of-type button {
+    width: 100%;
+    height: 44px;
+    font-size: 1rem;
+    border-radius: 8px !important;
+}
+
+@media (max-width: 599px) {
+    :host {
+        padding: 12px 8px;
+    }
+
+    mat-card {
+        border-radius: 12px !important;
+    }
+
+    section:first-of-type {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    section:first-of-type a {
+        height: 48px;
+        justify-content: center;
+    }
+
+    section:last-of-type button {
+        height: 48px;
+    }
+}
