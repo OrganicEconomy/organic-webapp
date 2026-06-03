@@ -1,14 +1,12 @@
 import { Component, inject, ViewChild } from '@angular/core';
 import { MatTable, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
-
+import { MatCardModule } from '@angular/material/card';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
-import { MatCardContent, MatCard, MatCardActions, MatCardSubtitle, MatCardHeader, MatCardTitle } from "@angular/material/card";
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { Router } from '@angular/router';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
-import { MatList, MatListItem } from "@angular/material/list";
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
@@ -16,13 +14,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
   imports: [
     MatTableModule,
     MatButtonModule,
+    MatCardModule,
     ZXingScannerModule,
-    MatCardContent,
-    MatCard,
-    MatCardActions,
-    MatCardSubtitle,
-    MatCardHeader,
-    MatCardTitle,
   ],
   templateUrl: './cash-papers.html',
   styleUrl: './cash-papers.css',
@@ -65,7 +58,6 @@ export class CashPapers {
     const query = this.serverDB.isPaperAlreadyCashed(paper.hash)
     query.subscribe({
       next: isCashed => {
-        console.log(isCashed)
         if (isCashed === false) {
           this.paper_list.push(paper)
           this.displayMessage("QR code scanné avec succès.")
@@ -83,13 +75,9 @@ export class CashPapers {
   }
 
   getContactName(pk: string) {
-    if (!pk) {
-      return "-"
-    }
+    if (!pk) return "-"
     const contact: any = this.user.contacts.find((contact: any) => contact.pk === pk)
-    if (!contact) {
-      return pk.slice(-15)
-    }
+    if (!contact) return "..." + pk.slice(-8)
     return contact.name
   }
 
@@ -101,10 +89,9 @@ export class CashPapers {
         this.user.blockchain.cashPaper(paper)
         this.serverDB.cashPaper(paper.hash)
         this.displayMessage("Paf, j'encaisse " + paper.money.length)
-        console.log(paper, paper.hash)
         okPapers.push(paper.hash)
       } catch (err) {
-        this.displayMessage("Le billet de " + paper.money.length + "— dont le code commence pas '" + paper.hash.slice(0, 8) + "' n'a pas pu être encaissé (doublons ou invalide).")
+        this.displayMessage("Le billet de " + paper.money.length + " dont le code commence par '" + paper.hash.slice(0, 8) + "' n'a pas pu être encaissé (doublon ou invalide).")
         failedPapers.push(paper)
       }
     }

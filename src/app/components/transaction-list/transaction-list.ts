@@ -1,34 +1,37 @@
 import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
+import { MatCardModule } from '@angular/material/card';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { Blockchain } from 'organic-money/src/index.js';
 
 @Component({
   selector: 'app-transaction-list',
   imports: [
-    MatTableModule
+    MatTableModule,
+    MatCardModule,
   ],
   templateUrl: './transaction-list.html',
   styleUrl: './transaction-list.css',
 })
-
 export class TransactionList {
   userService = inject(ConnectedUserService)
 
   user: any
   displayedColumns: string[] = ['date', 'type', 'source', 'target', 'amount']
-  dataSource = []
+  dataSource: any[] = []
 
-  tx_types = {
-    "0": "Initialisation",
-    "1": "Création",
-    "2": "Paiement",
-    "3": "Engagement",
-    "4": "Billet",
-    "5": "Admin (set)",
-    "6": "Acteur (set)",
-    "7": "Payeur (set)"
+  tx_types: Record<string, string> = {
+    "1": "Initialisation",
+    "2": "Création",
+    "3": "Paiement",
+    "4": "Engagement",
+    "5": "Billet",
+    "6": "Assignation Admin",
+    "7": "Assignation Acteur",
+    "8": "Assignation Payeur",
+    "9": "Suppression Admin",
+    "10": "Suppression Acteur",
+    "11": "Suppression Payeur"
   }
 
   constructor(private router: Router) {
@@ -38,29 +41,20 @@ export class TransactionList {
       return
     }
 
-    const tx_types: any = this.tx_types
     const getContactName = (pk: string) => {
-      if (!pk) {
-        return "-"
-      }
-      const contact: any = this.user.contacts.find((contact: any) => contact.pk === pk)
-      if (!contact) {
-        return pk.slice(-15)
-      }
-      return contact.name
+      if (!pk) return "-"
+      const contact: any = this.user.contacts.find((c: any) => c.pk === pk)
+      return contact ? contact.name : "..." + pk.slice(-8)
     }
-    
+
+    console.log(this.user.blockchain.getHistory())
     this.dataSource = this.user.blockchain.getHistory()
-      .map((tx: any) => {
-        return {
-          date: Blockchain.intToDate(tx.date).toLocaleDateString("fr-FR"),
-          type: tx_types[tx.type],
-          source: getContactName(tx.source),
-          target: getContactName(tx.target),
-          amount: tx.money.length
-        }
-      })
+      .map((tx: any) => ({
+        date: tx.date.toLocaleDateString("fr-FR"),
+        type: this.tx_types[tx.type] ?? tx.type,
+        source: getContactName(tx.source),
+        target: getContactName(tx.target),
+        amount: tx.money.length
+      }))
   }
-
-
 }

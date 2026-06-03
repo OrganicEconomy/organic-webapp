@@ -1,0 +1,125 @@
+:host {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 24px 16px;
+    box-sizing: border-box;
+}
+
+mat-card {
+    width: 100%;
+    max-width: 640px;
+    border-radius: 16px !important;
+}
+
+mat-card-header {
+    padding: 16px 16px 0 !important;
+}
+
+mat-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px !important;
+}
+
+mat-card-actions {
+    padding: 0 16px 16px !important;
+}
+
+mat-card-actions button {
+    width: 100%;
+    height: 44px;
+    font-size: 1rem;
+    border-radius: 8px !important;
+}
+
+zxing-scanner {
+    width: 100%;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* === TABLE (desktop) === */
+.desktop-table {
+    width: 100%;
+}
+
+.mono {
+    font-family: monospace;
+    font-size: 0.85rem;
+}
+
+/* === MOBILE LIST === */
+.mobile-list {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.paper-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: 10px;
+    gap: 12px;
+}
+
+.paper-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.paper-emitter {
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.paper-meta {
+    font-size: 0.78rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.paper-amount {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--mat-sys-primary);
+    flex-shrink: 0;
+}
+
+.empty {
+    text-align: center;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 0.9rem;
+    padding: 16px 0;
+}
+
+@media (max-width: 599px) {
+    :host {
+        padding: 12px 8px;
+    }
+
+    mat-card {
+        border-radius: 12px !important;
+    }
+
+    .desktop-table {
+        display: none;
+    }
+
+    .mobile-list {
+        display: flex;
+    }
+
+    mat-card-actions button {
+        height: 48px;
+    }
+}

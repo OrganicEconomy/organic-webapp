@@ -1,14 +1,19 @@
 :host {
     display: block;
-    background: #fff;
-    border-radius: 8px;
-    padding: 8px 16px 16px;
+    padding: 8px 4px 4px;
+    min-width: 240px;
 }
 
-input {
-    margin: 8px 0;
+.waiting {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    color: var(--mat-sys-on-surface-variant);
 }
 
-button+button {
-    margin-left: 8px;
+mat-dialog-actions button {
+    height: 40px;
+    border-radius: 8px !important;
 }

@@ -16,14 +16,14 @@ import {
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Dialog, DialogRef } from '@angular/cdk/dialog';
 import { MatInputModule } from '@angular/material/input';
-import {MatCheckboxModule} from '@angular/material/checkbox';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
 
 import { jsPDF } from "jspdf";
 import { QRCodeComponent } from 'angularx-qrcode';
 import { environment } from '../../../../src/environments/environment';
-import { Blockchain } from 'organic-money/src/index.js';
+import { intToDate } from 'organic-money/src/index.js';
 import { ServerConnexionService } from '../../services/server-connection.service';
 
 export interface DialogData {
@@ -33,6 +33,7 @@ export interface DialogData {
 const ROW_HEIGHT: number = 33;
 const PAPER_PER_COL: number = 8;
 const COL_PER_PAGE: number = 2;
+
 @Component({
   selector: 'app-print-papers',
   imports: [
@@ -45,11 +46,8 @@ const COL_PER_PAGE: number = 2;
     MatListModule,
     MatSelectModule,
     MatInputModule,
-    MatSelectModule,
-    MatInputModule,
-    MatCardModule,
     FormsModule,
-    MatCheckboxModule
+    MatCheckboxModule,
   ],
   templateUrl: './print-papers.html',
   styleUrl: './print-papers.css',
@@ -61,7 +59,10 @@ export class PrintPapers {
   user = this.userService.getConnectedUser()
   dialog = inject(Dialog);
 
-  papercounts: Array<number> = new Array(34)
+  denominations: number[] = [1, 3, 10, 20, 34]
+  selectOptions: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
+
+  papercounts: Array<number> = new Array(34).fill(0)
   total: number = 0
   max: number = 0
   papers: any = []
@@ -78,7 +79,6 @@ export class PrintPapers {
 
   selectedValue(event: MatSelectChange, amount: number) {
     this.papercounts[amount] = Number(event.value)
-
     this.total = this.papercounts.reduce((total, current, index) => {
       return total + index * current;
     }, 0);
@@ -86,7 +86,7 @@ export class PrintPapers {
   }
 
   validationCheck() {
-    this.canGenerate = (this.validated) && (this.total > 0) && (!this.isTooMuch())
+    this.canGenerate = this.validated && this.total > 0 && !this.isTooMuch()
   }
 
   isTooMuch() {
@@ -94,14 +94,13 @@ export class PrintPapers {
   }
 
   getBase64Image(img: any) {
-    var canvas = document.createElement("canvas");
+    const canvas = document.createElement("canvas");
     canvas.width = img.width;
     canvas.height = img.height;
-    var ctx = canvas.getContext("2d");
-    if (!ctx) { return }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
     ctx.drawImage(img, 0, 0);
-    var dataURL = canvas.toDataURL("image/png");
-    return dataURL;
+    return canvas.toDataURL("image/png");
   }
 
   drawVerticalLine(doc: jsPDF) {
@@ -116,13 +115,9 @@ export class PrintPapers {
 
   drawQRCode(paper: any, doc: jsPDF, col: number, row: number) {
     const qrcode = document.getElementById('qrcode-' + paper.hash);
-    if (qrcode) {
-      if (qrcode.firstChild) {
-        if (qrcode.firstChild.firstChild) {
-          let imageData: any = this.getBase64Image(qrcode.firstChild.firstChild);
-          doc.addImage(imageData, "JPG", 67 + 105 * col, 10 + ROW_HEIGHT * row, 32, 32)
-        }
-      }
+    if (qrcode?.firstChild?.firstChild) {
+      const imageData: any = this.getBase64Image(qrcode.firstChild.firstChild);
+      doc.addImage(imageData, "JPG", 67 + 105 * col, 10 + ROW_HEIGHT * row, 32, 32)
     }
   }
 
@@ -131,39 +126,34 @@ export class PrintPapers {
   }
 
   drawText(paper: any, doc: jsPDF, col: number, row: number) {
-    // Emitter informations
     doc.setFontSize(8)
     doc.text("Emetteur :", 10 + col * 105, 15 + row * ROW_HEIGHT)
     doc.setFontSize(12)
     doc.text(this.user.name.slice(0, 26), 24 + col * 105, 15 + row * ROW_HEIGHT)
     doc.setFontSize(5)
-    doc.text("("+paper.signer.slice(0, 32), 10 + col * 105, 18 + row * ROW_HEIGHT)
-    doc.text(paper.signer.slice(32, 66)+")", 10 + col * 105, 20 + row * ROW_HEIGHT)
-    
-    // Date
+    doc.text("(" + paper.signer.slice(0, 32), 10 + col * 105, 18 + row * ROW_HEIGHT)
+    doc.text(paper.signer.slice(32, 66) + ")", 10 + col * 105, 20 + row * ROW_HEIGHT)
+
     doc.setFontSize(6)
     doc.text("Valable jusqu'au", 10 + col * 105, 24 + row * ROW_HEIGHT)
     doc.setFontSize(10)
-    let d = new Date(Blockchain.intToDate(paper.date))
+    const d = new Date(intToDate(paper.date))
     d.setDate(d.getDate() + 30);
     doc.text(d.toLocaleDateString("fr-FR"), 10 + col * 105, 28 + row * ROW_HEIGHT)
-    
-    // Amount
-    doc.setFontSize(20)
-    doc.text(""+paper.money.length+"—", 46 + col * 105, 20 + row * ROW_HEIGHT)
 
-    // Signature zone
+    doc.setFontSize(20)
+    doc.text("" + paper.money.length + "—", 46 + col * 105, 20 + row * ROW_HEIGHT)
+
     doc.setFontSize(6)
     doc.text("Signature", 45 + col * 105, 25 + row * ROW_HEIGHT)
     doc.setLineDashPattern([], 0)
     doc.rect(45 + col * 105, 23 + row * ROW_HEIGHT, 20, 10)
 
-    // ID (=hash)
     doc.setFontSize(5)
     doc.text("Code :", 10 + col * 105, 34 + row * ROW_HEIGHT)
     doc.text(paper.hash.slice(0, 47), 10 + col * 105, 36 + row * ROW_HEIGHT)
-    doc.text(paper.hash.slice(47, 2*47), 10 + col * 105, 38 + row * ROW_HEIGHT)
-    doc.text(paper.hash.slice(2*47, -1), 10 + col * 105, 40 + row * ROW_HEIGHT)
+    doc.text(paper.hash.slice(47, 2 * 47), 10 + col * 105, 38 + row * ROW_HEIGHT)
+    doc.text(paper.hash.slice(2 * 47, -1), 10 + col * 105, 40 + row * ROW_HEIGHT)
   }
 
   endOfRowReached(row: number) {
@@ -176,12 +166,11 @@ export class PrintPapers {
 
   openDialog() {
     const dialogRef = this.dialog.open(DialogDownload, {
-      width: '250px',
+      width: '280px',
       disableClose: true,
       data: {}
     });
-
-    dialogRef.closed.subscribe(result => {
+    dialogRef.closed.subscribe(() => {
       this.generatePDF()
     });
   }
@@ -194,7 +183,6 @@ export class PrintPapers {
         }
       }
     }
-
     this.localDB.saveUser(this.user)
     this.serverDB.saveLastBlock(this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock)
     this.openDialog()
@@ -202,7 +190,6 @@ export class PrintPapers {
 
   generatePDF() {
     const doc = new jsPDF();
-
     let row = 0;
     let col = 0;
     this.drawVerticalLine(doc)
@@ -224,11 +211,9 @@ export class PrintPapers {
       }
     }
     this.drawHorizontalLine(doc, col, row)
-
     doc.save('FirstPdf.pdf');
     this.router.navigate(['/home']);
   }
-
 }
 
 @Component({
@@ -238,22 +223,21 @@ export class PrintPapers {
   imports: [
     FormsModule,
     MatFormFieldModule,
+    MatButtonModule,
     MatDialogTitle,
     MatDialogContent,
     MatDialogActions,
-    MatProgressSpinnerModule
-],
+    MatProgressSpinnerModule,
+  ],
 })
 export class DialogDownload {
   dialogRef = inject<DialogRef<string>>(DialogRef<string>);
-
   isReady = false
 
   constructor() {
     new Promise(resolve => setTimeout(resolve, 1000))
-      .then(() => { 
+      .then(() => {
         this.isReady = true
-        console.log("je suis prête mon gloubinours")
       })
   }
 }

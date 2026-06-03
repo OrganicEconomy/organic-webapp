@@ -55,7 +55,7 @@ export class LocalDatabaseService {
         if (data.secretkey) { user.secretkey = data.secretkey }
         if (data.password) { user.password = data.password }
         if (data.blockchain) {
-            user.blocks = data.blockchain.blocks
+            user.blocks = data.blockchain.export()
         } else if (data.blocks) {
             user.blocks = data.blocks
         }

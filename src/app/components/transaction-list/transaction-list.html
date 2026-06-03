@@ -1,40 +1,55 @@
-<div class="container-sm">
-    <div class="row-fluid">
-        <div>
-            <h2>Historique des transactions</h2>
+<mat-card appearance="outlined">
+    <mat-card-content>
+        <h1>Historique des transactions</h1>
+
+        <!-- Vue desktop : tableau -->
+        <table mat-table [dataSource]="dataSource" class="desktop-table">
+            <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef>Date</th>
+                <td mat-cell *matCellDef="let element">{{ element.date }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="type">
+                <th mat-header-cell *matHeaderCellDef>Type</th>
+                <td mat-cell *matCellDef="let element">{{ element.type }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="source">
+                <th mat-header-cell *matHeaderCellDef>Émetteur</th>
+                <td mat-cell *matCellDef="let element">{{ element.source }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="target">
+                <th mat-header-cell *matHeaderCellDef>Receveur</th>
+                <td mat-cell *matCellDef="let element">{{ element.target }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="amount">
+                <th mat-header-cell *matHeaderCellDef>Montant</th>
+                <td mat-cell *matCellDef="let element">{{ element.amount }} <i class="bi bi-cookie"></i></td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+
+        <!-- Vue mobile : liste de cartes -->
+        <div class="mobile-list">
+            @for (element of dataSource; track $index) {
+            <div class="tx-card">
+                <div class="tx-top">
+                    <span class="tx-type">{{ element.type }}</span>
+                    <span class="tx-amount">{{ element.amount }} <i class="bi bi-cookie"></i></span>
+                </div>
+                <div class="tx-bottom">
+                    <span class="tx-parties">{{ element.source }} → {{ element.target }}</span>
+                    <span class="tx-date">{{ element.date }}</span>
+                </div>
+            </div>
+            }
+            @if (dataSource.length === 0) {
+            <p class="empty">Aucune transaction.</p>
+            }
         </div>
-        <div class="">
-            <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
-
-                <ng-container matColumnDef="date">
-                    <th mat-header-cell *matHeaderCellDef> Date </th>
-                    <td mat-cell *matCellDef="let element"> {{element.date}} </td>
-                </ng-container>
-
-                <ng-container matColumnDef="type">
-                    <th mat-header-cell *matHeaderCellDef> Type </th>
-                    <td mat-cell *matCellDef="let element"> {{element.type}} </td>
-                </ng-container>
-
-                <ng-container matColumnDef="source">
-                    <th mat-header-cell *matHeaderCellDef> Emetteur </th>
-                    <td mat-cell *matCellDef="let element"> {{element.source}} </td>
-                </ng-container>
-
-                <ng-container matColumnDef="target">
-                    <th mat-header-cell *matHeaderCellDef> Receveur </th>
-                    <td mat-cell *matCellDef="let element"> {{element.target}} </td>
-                </ng-container>
-
-                <ng-container matColumnDef="amount">
-                    <th mat-header-cell *matHeaderCellDef> Montant </th>
-                    <td mat-cell *matCellDef="let element"> {{element.amount}} </td>
-                </ng-container>
-
-                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-                <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-            </table>
-        </div>
-    </div>
-
-</div>
+    </mat-card-content>
+</mat-card>
