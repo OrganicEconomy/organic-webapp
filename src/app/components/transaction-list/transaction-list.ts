@@ -43,11 +43,13 @@ export class TransactionList {
 
     const getContactName = (pk: string) => {
       if (!pk) return "-"
+      if (pk === this.user.blockchain.getMyPublicKey()) {
+        return "Moi"
+      }
       const contact: any = this.user.contacts.find((c: any) => c.pk === pk)
       return contact ? contact.name : "..." + pk.slice(-8)
     }
 
-    console.log(this.user.blockchain.getHistory())
     this.dataSource = this.user.blockchain.getHistory()
       .map((tx: any) => ({
         date: tx.date.toLocaleDateString("fr-FR"),

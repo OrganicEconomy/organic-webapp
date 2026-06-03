@@ -5,6 +5,7 @@
         <section>
             <mat-form-field>
                 <mat-select placeholder="Qui est-ce qu'on paye ?" (selectionChange)="selectedValue($event)" required>
+                    <mat-option [value]="user.blockchain.getMyPublicKey()"> Moi-même </mat-option>
                     @for (contact of contacts; track contact) {
                     <mat-option [value]="contact.pk">{{ contact.name }}</mat-option>
                     }

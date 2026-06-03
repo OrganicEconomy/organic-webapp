@@ -29,6 +29,7 @@ export class ServerConnexionService {
   }
 
   public saveLastBlock(publickey: string, block: any) {
+    block = block.export()
     this.http.put<any>(`${webserverurl}/users/save`, { publickey, block })
       .subscribe({
         next: res => {
@@ -41,6 +42,7 @@ export class ServerConnexionService {
   }
 
   public signLastBlock(publickey: string, block: any) {
+    block = block.export()
     this.http.put<any>(`${webserverurl}/users/sign`, { publickey, block })
       .subscribe({
         next: res => {
@@ -58,7 +60,8 @@ export class ServerConnexionService {
     })
   }
 
-  public async sendTransaction(tx: {}) {
+  public async sendTransaction(tx: any) {
+    tx = tx.export()
     return this.http.post<any>(`${webserverurl}/tx/send`, { tx })
       .subscribe({
         next: res => {
