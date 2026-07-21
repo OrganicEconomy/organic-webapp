@@ -11,6 +11,7 @@ import type {
   PapersCashBody, IsCashedResponse,
   TxWire,
 } from 'organic-protocol';
+import type { LoadedAccount } from '../models/account';
 
 const API_PATH = '/api/v1'
 
@@ -39,17 +40,18 @@ export class ServerConnexionService {
     return this.http.post<LoginResponse>(`${serverUrl}${API_PATH}/users/login`, body)
   }
 
-  /** block is a live Block instance (e.g. account.blockchain.lastblock), not yet exported. */
-  public saveLastBlock(serverUrl: string, publickey: string, block: any, devicetoken: string, sk: string): Observable<unknown> {
+  public saveLastBlock(user: LoadedAccount, sk: string): Observable<unknown> {
+    const block = user.blockchain.lastblock
     const headers = blockAuthHeaders(block, sk)
-    const body: SaveBlockBody = { publickey, block: block.export(), devicetoken }
-    return this.http.put(`${serverUrl}${API_PATH}/users/save`, body, { headers })
+    const body: SaveBlockBody = { publickey: user.blockchain.getMyPublicKey(), block: block.export(), devicetoken: user.devicetoken }
+    return this.http.put(`${user.serverUrl}${API_PATH}/users/save`, body, { headers })
   }
 
-  public signLastBlock(serverUrl: string, publickey: string, block: any, sk: string): Observable<unknown> {
+  public signLastBlock(user: LoadedAccount, sk: string): Observable<unknown> {
+    const block = user.blockchain.lastblock
     const headers = blockAuthHeaders(block, sk)
-    const body: SignBlockBody = { publickey, block: block.export() }
-    return this.http.put(`${serverUrl}${API_PATH}/users/sign`, body, { headers })
+    const body: SignBlockBody = { publickey: user.blockchain.getMyPublicKey(), block: block.export() }
+    return this.http.put(`${user.serverUrl}${API_PATH}/users/sign`, body, { headers })
   }
 
   public changePassword(serverUrl: string, publickey: string, newpassword: string, secretkey: string, sk: string): Observable<unknown> {

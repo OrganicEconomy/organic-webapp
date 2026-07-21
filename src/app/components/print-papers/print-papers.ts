@@ -185,7 +185,7 @@ export class PrintPapers {
       }
     }
     this.localDB.saveUser(this.user)
-    this.serverDB.saveLastBlock(this.user.serverUrl, this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock, this.user.devicetoken, sk)
+    this.serverDB.saveLastBlock(this.user, sk)
     this.openDialog()
   }
 

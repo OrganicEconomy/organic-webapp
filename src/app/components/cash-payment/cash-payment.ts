@@ -77,7 +77,7 @@ export class CashPayment {
 
     this.user.blockchain.income(tx)
     this.localDB.saveUser(this.user)
-    this.serverDB.saveLastBlock(this.user.serverUrl, this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock, this.user.devicetoken, this.userService.getSecretKey())
+    this.serverDB.saveLastBlock(this.user, this.userService.getSecretKey())
 
     this.dataSource = this.dataSource.filter((row: any) => row.hash !== hash)
   }

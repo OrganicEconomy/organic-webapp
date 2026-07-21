@@ -32,6 +32,9 @@ export interface Account {
   devicetoken: string
 }
 
+/** The in-memory shape components work with: a stored Account plus its live blockchain. */
+export type LoadedAccount = Account & { blockchain: any }
+
 export function makeDefaultAccount(publickey: string): Account {
   return {
     publickey,

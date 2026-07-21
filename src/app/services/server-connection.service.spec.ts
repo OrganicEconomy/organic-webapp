@@ -37,6 +37,18 @@ describe('ServerConnexionService', () => {
     })
   }
 
+  function makeLoadedAccount(devicetoken = 'device-1'): any {
+    const lastblock = makeBlock()
+    return {
+      serverUrl: SERVER_URL,
+      devicetoken,
+      blockchain: {
+        lastblock,
+        getMyPublicKey: () => TEST_PK,
+      },
+    }
+  }
+
   it('signupNewUser: POSTs to /api/v1/users/register with the given body', () => {
     const body: RegisterBody = {
       publickey: TEST_PK, name: 'Alice', mail: 'alice@ex.fr', password: 'pw',
@@ -67,8 +79,8 @@ describe('ServerConnexionService', () => {
   });
 
   it('saveLastBlock: PUTs with a valid x-signature header and the exported block', () => {
-    const block = makeBlock()
-    service.saveLastBlock(SERVER_URL, TEST_PK, block, 'device-1', TEST_SK).subscribe()
+    const user = makeLoadedAccount()
+    service.saveLastBlock(user, TEST_SK).subscribe()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/save`)
     expect(req.request.method).toBe('PUT')
@@ -89,8 +101,8 @@ describe('ServerConnexionService', () => {
   });
 
   it('signLastBlock: PUTs to /users/sign with a valid x-signature, no devicetoken field', () => {
-    const block = makeBlock()
-    service.signLastBlock(SERVER_URL, TEST_PK, block, TEST_SK).subscribe()
+    const user = makeLoadedAccount()
+    service.signLastBlock(user, TEST_SK).subscribe()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/sign`)
     expect(req.request.method).toBe('PUT')

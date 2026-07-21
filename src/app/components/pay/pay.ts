@@ -82,7 +82,7 @@ export class Pay {
       const tx = this.user.blockchain.pay(sk, this.target, this.amount)
 
       this.localDB.saveUser(this.user)
-      this.serverDB.saveLastBlock(this.user.serverUrl, this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock, this.user.devicetoken, sk)
+      this.serverDB.saveLastBlock(this.user, sk)
       if (!this.itIsMe(tx.target)) {
         this.serverDB.sendTransaction(this.user.serverUrl, tx.export())
       }

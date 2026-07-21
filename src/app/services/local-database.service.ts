@@ -1,10 +1,7 @@
 import { Injectable } from '@angular/core'
 import localforage from 'localforage'
 import { CitizenBlockchain } from 'organic-money/src/index.js'
-import type { Account } from '../models/account'
-
-/** The in-memory shape components work with: a stored Account plus its live blockchain. */
-export type LoadedAccount = Account & { blockchain: any }
+import type { Account, LoadedAccount } from '../models/account'
 
 @Injectable({
     providedIn: 'root',
