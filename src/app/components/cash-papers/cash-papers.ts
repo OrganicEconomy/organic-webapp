@@ -55,9 +55,9 @@ export class CashPapers {
     const isDuplicate = this.paper_list.find((element: any) => element.hash === paper.hash)
     if (isDuplicate) { return }
 
-    const query = this.serverDB.isPaperAlreadyCashed(paper.hash)
+    const query = this.serverDB.isPaperAlreadyCashed(this.user.serverUrl, paper.hash)
     query.subscribe({
-      next: isCashed => {
+      next: (isCashed: any) => {
         if (isCashed === false) {
           this.paper_list.push(paper)
           this.displayMessage("QR code scanné avec succès.")
@@ -82,12 +82,13 @@ export class CashPapers {
   }
 
   cashPapers() {
+    const sk = this.userService.getSecretKey()
     const failedPapers = []
     const okPapers: any = []
     for (let paper of this.paper_list) {
       try {
         this.user.blockchain.cashPaper(paper)
-        this.serverDB.cashPaper(paper.hash)
+        this.serverDB.cashPaper(this.user.serverUrl, paper)
         this.displayMessage("Paf, j'encaisse " + paper.money.length)
         okPapers.push(paper.hash)
       } catch (err) {
@@ -97,7 +98,7 @@ export class CashPapers {
     }
 
     this.localDB.saveUser(this.user)
-    this.serverDB.saveLastBlock(this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock)
+    this.serverDB.saveLastBlock(this.user.serverUrl, this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock, this.user.devicetoken, sk)
 
     this.paper_list = failedPapers
   }

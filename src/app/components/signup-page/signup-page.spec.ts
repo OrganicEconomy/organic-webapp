@@ -19,6 +19,7 @@ describe('SignupPage', () => {
       imports: [
         SignupPage,
         ReactiveFormsModule,
+        RouterTestingModule,
         MatCardModule,
         MatFormFieldModule,
         MatInputModule,
