@@ -41,6 +41,11 @@ export class UserSelection {
 
   async ngOnInit() {
     this.users = await this.localDB.getUserList();
+    if (this.users.length === 0) {
+      // First launch, or every local account was removed — start the entry
+      // flow from the top (Phase-1.md §7 navigation card).
+      this.router.navigate(['/server-selection']);
+    }
   }
 
   selectUser(index: number) {

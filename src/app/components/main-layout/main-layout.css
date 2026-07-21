@@ -1,0 +1,39 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.page-content {
+  flex: 1;
+  padding-bottom: 64px; /* leave room for the fixed bottom-nav */
+  box-sizing: border-box;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  display: flex;
+  background: white;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  z-index: 10;
+}
+
+.bottom-nav a {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  text-decoration: none;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 0.7rem;
+}
+
+.bottom-nav a.active {
+  color: #1976d2;
+}
