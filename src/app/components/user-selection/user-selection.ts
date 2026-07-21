@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LocalDatabaseService } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
+import { decryptSecretKey } from '../../services/secret-key-crypto.util';
 
 // Angular Material
 import { MatDialog, MatDialogRef, MAT_DIALOG_DATA, MatDialogModule } from '@angular/material/dialog';
@@ -48,16 +49,29 @@ export class UserSelection {
       data: { password: '' }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result !== undefined && this.passwordIsOk(this.users[index], result)) {
-        this.userService.setConnectedUser(this.users[index]);
-        this.router.navigate(['/home']);
+    dialogRef.afterClosed().subscribe(async (result) => {
+      if (result === undefined) return
+      const secretKey = await this.tryUnlock(this.users[index], result)
+      if (secretKey === null) {
+        alert("Mot de passe incorrect.")
+        return
       }
+      this.userService.setConnectedUser(this.users[index], secretKey);
+      this.router.navigate(['/home']);
     });
   }
 
-  passwordIsOk(user: any, password: any): boolean {
-    return user.password === password;
+  /**
+   * Unlocking is decryption, never a password comparison: a wrong password
+   * makes decryptSecretKey throw (Invalid password), which is the only
+   * signal of failure.
+   */
+  async tryUnlock(user: any, password: string): Promise<string | null> {
+    try {
+      return await decryptSecretKey(user.secretkey, password)
+    } catch {
+      return null
+    }
   }
 }
 

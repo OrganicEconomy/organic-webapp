@@ -1,9 +1,14 @@
 import { Component, inject } from '@angular/core'
 import { FormGroup, FormBuilder, ReactiveFormsModule } from '@angular/forms'
 import { Router, RouterLink } from '@angular/router'
+import { CitizenBlockchain } from 'organic-money/src/index.js'
+import type { RegisterBody } from 'organic-protocol'
 import { ServerConnexionService } from '../../services/server-connection.service'
 import { LocalDatabaseService } from '../../services/local-database.service'
 import { ConnectedUserService } from '../../services/connected-user.service'
+import { encryptSecretKey } from '../../services/secret-key-crypto.util'
+import { makeDefaultAccount } from '../../models/account'
+import { environment } from '../../../environments/environment'
 
 // Angular Material imports
 import { MatCardModule } from '@angular/material/card'
@@ -41,24 +46,44 @@ export class SignupPage {
     this.signupForm = this.formBuilder.group({
       email: [""],
       name: [""],
+      birthdate: [""],
       password: [""],
     })
   }
 
-  signup() {
-    const birthdate = new Date()
+  async signup() {
+    const { name, email, birthdate, password } = this.signupForm.value
+    const serverUrl = environment.serverUrl
 
-    const res = this.server.signupNewUser(
-      this.signupForm.value.name,
-      this.signupForm.value.email,
-      this.signupForm.value.password,
-      birthdate)
-    res.subscribe({
+    // The BirthBlock is generated locally: the secret key never exists
+    // anywhere but on this device, encrypted, from the very first block.
+    const bc = new CitizenBlockchain()
+    const sk = bc.makeBirthBlock(name, new Date(birthdate))
+    const publickey = bc.getMyPublicKey()
+    const secretkey = await encryptSecretKey(sk, password)
+
+    const body: RegisterBody = {
+      publickey,
+      name,
+      mail: email,
+      password,
+      birthdate,
+      secretkey,
+      blocks: bc.export(),
+    }
+
+    this.server.signupNewUser(serverUrl, body).subscribe({
       next: async (res) => {
-        res.isuptodate = true
-        res.contacts = [{ name: "moi", pk: res.publickey }]
-        let user = await this.localDB.saveUser(res)
-        this.userService.setConnectedUser(user)
+        const account = makeDefaultAccount(res.publickey)
+        account.name = name
+        account.serverUrl = serverUrl
+        account.blocks = res.blocks
+        account.secretkey = secretkey
+        account.devicetoken = res.devicetoken
+        account.contacts = [{ name: 'moi', pk: res.publickey, url: serverUrl, type: 'citizen' }]
+
+        const user = await this.localDB.saveUser(account)
+        this.userService.setConnectedUser(user, sk)
         this.router.navigate(['/home']);
       },
       error: (err) => {

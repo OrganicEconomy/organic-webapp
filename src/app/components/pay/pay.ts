@@ -78,12 +78,13 @@ export class Pay {
       return;
     }
     try {
-      const tx = this.user.blockchain.pay(this.user.secretkey, this.target, this.amount)
-      
+      const sk = this.userService.getSecretKey()
+      const tx = this.user.blockchain.pay(sk, this.target, this.amount)
+
       this.localDB.saveUser(this.user)
-      this.serverDB.saveLastBlock(this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock)
+      this.serverDB.saveLastBlock(this.user, sk)
       if (!this.itIsMe(tx.target)) {
-        this.serverDB.sendTransaction(tx)
+        this.serverDB.sendTransaction(this.user.serverUrl, tx.export())
       }
 
       this.displayMessage("Paiement enregistré et envoyé avec succès.")

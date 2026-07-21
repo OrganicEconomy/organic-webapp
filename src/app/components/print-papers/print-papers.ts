@@ -176,15 +176,16 @@ export class PrintPapers {
   }
 
   generatePapers() {
+    const sk = this.userService.getSecretKey()
     for (let i = 0; i < this.papercounts.length; i++) {
       if (this.papercounts[i] > 0) {
         for (let j = 0; j < this.papercounts[i]; j++) {
-          this.papers.push(this.user.blockchain.generatePaper(this.user.secretkey, i, environment.refPublicKey))
+          this.papers.push(this.user.blockchain.generatePaper(sk, i, environment.refPublicKey))
         }
       }
     }
     this.localDB.saveUser(this.user)
-    this.serverDB.saveLastBlock(this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock)
+    this.serverDB.saveLastBlock(this.user, sk)
     this.openDialog()
   }
 

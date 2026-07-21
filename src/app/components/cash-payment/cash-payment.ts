@@ -39,7 +39,7 @@ export class CashPayment {
   }
 
   updateList() {
-    const query = this.serverDB.getTransactionList(this.user.publickey)
+    const query = this.serverDB.getTransactionList(this.user.serverUrl, this.user.publickey, this.userService.getSecretKey())
     query.subscribe({
       next: data => {
         this.updateDataSource(data)
@@ -77,7 +77,7 @@ export class CashPayment {
 
     this.user.blockchain.income(tx)
     this.localDB.saveUser(this.user)
-    this.serverDB.saveLastBlock(this.user.blockchain.getMyPublicKey(), this.user.blockchain.lastblock)
+    this.serverDB.saveLastBlock(this.user, this.userService.getSecretKey())
 
     this.dataSource = this.dataSource.filter((row: any) => row.hash !== hash)
   }

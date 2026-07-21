@@ -2,6 +2,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { Contacts } from './contacts';
+import { ConnectedUserService } from '../../services/connected-user.service';
+
+// Minimal stand-in for a logged-in account — see home.spec.ts for context.
+const stubConnectedUserService = {
+  getConnectedUser: () => ({ contacts: [] }),
+  getSecretKey: () => '',
+}
 
 describe('Contacts', () => {
   let component: Contacts;
@@ -10,7 +17,10 @@ describe('Contacts', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Contacts],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter([]),
+        { provide: ConnectedUserService, useValue: stubConnectedUserService },
+      ],
     })
     .compileComponents();
 

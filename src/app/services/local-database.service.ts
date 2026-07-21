@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core'
 import localforage from 'localforage'
-import { CitizenBlockchain } from 'organic-money/src/index.js';
+import { CitizenBlockchain } from 'organic-money/src/index.js'
+import type { Account, LoadedAccount } from '../models/account'
 
 @Injectable({
     providedIn: 'root',
@@ -17,10 +18,10 @@ export class LocalDatabaseService {
         });
     }
 
-    public async getUserList(): Promise<[]> {
-        const result: any = []
+    public async getUserList(): Promise<Account[]> {
+        const result: Account[] = []
         try {
-            await localforage.iterate((value, key, iterationNumber) => {
+            await localforage.iterate((value: Account) => {
                 result.push(value)
             })
         } catch (err) {
@@ -30,49 +31,41 @@ export class LocalDatabaseService {
     }
 
     /**
-     * 
-     * @param pk 
-     * @param data: publickey, name, blocks, isuptodate, contacts, secretkey, password
+     * Persists a complete account record. Callers pass the full Account shape
+     * (typically `this.user`, as loaded by getUser and mutated in place) —
+     * there is no partial merge, so every field must be present. A `blockchain`
+     * instance (as getUser attaches) is accepted in place of `blocks`.
      */
-    public async saveUser(data: any) {
-        let user: any
-        user = await localforage.getItem(data.publickey)
-        if (! user) {
-            user = {
-                publickey: data.publickey,
-                name: "",
-                blocks: [],
-                isuptodate: false,
-                contacts: [],
-                secretkey: "",
-                password: ""
-            }
-        }
-
-        if (data.name) { user.name = data.name }
-        if (data.isuptodate) { user.isuptodate = data.isuptodate }
-        if (data.contacts) { user.contacts = data.contacts }
-        if (data.secretkey) { user.secretkey = data.secretkey }
-        if (data.password) { user.password = data.password }
-        if (data.blockchain) {
-            user.blocks = data.blockchain.export()
-        } else if (data.blocks) {
-            user.blocks = data.blocks
+    public async saveUser(data: Account & { blockchain?: { export(): unknown } }): Promise<Account> {
+        const account: Account = {
+            publickey: data.publickey,
+            name: data.name,
+            serverUrl: data.serverUrl,
+            blocks: data.blockchain ? (data.blockchain.export() as Account['blocks']) : data.blocks,
+            secretkey: data.secretkey,
+            contacts: data.contacts,
+            backupPolicy: data.backupPolicy,
+            lastBackupAt: data.lastBackupAt,
+            isuptodate: data.isuptodate,
+            pendingOfflineTx: data.pendingOfflineTx,
+            sentOfflineTx: data.sentOfflineTx,
+            status: data.status,
+            devicetoken: data.devicetoken,
         }
 
         try {
-            await localforage.setItem(user.publickey, user)
+            await localforage.setItem(account.publickey, account)
         } catch (err) {
             console.log(err)
         }
-        return user
+        return account
     }
 
-    public async getUser(pk: string): Promise<any> {
+    public async getUser(pk: string): Promise<LoadedAccount | null> {
         try {
-            const user: any = await localforage.getItem(pk)
-            user.blockchain = new CitizenBlockchain(user.blocks)
-            return user
+            const account = await localforage.getItem<Account>(pk)
+            if (!account) return null
+            return { ...account, blockchain: new CitizenBlockchain(account.blocks) }
         } catch (err) {
             console.log(err)
             return null
