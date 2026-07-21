@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core'
 import { FormGroup, FormBuilder, ReactiveFormsModule } from '@angular/forms'
-import { Router, RouterLink } from '@angular/router'
+import { ActivatedRoute, Router, RouterLink } from '@angular/router'
 import { CitizenBlockchain } from 'organic-money/src/index.js'
 import type { RegisterBody } from 'organic-protocol'
 import { ServerConnexionService } from '../../services/server-connection.service'
@@ -40,7 +40,7 @@ export class SignupPage {
   localDB = inject(LocalDatabaseService)
   userService = inject(ConnectedUserService)
 
-  constructor(private formBuilder: FormBuilder, private router: Router) { }
+  constructor(private formBuilder: FormBuilder, private router: Router, private route: ActivatedRoute) { }
 
   ngOnInit(): void {
     this.signupForm = this.formBuilder.group({
@@ -53,7 +53,7 @@ export class SignupPage {
 
   async signup() {
     const { name, email, birthdate, password } = this.signupForm.value
-    const serverUrl = environment.serverUrl
+    const serverUrl = this.route.snapshot.queryParamMap.get('server') ?? environment.serverUrl
 
     // The BirthBlock is generated locally: the secret key never exists
     // anywhere but on this device, encrypted, from the very first block.

@@ -1,7 +1,8 @@
 import { Routes } from '@angular/router';
 
-import { LoginPage } from './components/login-page/login-page';
 import { SignupPage } from './components/signup-page/signup-page';
+import { ServerSelection } from './components/server-selection/server-selection';
+import { RestoreAccount } from './components/restore-account/restore-account';
 import { Home } from './components/home/home';
 import { AccountDetails } from './components/account-details/account-details';
 import { AddContact } from './components/add-contact/add-contact';
@@ -17,10 +18,11 @@ import { UserSelection } from './components/user-selection/user-selection';
 
 export const routes: Routes = [
     { path: "", redirectTo: "user-selection", pathMatch: "full" },
-    { path: "login", component:LoginPage},
     { path: "logout", component: Logout },
     { path: "user-selection", component: UserSelection },
+    { path: "server-selection", component: ServerSelection },
     { path: "signup", component: SignupPage },
+    { path: "restore-account", component: RestoreAccount },
     { path: "account", component: AccountDetails },
     { path: "addcontact", component: AddContact },
     { path: "cashpapers", component: CashPapers },

@@ -1,0 +1,35 @@
+mat-card {
+  max-width: 480px;
+  margin: 2rem auto;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.submit-btn {
+  margin-top: 0.75rem;
+  height: 48px;
+  font-size: 1rem;
+}
+
+.warning {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: #e65100;
+  margin: 0.5rem 0;
+}
+
+.error {
+  color: #c62828;
+  font-size: 0.9rem;
+}

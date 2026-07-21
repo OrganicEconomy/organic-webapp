@@ -1,0 +1,46 @@
+mat-card {
+  max-width: 480px;
+  margin: 2rem auto;
+}
+
+mat-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.server-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 0;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.verified {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #2e7d32;
+  font-size: 0.9rem;
+}
+
+.error {
+  color: #c62828;
+  font-size: 0.9rem;
+}
+
+mat-card-actions.full-width {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 16px 16px;
+}
