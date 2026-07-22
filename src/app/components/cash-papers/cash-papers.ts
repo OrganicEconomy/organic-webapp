@@ -6,9 +6,11 @@ import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { Router, RouterLink } from '@angular/router';
 import { ServerConnexionService } from '../../services/server-connection.service';
-import { LocalDatabaseService } from '../../services/local-database.service';
 import { LevelUpService } from '../../services/level-up.service';
+import { BackupService } from '../../services/backup.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { decodeQr } from 'organic-protocol';
+import { TransactionMaker } from 'organic-money/src/index.js';
 
 @Component({
   selector: 'app-cash-papers',
@@ -26,8 +28,8 @@ export class CashPapers {
   @ViewChild(MatTable) table: MatTable<any> | undefined;
   userService = inject(ConnectedUserService)
   serverDB = inject(ServerConnexionService)
-  localDB = inject(LocalDatabaseService)
   levelUp = inject(LevelUpService)
+  backupService = inject(BackupService)
   private _snackBar = inject(MatSnackBar);
 
   user: any
@@ -43,36 +45,47 @@ export class CashPapers {
   }
 
   scanSuccessHandler(result: string) {
-    let paper: any
+    let decoded
     try {
-      paper = JSON.parse(result)
+      decoded = decodeQr(result)
     } catch {
       this.displayMessage("QR code invalide.")
       return
     }
-    if (!paper.hash) {
+    if (decoded.type !== 'PP') {
+      this.displayMessage("Ce QR n'est pas un billet.")
+      return
+    }
+
+    let paper: any
+    try {
+      paper = TransactionMaker.make(decoded.payload.tx)
+    } catch {
       this.displayMessage("QR code invalide.")
       return
     }
 
-    const isDuplicate = this.paper_list.find((element: any) => element.hash === paper.hash)
+    const isDuplicate = this.paper_list.find((element: any) => element.signature === paper.signature)
     if (isDuplicate) { return }
 
-    const query = this.serverDB.isPaperAlreadyCashed(this.user.serverUrl, paper.hash)
+    const query = this.serverDB.isPaperAlreadyCashed(this.user.serverUrl, paper.signature)
     query.subscribe({
-      next: (isCashed: any) => {
-        if (isCashed === false) {
+      // isPaperAlreadyCashed only resolves (next) when the server has a record
+      // of it — i.e. it WAS cashed. "Not cashed" is a 404 (Phase-1.md §6.5),
+      // not a `false` value in a 200 response.
+      next: () => {
+        this.displayMessage("Ce billet a déjà été utilisé tantôt.")
+      },
+      error: (err: any) => {
+        if (err.status === 404) {
           this.paper_list.push(paper)
           this.displayMessage("QR code scanné avec succès.")
           if (this.table) {
             this.table.renderRows();
           }
         } else {
-          this.displayMessage("Ce billet a déjà été utilisé tantôt.")
+          this.displayMessage("Impossible de vérifier ce billet pour le moment.")
         }
-      },
-      error: err => {
-        console.log("Something went wrong")
       }
     })
   }
@@ -85,24 +98,42 @@ export class CashPapers {
   }
 
   cashPapers() {
+    if (this.userService.isReadOnlySession()) return
+
     const sk = this.userService.getSecretKey()
     const oldLevel = this.user.blockchain.getLevel()
     const failedPapers = []
-    const okPapers: any = []
+    const okPapers: any[] = []
     for (let paper of this.paper_list) {
       try {
         this.user.blockchain.cashPaper(paper)
-        this.serverDB.cashPaper(this.user.serverUrl, paper)
-        this.displayMessage("Paf, j'encaisse " + paper.money.length)
-        okPapers.push(paper.hash)
+        okPapers.push(paper)
       } catch (err) {
-        this.displayMessage("Le billet de " + paper.money.length + " dont le code commence par '" + paper.hash.slice(0, 8) + "' n'a pas pu être encaissé (doublon ou invalide).")
+        this.displayMessage("Le billet de " + paper.money.length + " dont la signature commence par '" + paper.signature.slice(0, 8) + "' n'a pas pu être encaissé (doublon ou invalide).")
         failedPapers.push(paper)
       }
     }
 
-    this.localDB.saveUser(this.user)
-    this.serverDB.saveLastBlock(this.user, sk)
+    this.backupService.recordAutomatic(this.user, sk)
+
+    for (let paper of okPapers) {
+      this.serverDB.cashPaper(this.user.serverUrl, paper.export()).subscribe({
+        next: () => { this.displayMessage("Paf, j'encaisse " + paper.money.length) },
+        error: (err: any) => {
+          console.log(err)
+          this.displayMessage("Billet encaissé localement mais pas confirmé au serveur.")
+        },
+      })
+    }
+    if (okPapers.length > 0) {
+      // A block containing a paper can only be sealed by the paper's referent
+      // (the server here) — required by the lib, see Phase-1.md §6.5.
+      this.serverDB.signLastBlock(this.user, sk).subscribe({
+        next: () => { },
+        error: (err: any) => { console.log(err) },
+      })
+    }
+
     this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
 
     this.paper_list = failedPapers
