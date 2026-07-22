@@ -58,6 +58,14 @@ mat-progress-bar {
     padding: 8px 16px !important;
 }
 
+.pending-card mat-card-header {
+    align-items: center;
+}
+
+.pending-card .reload-btn {
+    margin-left: auto;
+}
+
 .pending-row {
     display: flex;
     align-items: center;

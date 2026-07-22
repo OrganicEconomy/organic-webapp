@@ -11,7 +11,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatBadgeModule } from '@angular/material/badge';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
 
@@ -26,7 +25,6 @@ import { LevelUpService } from '../../services/level-up.service';
     MatButtonModule,
     MatInputModule,
     MatCardModule,
-    MatBadgeModule,
     FormsModule
   ],
   templateUrl: './pay.html',
@@ -43,7 +41,6 @@ export class Pay {
   max = 0;
   target: string = "";
   validated: boolean = false;
-  pendingCount = 0;
 
   private _snackBar = inject(MatSnackBar);
 
@@ -55,15 +52,6 @@ export class Pay {
       return
     }
     this.max = this.user.blockchain.getAvailableMoneyAmount()
-    this.loadPendingCount()
-  }
-
-  private loadPendingCount() {
-    const sk = this.userService.getSecretKey()
-    this.serverDB.getTransactionList(this.user.serverUrl, this.user.publickey, sk).subscribe({
-      next: (list) => { this.pendingCount = list.length },
-      error: () => { /* offline or unreachable — badge just stays at 0 */ },
-    })
   }
 
   ngOnInit(): void {

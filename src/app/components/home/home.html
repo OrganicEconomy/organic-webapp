@@ -19,15 +19,20 @@
     </mat-card-content>
 </mat-card>
 
-@if (pending.dataSource.length > 0) {
 <mat-card appearance="outlined" class="pending-card">
     <mat-card-header>
         <mat-card-title>Paiements en attente</mat-card-title>
+        <button mat-icon-button class="reload-btn" (click)="pending.refresh()" title="Recharger">
+            <i class="bi bi-arrow-clockwise"></i>
+        </button>
     </mat-card-header>
 
     <mat-divider [inset]="true"></mat-divider>
 
     <mat-card-content>
+        @if (pending.dataSource.length === 0) {
+        <p class="empty">Aucun paiement en attente.</p>
+        } @else {
         @for (row of pending.dataSource; track row.hash) {
         <div class="pending-row">
             <div class="pending-info">
@@ -40,9 +45,9 @@
             </div>
         </div>
         }
+        }
     </mat-card-content>
 </mat-card>
-}
 
 <mat-card appearance="outlined" class="recent-card">
     <mat-card-header>

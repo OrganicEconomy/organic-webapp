@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
-import { of } from 'rxjs';
 
 import { Pay } from './pay';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -16,7 +15,7 @@ let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
-let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveLastBlock' | 'sendTransaction' | 'getTransactionList'>>;
+let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveLastBlock' | 'sendTransaction'>>;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
 
 describe('Pay', () => {
@@ -45,8 +44,7 @@ describe('Pay', () => {
       getSecretKey: () => 'the-real-sk',
     };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
-    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveLastBlock', 'sendTransaction', 'getTransactionList']);
-    serverDBSpy.getTransactionList.and.returnValue(of([]));
+    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveLastBlock', 'sendTransaction']);
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
 
     TestBed.configureTestingModule({
@@ -125,15 +123,5 @@ describe('Pay', () => {
     component.pay();
 
     expect(levelUpSpy.celebrateIfLevelUp).toHaveBeenCalledWith(2, 3);
-  });
-
-  it('should show the number of pending payments fetched on load', () => {
-    serverDBSpy.getTransactionList.and.returnValue(of([{}, {}] as any));
-
-    fixture = TestBed.createComponent(Pay);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-
-    expect(component.pendingCount).toBe(2);
   });
 });

@@ -99,6 +99,22 @@ describe('Home', () => {
     expect(pendingSpy.refresh).toHaveBeenCalled();
   });
 
+  it('should always show the pending payments card, even when empty', () => {
+    pendingSpy.dataSource = [];
+    createComponent();
+    expect(fixture.nativeElement.textContent).toContain('Aucun paiement en attente.');
+  });
+
+  it('should refresh the pending payments list when the reload button is clicked', () => {
+    createComponent();
+    pendingSpy.refresh.calls.reset();
+
+    const reloadBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.pending-card .reload-btn');
+    reloadBtn.click();
+
+    expect(pendingSpy.refresh).toHaveBeenCalled();
+  });
+
   it('should expose the blockchain\'s experience as xp', () => {
     createComponent();
     expect(component.xp).toBe(42);
