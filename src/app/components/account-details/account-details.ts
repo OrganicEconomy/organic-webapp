@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ConnectedUserService } from '../../services/connected-user.service';
+import { encodeContactQr } from 'organic-protocol';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
@@ -27,6 +28,7 @@ export class AccountDetails {
   name: string = ""
   inscription_date: string = ""
   publickey: string = ""
+  myContactQr: string = ""
 
 
   constructor(private router: Router) {
@@ -38,5 +40,6 @@ export class AccountDetails {
 
     this.name = this.user.name
     this.publickey = this.user.publickey
+    this.myContactQr = encodeContactQr({ pk: this.user.publickey, url: this.user.serverUrl, n: this.user.name })
   }
 }

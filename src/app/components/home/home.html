@@ -15,17 +15,7 @@
     <mat-card-content>
         <mat-list>
             <mat-list-item>
-                <button mat-stroked-button (click)="createDailyMoney()" [disabled]="isDailyMoneyCreated">
-                    <i class="bi bi-piggy-bank"></i> Créer ma monnaie du jour
-                </button>
-            </mat-list-item>
-            <mat-list-item>
-                <a mat-stroked-button routerLink="/pay">
-                    <i class="bi bi-send"></i> Payer
-                </a>
-            </mat-list-item>
-            <mat-list-item>
-                <a mat-stroked-button routerLink="/cashpayment">
+                <a mat-stroked-button routerLink="/cashpayment" [matBadge]="pendingCount" [matBadgeHidden]="pendingCount === 0" matBadgeColor="accent">
                     <i class="bi bi-router"></i> Recevoir un paiement
                 </a>
             </mat-list-item>
@@ -42,16 +32,6 @@
             <mat-list-item>
                 <a mat-stroked-button routerLink="/transactions">
                     <i class="bi bi-card-list"></i> Historique de transactions
-                </a>
-            </mat-list-item>
-            <mat-list-item>
-                <a mat-stroked-button routerLink="/contacts">
-                    <i class="bi bi-person-lines-fill"></i> Contacts
-                </a>
-            </mat-list-item>
-            <mat-list-item>
-                <a mat-stroked-button routerLink="/account">
-                    <i class="bi bi-person"></i> Mon compte
                 </a>
             </mat-list-item>
         </mat-list>

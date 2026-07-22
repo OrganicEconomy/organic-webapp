@@ -4,8 +4,10 @@ import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconButton } from '@angular/material/button';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { Blockchain } from 'organic-money/src/index.js';
+import { TransactionMaker } from 'organic-money/src/index.js';
+import type { TxWire } from 'organic-protocol';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
 
@@ -23,11 +25,12 @@ export class CashPayment {
   userService = inject(ConnectedUserService)
   serverDB = inject(ServerConnexionService)
   localDB = inject(LocalDatabaseService)
+  private _snackBar = inject(MatSnackBar)
 
   user: any
   displayedColumns: string[] = ['date', 'source', 'amount', 'cash']
   dataSource: any = []
-  tx_list = []
+  tx_list: any[] = []
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
@@ -50,7 +53,7 @@ export class CashPayment {
     })
   }
 
-  updateDataSource(data: any) {
+  updateDataSource(data: TxWire[]) {
     const getContactName = (pk: string) => {
       const contact: any = this.user.contacts.find((contact: any) => contact.pk === pk)
       if (!contact) {
@@ -58,27 +61,37 @@ export class CashPayment {
       }
       return contact.name
     }
-    this.tx_list = data.map((rawData: any) => rawData.tx)
+
+    // Malformed entries are skipped rather than crashing the whole screen.
+    this.tx_list = data
+      .map((wireTx) => { try { return TransactionMaker.make(wireTx) } catch { return null } })
+      .filter((tx: any) => tx !== null)
 
     this.dataSource = this.tx_list.map((tx: any) => {
       return {
-        date: Blockchain.intToDate(tx.date).toLocaleDateString("fr-FR"),
-        id: "..." + tx.hash.slice(-8),
-        source: getContactName(tx.source),
+        date: tx.date.toLocaleDateString("fr-FR"),
+        id: "..." + tx.signature.slice(-8),
+        source: getContactName(tx.signer),
         amount: tx.money.length,
-        hash: tx.hash
+        hash: tx.signature
       }
     })
   }
 
   cash(hash: string) {
-    const tx = this.tx_list.find((tx: any) => tx.hash === hash)
+    const tx = this.tx_list.find((tx: any) => tx.signature === hash)
     if (!tx) return;
 
-    this.user.blockchain.income(tx)
+    this.user.blockchain.receivePay(tx)
+    const leveledUp = this.user.blockchain.hasLevelUpOnLastTx()
+
     this.localDB.saveUser(this.user)
     this.serverDB.saveLastBlock(this.user, this.userService.getSecretKey())
 
     this.dataSource = this.dataSource.filter((row: any) => row.hash !== hash)
+
+    if (leveledUp) {
+      this._snackBar.open('Niveau supérieur !', 'OK', { duration: 3000 })
+    }
   }
 }

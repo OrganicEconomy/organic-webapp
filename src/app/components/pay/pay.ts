@@ -88,7 +88,7 @@ export class Pay {
       }
 
       this.displayMessage("Paiement enregistré et envoyé avec succès.")
-      //this.router.navigate(['/home']);
+      this.router.navigate(['/home']);
     } catch (err) {
       console.log(err)
       this.displayMessage("Une erreur est survenue oO")
