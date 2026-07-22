@@ -1,0 +1,52 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Économie organique</mat-card-title>
+    <mat-card-subtitle>Choisissez votre serveur</mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (knownServers.length > 0) {
+      <mat-radio-group [(ngModel)]="selectedUrl" (ngModelChange)="useCustom = false; verifiedInfo = null; error = ''" class="server-list">
+        @for (server of knownServers; track server.url) {
+          <mat-radio-button [value]="server.url">{{ server.name }}</mat-radio-button>
+        }
+      </mat-radio-group>
+      <p class="hint">(liste fournie par le serveur racine)</p>
+    }
+
+    <mat-radio-button [checked]="useCustom" (click)="useCustom = true; verifiedInfo = null; error = ''">
+      Autre (URL ou IP)
+    </mat-radio-button>
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Adresse du serveur</mat-label>
+      <input matInput type="text" [(ngModel)]="customUrl" (focus)="useCustom = true" placeholder="https://…">
+    </mat-form-field>
+
+    <button mat-flat-button color="primary" class="full-width" (click)="verify()" [disabled]="!chosenUrl || verifying">
+      @if (verifying) {
+        <mat-spinner diameter="20"></mat-spinner>
+      } @else {
+        Vérifier
+      }
+    </button>
+
+    @if (verifiedInfo) {
+      <p class="verified">
+        <mat-icon>check_circle</mat-icon>
+        « {{ verifiedInfo.name }} » — {{ verifiedInfo.stats.users }} citoyens · protocole {{ verifiedInfo.protocolVersion }}
+      </p>
+    }
+    @if (error) {
+      <p class="error">{{ error }}</p>
+    }
+  </mat-card-content>
+
+  <mat-card-actions class="full-width">
+    <button mat-flat-button color="primary" class="full-width" [disabled]="!verifiedInfo" (click)="createAccount()">
+      Créer mon compte
+    </button>
+    <button mat-stroked-button class="full-width" [disabled]="!verifiedInfo" (click)="restoreAccount()">
+      Restaurer mon compte
+    </button>
+  </mat-card-actions>
+</mat-card>

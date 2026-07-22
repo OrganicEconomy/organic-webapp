@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { signHash, hashTimestampAuth } from 'organic-money/src/crypto.js';
 import type {
+  InfoResponse, ServersResponse,
   RegisterBody, RegisterResponse,
   LoginBody, LoginResponse,
   SaveBlockBody, SignBlockBody,
@@ -30,6 +31,16 @@ function timestampAuthHeaders(publickey: string, sk: string): { headers: HttpHea
 export class ServerConnexionService {
 
   private http = inject(HttpClient);
+
+  /** Public identity card of a server — used by server-selection to verify a URL before use. */
+  public getServerInfo(serverUrl: string): Observable<InfoResponse> {
+    return this.http.get<InfoResponse>(`${serverUrl}${API_PATH}/info`)
+  }
+
+  /** Directory of servers known to serverUrl, maintained by its operator. */
+  public getKnownServers(serverUrl: string): Observable<ServersResponse> {
+    return this.http.get<ServersResponse>(`${serverUrl}${API_PATH}/servers`)
+  }
 
   public signupNewUser(serverUrl: string, body: RegisterBody): Observable<RegisterResponse> {
     return this.http.post<RegisterResponse>(`${serverUrl}${API_PATH}/users/register`, body)

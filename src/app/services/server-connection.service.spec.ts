@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
-import type { RegisterBody, RegisterResponse, LoginResponse } from 'organic-protocol';
+import type { RegisterBody, RegisterResponse, LoginResponse, InfoResponse, ServersResponse } from 'organic-protocol';
 import { BlockMaker } from 'organic-money/src/index.js';
 import { verifySignature } from 'organic-money/src/crypto.js';
 
@@ -48,6 +48,31 @@ describe('ServerConnexionService', () => {
       },
     }
   }
+
+  it('getServerInfo: GETs /v1/info (public, no auth)', () => {
+    let result: InfoResponse | undefined
+    service.getServerInfo(SERVER_URL).subscribe((res) => (result = res))
+
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/info`)
+    expect(req.request.method).toBe('GET')
+    expect(req.request.headers.has('x-signature')).toBeFalse()
+    req.flush({ protocolVersion: 1, apiVersion: '1', name: 'Serveur de Trifouillis', serverPk: TEST_PK, corePk: null, stats: { users: 42 } })
+
+    expect(result?.name).toBe('Serveur de Trifouillis')
+    expect(result?.stats.users).toBe(42)
+  });
+
+  it('getKnownServers: GETs /v1/servers (public, no auth)', () => {
+    let result: ServersResponse | undefined
+    service.getKnownServers(SERVER_URL).subscribe((res) => (result = res))
+
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/servers`)
+    expect(req.request.method).toBe('GET')
+    req.flush([{ name: 'Serveur de Trifouillis', url: SERVER_URL }])
+
+    expect(result?.length).toBe(1)
+    expect(result?.[0].name).toBe('Serveur de Trifouillis')
+  });
 
   it('signupNewUser: POSTs to /api/v1/users/register with the given body', () => {
     const body: RegisterBody = {
