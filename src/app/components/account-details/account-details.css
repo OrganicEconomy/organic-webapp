@@ -1,0 +1,47 @@
+:host {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 24px 16px;
+    box-sizing: border-box;
+}
+
+mat-card {
+    width: 100%;
+    max-width: 480px;
+    border-radius: 16px !important;
+}
+
+mat-card-content {
+    padding: 16px !important;
+}
+
+qrcode {
+    display: flex;
+    justify-content: center;
+    padding: 16px 0;
+}
+
+mat-card-actions {
+    display: flex;
+    justify-content: center;
+    padding: 8px 16px 16px !important;
+}
+
+mat-card-actions a {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    color: var(--mat-sys-error) !important;
+}
+
+@media (max-width: 599px) {
+    :host {
+        padding: 12px 8px;
+    }
+
+    mat-card {
+        border-radius: 12px !important;
+    }
+}

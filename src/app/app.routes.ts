@@ -8,7 +8,6 @@ import { Home } from './components/home/home';
 import { AccountDetails } from './components/account-details/account-details';
 import { AddContact } from './components/add-contact/add-contact';
 import { CashPapers } from './components/cash-papers/cash-papers';
-import { CashPayment } from './components/cash-payment/cash-payment';
 import { Contacts } from './components/contacts/contacts';
 import { Logout } from './components/logout/logout';
 import { Pay } from './components/pay/pay';
@@ -27,7 +26,6 @@ export const routes: Routes = [
     // Secondary screens reached from within a tab: full-screen, back arrow, no bottom bar.
     { path: "addcontact", component: AddContact },
     { path: "cashpapers", component: CashPapers },
-    { path: "cashpayment", component: CashPayment },
     { path: "printpapers", component: PrintPapers },
     { path: "transactions", component: TransactionList },
     // The four permanent tabs (Phase-1.md §7) share the bottom-nav shell.

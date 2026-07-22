@@ -41,5 +41,7 @@ export class AccountDetails {
     this.name = this.user.name
     this.publickey = this.user.publickey
     this.myContactQr = encodeContactQr({ pk: this.user.publickey, url: this.user.serverUrl, n: this.user.name })
+    const birthBlock = this.user.blockchain.blocks[this.user.blockchain.blocks.length - 1]
+    this.inscription_date = birthBlock.closedate.toLocaleDateString('fr-FR')
   }
 }

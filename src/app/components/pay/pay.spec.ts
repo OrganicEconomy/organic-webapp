@@ -5,6 +5,7 @@ import { Pay } from './pay';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
+import { LevelUpService } from '../../services/level-up.service';
 
 const MY_PK = 'my-pk';
 
@@ -15,6 +16,7 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveLastBlock' | 'sendTransaction'>>;
+let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
 
 describe('Pay', () => {
   let component: Pay;
@@ -26,6 +28,7 @@ describe('Pay', () => {
     fakeBlockchain = {
       getMyPublicKey: () => MY_PK,
       getAvailableMoneyAmount: () => 100,
+      getLevel: () => 2,
       pay: jasmine.createSpy('pay').and.callFake((sk: string, target: string) => {
         fakeTx.target = target
         return fakeTx
@@ -42,6 +45,7 @@ describe('Pay', () => {
     };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveLastBlock', 'sendTransaction']);
+    levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
 
     TestBed.configureTestingModule({
       imports: [Pay],
@@ -50,6 +54,7 @@ describe('Pay', () => {
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: LocalDatabaseService, useValue: localDBSpy },
         { provide: ServerConnexionService, useValue: serverDBSpy },
+        { provide: LevelUpService, useValue: levelUpSpy },
       ],
     });
 
@@ -107,5 +112,16 @@ describe('Pay', () => {
     component.validated = false;
     component.pay();
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
+  it('should ask LevelUpService to celebrate using the level captured before and after paying', () => {
+    fakeBlockchain.getLevel = jasmine.createSpy('getLevel').and.returnValues(2, 3);
+    component.target = MY_PK;
+    component.amount = 5;
+    component.validated = true;
+
+    component.pay();
+
+    expect(levelUpSpy.celebrateIfLevelUp).toHaveBeenCalledWith(2, 3);
   });
 });

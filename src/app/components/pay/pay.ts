@@ -12,6 +12,7 @@ import { MatCardModule } from '@angular/material/card';
 import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ServerConnexionService } from '../../services/server-connection.service';
+import { LevelUpService } from '../../services/level-up.service';
 
 @Component({
   selector: 'app-pay',
@@ -33,6 +34,7 @@ export class Pay {
   userService = inject(ConnectedUserService)
   localDB = inject(LocalDatabaseService)
   serverDB = inject(ServerConnexionService)
+  levelUp = inject(LevelUpService)
   user = this.userService.getConnectedUser()
   contacts: any = []
   amount = 0;
@@ -79,6 +81,7 @@ export class Pay {
     }
     try {
       const sk = this.userService.getSecretKey()
+      const oldLevel = this.user.blockchain.getLevel()
       const tx = this.user.blockchain.pay(sk, this.target, this.amount)
 
       this.localDB.saveUser(this.user)
@@ -86,6 +89,7 @@ export class Pay {
       if (!this.itIsMe(tx.target)) {
         this.serverDB.sendTransaction(this.user.serverUrl, tx.export())
       }
+      this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
 
       this.displayMessage("Paiement enregistré et envoyé avec succès.")
       this.router.navigate(['/home']);

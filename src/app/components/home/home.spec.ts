@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
 
 import { Home } from './home';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
+import { PendingPaymentsService } from '../../services/pending-payments.service';
 
 // A minimal stand-in for a logged-in account — this component (like Pay,
 // Contacts) has always assumed getConnectedUser() is non-null; it's not this
@@ -14,7 +14,8 @@ let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
-let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveLastBlock' | 'getTransactionList'>>;
+let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveLastBlock'>>;
+let pendingSpy: jasmine.SpyObj<Pick<PendingPaymentsService, 'refresh'>> & { dataSource: any[] };
 
 describe('Home', () => {
   let component: Home;
@@ -26,6 +27,8 @@ describe('Home', () => {
       getAvailableMoneyAmount: () => 0,
       getLevel: () => 1,
       getMoneyBeforeNextLevel: () => 0,
+      getHistory: () => [],
+      experience: 42,
       createMoneyAndInvests: jasmine.createSpy('createMoneyAndInvests').and.returnValue(null),
     };
     fakeAccount = {
@@ -41,8 +44,9 @@ describe('Home', () => {
       getSecretKey: () => 'the-real-decrypted-sk',
     };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
-    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveLastBlock', 'getTransactionList']);
-    serverDBSpy.getTransactionList.and.returnValue(of([]));
+    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveLastBlock']);
+    pendingSpy = jasmine.createSpyObj('PendingPaymentsService', ['refresh']);
+    pendingSpy.dataSource = [];
 
     TestBed.configureTestingModule({
       imports: [Home],
@@ -51,6 +55,7 @@ describe('Home', () => {
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: LocalDatabaseService, useValue: localDBSpy },
         { provide: ServerConnexionService, useValue: serverDBSpy },
+        { provide: PendingPaymentsService, useValue: pendingSpy },
       ],
     });
   });
@@ -89,11 +94,43 @@ describe('Home', () => {
     expect(serverDBSpy.saveLastBlock).not.toHaveBeenCalled();
   });
 
-  it('should show the number of pending payments fetched on load', () => {
-    serverDBSpy.getTransactionList.and.returnValue(of([{}, {}, {}] as any));
-
+  it('should refresh the pending payments list on load', () => {
     createComponent();
+    expect(pendingSpy.refresh).toHaveBeenCalled();
+  });
 
-    expect(component.pendingCount).toBe(3);
+  it('should always show the pending payments card, even when empty', () => {
+    pendingSpy.dataSource = [];
+    createComponent();
+    expect(fixture.nativeElement.textContent).toContain('Aucun paiement en attente.');
+  });
+
+  it('should refresh the pending payments list when the reload button is clicked', () => {
+    createComponent();
+    pendingSpy.refresh.calls.reset();
+
+    const reloadBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.pending-card .reload-btn');
+    reloadBtn.click();
+
+    expect(pendingSpy.refresh).toHaveBeenCalled();
+  });
+
+  it('should expose the blockchain\'s experience as xp', () => {
+    createComponent();
+    expect(component.xp).toBe(42);
+  });
+
+  it('should expose the raw amount of money missing before the next level', () => {
+    fakeBlockchain.getMoneyBeforeNextLevel = (asPercent?: boolean) => asPercent ? 40 : 16;
+    createComponent();
+    expect(component.remainingBeforeNextLevel).toBe(16);
+    expect(component.percent).toBe(40);
+  });
+
+  it('should show at most the 5 most recent transactions', () => {
+    const tx = (n: number) => ({ date: new Date(2026, 0, n), type: 3, signer: 'pk', target: 'pk', money: [1] });
+    fakeBlockchain.getHistory = () => [tx(6), tx(5), tx(4), tx(3), tx(2), tx(1)];
+    createComponent();
+    expect(component.recentTransactions.length).toBe(5);
   });
 });

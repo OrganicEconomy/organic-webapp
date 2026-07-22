@@ -17,8 +17,8 @@
   right: 0;
   height: 64px;
   display: flex;
-  background: white;
-  border-top: 1px solid rgba(0, 0, 0, 0.12);
+  background: var(--mat-sys-surface);
+  border-top: 1px solid var(--mat-sys-outline-variant);
   z-index: 10;
 }
 
@@ -30,10 +30,10 @@
   justify-content: center;
   gap: 2px;
   text-decoration: none;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--mat-sys-on-surface-variant);
   font-size: 0.7rem;
 }
 
 .bottom-nav a.active {
-  color: #1976d2;
+  color: var(--mat-sys-primary);
 }
