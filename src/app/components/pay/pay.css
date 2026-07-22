@@ -126,6 +126,13 @@ section:last-of-type button {
     border-radius: 8px !important;
 }
 
+.read-only-notice {
+    margin: 8px 0 0 0;
+    font-size: 0.85rem;
+    color: var(--mat-sys-error);
+    text-align: center;
+}
+
 @media (max-width: 599px) {
     :host {
         padding: 12px 8px;

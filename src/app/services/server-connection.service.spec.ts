@@ -180,6 +180,20 @@ describe('ServerConnexionService', () => {
     req.flush({ message: 'ok' })
   });
 
+  it('verifyTransaction: POSTs { tx } to /tx/verify, no auth header (public, read-only)', () => {
+    const tx: any = { v: 1, d: 20260101, t: 3, p: 'target', s: TEST_PK, m: '', i: '', h: 'sig' }
+    let result: any
+    service.verifyTransaction(SERVER_URL, tx).subscribe((res) => (result = res))
+
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/tx/verify`)
+    expect(req.request.method).toBe('POST')
+    expect(req.request.body).toEqual({ tx })
+    expect(req.request.headers.has('x-signature')).toBeFalse()
+    req.flush({ status: 'confirmed' })
+
+    expect(result?.status).toBe('confirmed')
+  });
+
   it('isPaperAlreadyCashed: GETs /papers/isCashed with the hash as a query param', () => {
     service.isPaperAlreadyCashed(SERVER_URL, 'a-paper-hash').subscribe()
 

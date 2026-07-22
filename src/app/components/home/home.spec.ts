@@ -3,9 +3,8 @@ import { provideRouter } from '@angular/router';
 
 import { Home } from './home';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { LocalDatabaseService } from '../../services/local-database.service';
-import { ServerConnexionService } from '../../services/server-connection.service';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
+import { BackupService } from '../../services/backup.service';
 
 // A minimal stand-in for a logged-in account — this component (like Pay,
 // Contacts) has always assumed getConnectedUser() is non-null; it's not this
@@ -13,9 +12,8 @@ import { PendingPaymentsService } from '../../services/pending-payments.service'
 let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
-let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveLastBlock'>>;
 let pendingSpy: jasmine.SpyObj<Pick<PendingPaymentsService, 'refresh'>> & { dataSource: any[] };
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
 
 describe('Home', () => {
   let component: Home;
@@ -42,20 +40,19 @@ describe('Home', () => {
     stubConnectedUserService = {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => 'the-real-decrypted-sk',
+      isReadOnlySession: () => false,
     };
-    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
-    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveLastBlock']);
     pendingSpy = jasmine.createSpyObj('PendingPaymentsService', ['refresh']);
     pendingSpy.dataSource = [];
+    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
 
     TestBed.configureTestingModule({
       imports: [Home],
       providers: [
         provideRouter([]),
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
-        { provide: LocalDatabaseService, useValue: localDBSpy },
-        { provide: ServerConnexionService, useValue: serverDBSpy },
         { provide: PendingPaymentsService, useValue: pendingSpy },
+        { provide: BackupService, useValue: backupSpy },
       ],
     });
   });
@@ -76,22 +73,46 @@ describe('Home', () => {
     expect(fakeBlockchain.createMoneyAndInvests).toHaveBeenCalledWith('the-real-decrypted-sk');
   });
 
-  it('should save (locally and to the server) when money was actually created', () => {
+  it('should record the mutation (via backup.service) when money was actually created', () => {
     fakeBlockchain.createMoneyAndInvests.and.returnValue({ money: [20260722000] });
 
     createComponent();
 
-    expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
-    expect(serverDBSpy.saveLastBlock).toHaveBeenCalledWith(fakeAccount, 'the-real-decrypted-sk');
+    expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-decrypted-sk');
   });
 
-  it('should not save when money was already created today (null result)', () => {
+  it('should not record anything when money was already created today (null result)', () => {
     fakeBlockchain.createMoneyAndInvests.and.returnValue(null);
 
     createComponent();
 
-    expect(localDBSpy.saveUser).not.toHaveBeenCalled();
-    expect(serverDBSpy.saveLastBlock).not.toHaveBeenCalled();
+    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+  });
+
+  it('should not even attempt automatic money creation when the session is read-only', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+
+    createComponent();
+
+    expect(fakeBlockchain.createMoneyAndInvests).not.toHaveBeenCalled();
+  });
+
+  it('should show a banner explaining the read-only state', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+
+    createComponent();
+
+    expect(fixture.nativeElement.textContent).toContain('lecture seule');
+  });
+
+  it('should disable the per-row Encaisser button when the session is read-only', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    pendingSpy.dataSource = [{ hash: 'h1', date: '22/07/2026', source: 'Alice', amount: 3 }];
+
+    createComponent();
+
+    const cashBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.pending-row button');
+    expect(cashBtn.disabled).toBeTrue();
   });
 
   it('should refresh the pending payments list on load', () => {

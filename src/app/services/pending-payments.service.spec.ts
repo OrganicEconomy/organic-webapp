@@ -3,9 +3,9 @@ import { of } from 'rxjs';
 
 import { PendingPaymentsService } from './pending-payments.service';
 import { ConnectedUserService } from './connected-user.service';
-import { LocalDatabaseService } from './local-database.service';
 import { ServerConnexionService } from './server-connection.service';
 import { LevelUpService } from './level-up.service';
+import { BackupService } from './backup.service';
 
 const MY_PK = '02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3';
 const SENDER_PK = '0306ffd8f4fe843f5f7183179dcf36f550326813f56ec824911abca9c9d1cd7834';
@@ -24,9 +24,9 @@ function makePayTxWire(overrides: Partial<any> = {}): any {
 let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
-let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveLastBlock' | 'getTransactionList'>>;
+let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getTransactionList'>>;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
 
 describe('PendingPaymentsService', () => {
   let service: PendingPaymentsService;
@@ -45,19 +45,20 @@ describe('PendingPaymentsService', () => {
     stubConnectedUserService = {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => 'the-real-sk',
+      isReadOnlySession: () => false,
     };
-    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
-    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveLastBlock', 'getTransactionList']);
+    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['getTransactionList']);
     serverDBSpy.getTransactionList.and.returnValue(of([]));
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
+    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
 
     TestBed.configureTestingModule({
       providers: [
         PendingPaymentsService,
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
-        { provide: LocalDatabaseService, useValue: localDBSpy },
         { provide: ServerConnexionService, useValue: serverDBSpy },
         { provide: LevelUpService, useValue: levelUpSpy },
+        { provide: BackupService, useValue: backupSpy },
       ],
     });
 
@@ -89,15 +90,26 @@ describe('PendingPaymentsService', () => {
     expect(receivedArg.signer).toBe(SENDER_PK); // decoded property, not the wire's "s" letter
   });
 
-  it('should save locally and to the server after receiving a payment', () => {
+  it('should record the mutation (via backup.service) after receiving a payment', () => {
     serverDBSpy.getTransactionList.and.returnValue(of([makePayTxWire()]));
     service.refresh();
     const hash = service.dataSource[0].hash;
 
     service.cash(hash);
 
-    expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
-    expect(serverDBSpy.saveLastBlock).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+    expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+  });
+
+  it('should not cash anything when the session is read-only', () => {
+    serverDBSpy.getTransactionList.and.returnValue(of([makePayTxWire()]));
+    service.refresh();
+    const hash = service.dataSource[0].hash;
+    stubConnectedUserService.isReadOnlySession = () => true;
+
+    service.cash(hash);
+
+    expect(fakeBlockchain.receivePay).not.toHaveBeenCalled();
+    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
   });
 
   it('should ask LevelUpService to celebrate using the level captured before and after receiving', () => {

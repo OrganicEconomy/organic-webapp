@@ -14,6 +14,18 @@ mat-card {
     border-radius: 16px !important;
 }
 
+.read-only-banner {
+    width: 100%;
+    max-width: 480px;
+    box-sizing: border-box;
+    padding: 10px 16px;
+    border-radius: 8px;
+    background: var(--mat-sys-error-container, #fdecea);
+    color: var(--mat-sys-on-error-container, var(--mat-sys-error));
+    font-size: 0.85rem;
+    text-align: center;
+}
+
 mat-card-title {
     font-size: 1.2rem;
     font-weight: 600;

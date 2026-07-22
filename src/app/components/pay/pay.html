@@ -37,13 +37,22 @@
         </section>
 
         <section>
-            <button mat-flat-button (click)="pay()">Payer</button>
+            <button mat-flat-button class="pay-btn" (click)="pay()" [disabled]="userService.isReadOnlySession()">Payer</button>
+            @if (userService.isReadOnlySession()) {
+            <p class="read-only-notice">Ce compte est actif sur un autre appareil — lecture seule.</p>
+            }
         </section>
     </mat-card-content>
 </mat-card>
 
 <mat-card appearance="outlined" class="hub-actions">
     <mat-card-content>
+        <a mat-stroked-button routerLink="/pay-offline">
+            <i class="bi bi-qr-code"></i> Payer par QR (hors-ligne)
+        </a>
+        <a mat-stroked-button routerLink="/receive-offline">
+            <i class="bi bi-upc-scan"></i> Recevoir par QR (hors-ligne)
+        </a>
         <a mat-stroked-button routerLink="/cashpapers">
             <i class="bi bi-qr-code-scan"></i> Encaisser des billets
         </a>
