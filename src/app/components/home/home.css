@@ -49,10 +49,6 @@ mat-progress-bar {
     color: var(--mat-sys-on-surface-variant);
 }
 
-.xp-line .eta {
-    font-style: italic;
-}
-
 .pending-card mat-card-content,
 .recent-card mat-card-content {
     padding: 8px 16px !important;

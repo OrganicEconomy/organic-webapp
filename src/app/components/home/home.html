@@ -12,9 +12,6 @@
         <mat-progress-bar mode="determinate" [value]="percent"></mat-progress-bar>
         <p class="xp-line">
             {{ xp }} XP — {{ remainingBeforeNextLevel }} unité(s) avant le niveau {{ level + 1 }}
-            @if (etaDays !== null) {
-            <span class="eta">(≈ {{ etaDays }} j)</span>
-            }
         </p>
     </mat-card-content>
 </mat-card>

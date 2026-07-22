@@ -127,19 +127,6 @@ describe('Home', () => {
     expect(component.percent).toBe(40);
   });
 
-  it('should compute an ETA in days from the remaining amount and current level', () => {
-    fakeBlockchain.getLevel = () => 4;
-    fakeBlockchain.getMoneyBeforeNextLevel = (asPercent?: boolean) => asPercent ? 0 : 15;
-    createComponent();
-    expect(component.etaDays).toBe(4); // ceil(15 / 4)
-  });
-
-  it('should leave the ETA null when the account has no level yet', () => {
-    fakeBlockchain.getLevel = () => 0;
-    createComponent();
-    expect(component.etaDays).toBeNull();
-  });
-
   it('should show at most the 5 most recent transactions', () => {
     const tx = (n: number) => ({ date: new Date(2026, 0, n), type: 3, signer: 'pk', target: 'pk', money: [1] });
     fakeBlockchain.getHistory = () => [tx(6), tx(5), tx(4), tx(3), tx(2), tx(1)];

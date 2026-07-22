@@ -36,7 +36,6 @@ export class Home {
   percent = 0
   xp = 0
   remainingBeforeNextLevel = 0
-  etaDays: number | null = null
   recentTransactions: any[] = []
 
   constructor(private router: Router) {
@@ -57,9 +56,6 @@ export class Home {
     this.percent = bc.getMoneyBeforeNextLevel(true)
     this.xp = bc.experience
     this.remainingBeforeNextLevel = bc.getMoneyBeforeNextLevel()
-    // La création quotidienne mint `level` unité(s)/jour — approximation qui
-    // ignore les paiements reçus entre-temps (qui accélèreraient l'ETA).
-    this.etaDays = this.level > 0 ? Math.ceil(this.remainingBeforeNextLevel / this.level) : null
     this.recentTransactions = bc.getHistory().slice(0, 5)
       .map((tx: any) => toDisplayRow(tx, bc.getMyPublicKey(), this.user.contacts))
   }
