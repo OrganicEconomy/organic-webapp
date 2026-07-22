@@ -26,6 +26,12 @@ h1 {
     margin: 0 0 8px 0;
 }
 
+.scan-error {
+    color: #c62828;
+    font-size: 0.85rem;
+    margin: 4px 0;
+}
+
 form {
     display: flex;
     flex-direction: column;

@@ -2,6 +2,11 @@
     <mat-card-content>
         <h1>Nouveau contact</h1>
 
+        <zxing-scanner (scanSuccess)="scanSuccessHandler($event)"></zxing-scanner>
+        @if (scanError) {
+            <p class="scan-error">{{ scanError }}</p>
+        }
+
         <form [formGroup]="addcontactForm" (ngSubmit)="addContact()">
             <section>
                 <mat-form-field>
@@ -14,6 +19,13 @@
                 <mat-form-field>
                     <mat-label>Clé publique</mat-label>
                     <input matInput type="text" formControlName="pk" placeholder="Un truc à 66 caractères">
+                </mat-form-field>
+            </section>
+
+            <section>
+                <mat-form-field>
+                    <mat-label>Serveur</mat-label>
+                    <input matInput type="text" formControlName="url" placeholder="https://…">
                 </mat-form-field>
             </section>
 
