@@ -4,14 +4,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { ZXingScannerModule } from '@zxing/ngx-scanner';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
+import { LevelUpService } from '../../services/level-up.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-cash-papers',
   imports: [
+    RouterLink,
     MatTableModule,
     MatButtonModule,
     MatCardModule,
@@ -25,6 +27,7 @@ export class CashPapers {
   userService = inject(ConnectedUserService)
   serverDB = inject(ServerConnexionService)
   localDB = inject(LocalDatabaseService)
+  levelUp = inject(LevelUpService)
   private _snackBar = inject(MatSnackBar);
 
   user: any
@@ -83,6 +86,7 @@ export class CashPapers {
 
   cashPapers() {
     const sk = this.userService.getSecretKey()
+    const oldLevel = this.user.blockchain.getLevel()
     const failedPapers = []
     const okPapers: any = []
     for (let paper of this.paper_list) {
@@ -99,6 +103,7 @@ export class CashPapers {
 
     this.localDB.saveUser(this.user)
     this.serverDB.saveLastBlock(this.user, sk)
+    this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
 
     this.paper_list = failedPapers
   }

@@ -1,0 +1,15 @@
+<div class="level-up-content" mat-dialog-content>
+    <div class="confetti" aria-hidden="true">
+        <span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span>
+    </div>
+
+    <i class="bi bi-trophy-fill trophy"></i>
+    <h2>Niveau supérieur !</h2>
+    <p class="new-level">Niveau {{ data.newLevel }}</p>
+    <p class="from-level">(depuis le niveau {{ data.oldLevel }})</p>
+</div>
+
+<div mat-dialog-actions class="actions">
+    <button mat-flat-button mat-dialog-close>Continuer</button>
+</div>

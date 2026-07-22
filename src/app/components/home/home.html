@@ -1,45 +1,52 @@
-<mat-card appearance="outlined">
+<mat-card appearance="outlined" class="identity-card">
     <mat-card-header>
-        <mat-card-title>{{ user.name }} — Niveau {{ level }}</mat-card-title>
-        <mat-card-subtitle>
-            Solde : <span>{{ solde }}</span> <i class="bi bi-cookie"></i>
-        </mat-card-subtitle>
+        <mat-card-title>{{ user.name }}</mat-card-title>
+        <mat-card-subtitle class="level-line">Niveau {{ level }}</mat-card-subtitle>
     </mat-card-header>
 
-    <mat-card-header>
+    <mat-card-content>
+        <div class="solde-row">
+            <span class="solde-value">{{ solde }}</span> <i class="bi bi-cookie"></i>
+        </div>
+
         <mat-progress-bar mode="determinate" [value]="percent"></mat-progress-bar>
+        <p class="xp-line">
+            {{ xp }} XP — {{ remainingBeforeNextLevel }} unité(s) avant le niveau {{ level + 1 }}
+            @if (etaDays !== null) {
+            <span class="eta">(≈ {{ etaDays }} j)</span>
+            }
+        </p>
+
+        @if (pendingCount > 0) {
+        <a class="pending-chip" routerLink="/cashpayment">
+            <i class="bi bi-bell"></i> {{ pendingCount }} paiement(s) en attente
+        </a>
+        }
+    </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="recent-card">
+    <mat-card-header>
+        <mat-card-title>Dernières transactions</mat-card-title>
     </mat-card-header>
 
     <mat-divider [inset]="true"></mat-divider>
 
     <mat-card-content>
-        <mat-list>
-            <mat-list-item>
-                <a mat-stroked-button routerLink="/cashpayment" [matBadge]="pendingCount" [matBadgeHidden]="pendingCount === 0" matBadgeColor="accent">
-                    <i class="bi bi-router"></i> Recevoir un paiement
-                </a>
-            </mat-list-item>
-            <mat-list-item>
-                <a mat-stroked-button routerLink="/cashpapers">
-                    <i class="bi bi-qr-code-scan"></i> Encaisser des billets
-                </a>
-            </mat-list-item>
-            <mat-list-item>
-                <a mat-stroked-button routerLink="/printpapers">
-                    <i class="bi bi-printer"></i> Imprimer des billets
-                </a>
-            </mat-list-item>
-            <mat-list-item>
-                <a mat-stroked-button routerLink="/transactions">
-                    <i class="bi bi-card-list"></i> Historique de transactions
-                </a>
-            </mat-list-item>
-        </mat-list>
+        @if (recentTransactions.length === 0) {
+        <p class="empty">Aucune transaction pour l'instant.</p>
+        } @else {
+        @for (tx of recentTransactions; track $index) {
+        <div class="tx-row">
+            <span class="tx-date">{{ tx.date }}</span>
+            <span class="tx-type">{{ tx.type }}</span>
+            <span class="tx-amount">{{ tx.amount }} <i class="bi bi-cookie"></i></span>
+        </div>
+        }
+        }
     </mat-card-content>
 
     <mat-card-actions>
-        <a mat-button routerLink="/user-selection">
-            <i class="bi bi-power"></i> Déconnexion
-        </a>
+        <a mat-button routerLink="/transactions">Voir tout l'historique →</a>
     </mat-card-actions>
 </mat-card>

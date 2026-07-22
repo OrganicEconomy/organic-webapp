@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -10,10 +10,12 @@ import { TransactionMaker } from 'organic-money/src/index.js';
 import type { TxWire } from 'organic-protocol';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
+import { LevelUpService } from '../../services/level-up.service';
 
 @Component({
   selector: 'app-cash-payment',
   imports: [
+    RouterLink,
     MatTableModule,
     MatButtonModule,
     MatCardModule,
@@ -25,6 +27,7 @@ export class CashPayment {
   userService = inject(ConnectedUserService)
   serverDB = inject(ServerConnexionService)
   localDB = inject(LocalDatabaseService)
+  levelUp = inject(LevelUpService)
   private _snackBar = inject(MatSnackBar)
 
   user: any
@@ -82,16 +85,14 @@ export class CashPayment {
     const tx = this.tx_list.find((tx: any) => tx.signature === hash)
     if (!tx) return;
 
+    const oldLevel = this.user.blockchain.getLevel()
     this.user.blockchain.receivePay(tx)
-    const leveledUp = this.user.blockchain.hasLevelUpOnLastTx()
 
     this.localDB.saveUser(this.user)
     this.serverDB.saveLastBlock(this.user, this.userService.getSecretKey())
 
     this.dataSource = this.dataSource.filter((row: any) => row.hash !== hash)
 
-    if (leveledUp) {
-      this._snackBar.open('Niveau supérieur !', 'OK', { duration: 3000 })
-    }
+    this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
   }
 }

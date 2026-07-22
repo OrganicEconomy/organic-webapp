@@ -26,6 +26,8 @@ describe('Home', () => {
       getAvailableMoneyAmount: () => 0,
       getLevel: () => 1,
       getMoneyBeforeNextLevel: () => 0,
+      getHistory: () => [],
+      experience: 42,
       createMoneyAndInvests: jasmine.createSpy('createMoneyAndInvests').and.returnValue(null),
     };
     fakeAccount = {
@@ -95,5 +97,37 @@ describe('Home', () => {
     createComponent();
 
     expect(component.pendingCount).toBe(3);
+  });
+
+  it('should expose the blockchain\'s experience as xp', () => {
+    createComponent();
+    expect(component.xp).toBe(42);
+  });
+
+  it('should expose the raw amount of money missing before the next level', () => {
+    fakeBlockchain.getMoneyBeforeNextLevel = (asPercent?: boolean) => asPercent ? 40 : 16;
+    createComponent();
+    expect(component.remainingBeforeNextLevel).toBe(16);
+    expect(component.percent).toBe(40);
+  });
+
+  it('should compute an ETA in days from the remaining amount and current level', () => {
+    fakeBlockchain.getLevel = () => 4;
+    fakeBlockchain.getMoneyBeforeNextLevel = (asPercent?: boolean) => asPercent ? 0 : 15;
+    createComponent();
+    expect(component.etaDays).toBe(4); // ceil(15 / 4)
+  });
+
+  it('should leave the ETA null when the account has no level yet', () => {
+    fakeBlockchain.getLevel = () => 0;
+    createComponent();
+    expect(component.etaDays).toBeNull();
+  });
+
+  it('should show at most the 5 most recent transactions', () => {
+    const tx = (n: number) => ({ date: new Date(2026, 0, n), type: 3, signer: 'pk', target: 'pk', money: [1] });
+    fakeBlockchain.getHistory = () => [tx(6), tx(5), tx(4), tx(3), tx(2), tx(1)];
+    createComponent();
+    expect(component.recentTransactions.length).toBe(5);
   });
 });

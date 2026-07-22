@@ -1,7 +1,8 @@
 :host {
     display: flex;
-    justify-content: center;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
     min-height: 100vh;
     padding: 24px 16px;
     box-sizing: border-box;
@@ -11,6 +12,32 @@ mat-card {
     width: 100%;
     max-width: 480px;
     border-radius: 16px !important;
+}
+
+.hub-actions mat-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px !important;
+}
+
+.hub-actions a {
+    width: 100%;
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    justify-content: flex-start;
+    padding: 10px 16px !important;
+    font-size: 0.95rem;
+    border-radius: 8px !important;
+    height: 44px;
+    box-sizing: border-box;
+}
+
+.hub-actions i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
 }
 
 mat-card-content {

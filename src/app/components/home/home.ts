@@ -7,9 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
-import { MatListModule } from '@angular/material/list';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatBadgeModule } from '@angular/material/badge';
+import { toDisplayRow } from '../../utils/transaction-display.util';
 
 @Component({
   selector: 'app-home',
@@ -19,8 +18,6 @@ import { MatBadgeModule } from '@angular/material/badge';
     MatProgressBarModule,
     MatCardModule,
     MatDividerModule,
-    MatListModule,
-    MatBadgeModule,
   ],
   templateUrl: './home.html',
   styleUrl: './home.css',
@@ -35,7 +32,11 @@ export class Home {
   solde = 0
   level = 0
   percent = 0
+  xp = 0
+  remainingBeforeNextLevel = 0
+  etaDays: number | null = null
   pendingCount = 0
+  recentTransactions: any[] = []
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
@@ -49,9 +50,17 @@ export class Home {
   }
 
   update() {
-    this.solde = this.user.blockchain.getAvailableMoneyAmount()
-    this.level = this.user.blockchain.getLevel()
-    this.percent = this.user.blockchain.getMoneyBeforeNextLevel(true)
+    const bc = this.user.blockchain
+    this.solde = bc.getAvailableMoneyAmount()
+    this.level = bc.getLevel()
+    this.percent = bc.getMoneyBeforeNextLevel(true)
+    this.xp = bc.experience
+    this.remainingBeforeNextLevel = bc.getMoneyBeforeNextLevel()
+    // La création quotidienne mint `level` unité(s)/jour — approximation qui
+    // ignore les paiements reçus entre-temps (qui accélèreraient l'ETA).
+    this.etaDays = this.level > 0 ? Math.ceil(this.remainingBeforeNextLevel / this.level) : null
+    this.recentTransactions = bc.getHistory().slice(0, 5)
+      .map((tx: any) => toDisplayRow(tx, bc.getMyPublicKey(), this.user.contacts))
   }
 
   private createDailyMoney() {

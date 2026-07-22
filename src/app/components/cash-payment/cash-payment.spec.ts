@@ -6,6 +6,7 @@ import { CashPayment } from './cash-payment';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
+import { LevelUpService } from '../../services/level-up.service';
 
 const MY_PK = '02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3';
 const SENDER_PK = '0306ffd8f4fe843f5f7183179dcf36f550326813f56ec824911abca9c9d1cd7834';
@@ -26,6 +27,7 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveLastBlock' | 'getTransactionList'>>;
+let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
 
 describe('CashPayment', () => {
   let component: CashPayment;
@@ -34,7 +36,7 @@ describe('CashPayment', () => {
   beforeEach(() => {
     fakeBlockchain = {
       receivePay: jasmine.createSpy('receivePay'),
-      hasLevelUpOnLastTx: () => false,
+      getLevel: () => 2,
     };
     fakeAccount = {
       publickey: MY_PK,
@@ -49,6 +51,7 @@ describe('CashPayment', () => {
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveLastBlock', 'getTransactionList']);
     serverDBSpy.getTransactionList.and.returnValue(of([]));
+    levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
 
     TestBed.configureTestingModule({
       imports: [CashPayment],
@@ -57,6 +60,7 @@ describe('CashPayment', () => {
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: LocalDatabaseService, useValue: localDBSpy },
         { provide: ServerConnexionService, useValue: serverDBSpy },
+        { provide: LevelUpService, useValue: levelUpSpy },
       ],
     });
   });
@@ -106,6 +110,17 @@ describe('CashPayment', () => {
 
     expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
     expect(serverDBSpy.saveLastBlock).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+  });
+
+  it('should ask LevelUpService to celebrate using the level captured before and after receiving', () => {
+    fakeBlockchain.getLevel = jasmine.createSpy('getLevel').and.returnValues(2, 3);
+    serverDBSpy.getTransactionList.and.returnValue(of([makePayTxWire()]));
+    createComponent();
+    const hash = component.dataSource[0].hash;
+
+    component.cash(hash);
+
+    expect(levelUpSpy.celebrateIfLevelUp).toHaveBeenCalledWith(2, 3);
   });
 
   it('should skip a malformed transaction instead of crashing the screen', () => {

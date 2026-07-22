@@ -9,6 +9,12 @@ const fakeAccount = {
   name: 'Alice',
   publickey: 'alice-pk',
   serverUrl: 'https://trifouillis.fr',
+  blockchain: {
+    blocks: [
+      { closedate: new Date(2027, 2, 3) }, // dernier bloc (le plus récent)
+      { closedate: new Date(2026, 0, 15) }, // bloc de naissance (le plus ancien)
+    ],
+  },
 };
 const stubConnectedUserService = {
   getConnectedUser: () => fakeAccount,
@@ -35,6 +41,10 @@ describe('AccountDetails', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('should show the birth block\'s close date as the inscription date', () => {
+    expect(component.inscription_date).toBe(new Date(2026, 0, 15).toLocaleDateString('fr-FR'));
   });
 
   it('should generate a QR that decodes back to this account\'s contact card', () => {
