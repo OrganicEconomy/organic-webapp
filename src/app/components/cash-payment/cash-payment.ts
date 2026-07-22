@@ -3,14 +3,8 @@ import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatIconButton } from '@angular/material/button';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { TransactionMaker } from 'organic-money/src/index.js';
-import type { TxWire } from 'organic-protocol';
-import { ServerConnexionService } from '../../services/server-connection.service';
-import { LocalDatabaseService } from '../../services/local-database.service';
-import { LevelUpService } from '../../services/level-up.service';
+import { PendingPaymentsService } from '../../services/pending-payments.service';
 
 @Component({
   selector: 'app-cash-payment',
@@ -25,15 +19,10 @@ import { LevelUpService } from '../../services/level-up.service';
 })
 export class CashPayment {
   userService = inject(ConnectedUserService)
-  serverDB = inject(ServerConnexionService)
-  localDB = inject(LocalDatabaseService)
-  levelUp = inject(LevelUpService)
-  private _snackBar = inject(MatSnackBar)
+  pending = inject(PendingPaymentsService)
 
   user: any
   displayedColumns: string[] = ['date', 'source', 'amount', 'cash']
-  dataSource: any = []
-  tx_list: any[] = []
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
@@ -44,55 +33,15 @@ export class CashPayment {
     this.updateList()
   }
 
-  updateList() {
-    const query = this.serverDB.getTransactionList(this.user.serverUrl, this.user.publickey, this.userService.getSecretKey())
-    query.subscribe({
-      next: data => {
-        this.updateDataSource(data)
-      },
-      error: err => {
-        console.log("Something went wrong")
-      }
-    })
+  get dataSource() {
+    return this.pending.dataSource
   }
 
-  updateDataSource(data: TxWire[]) {
-    const getContactName = (pk: string) => {
-      const contact: any = this.user.contacts.find((contact: any) => contact.pk === pk)
-      if (!contact) {
-        return "..." + pk.slice(-15)
-      }
-      return contact.name
-    }
-
-    // Malformed entries are skipped rather than crashing the whole screen.
-    this.tx_list = data
-      .map((wireTx) => { try { return TransactionMaker.make(wireTx) } catch { return null } })
-      .filter((tx: any) => tx !== null)
-
-    this.dataSource = this.tx_list.map((tx: any) => {
-      return {
-        date: tx.date.toLocaleDateString("fr-FR"),
-        id: "..." + tx.signature.slice(-8),
-        source: getContactName(tx.signer),
-        amount: tx.money.length,
-        hash: tx.signature
-      }
-    })
+  updateList() {
+    this.pending.refresh()
   }
 
   cash(hash: string) {
-    const tx = this.tx_list.find((tx: any) => tx.signature === hash)
-    if (!tx) return;
-
-    const oldLevel = this.user.blockchain.getLevel()
-    this.user.blockchain.receivePay(tx)
-
-    this.localDB.saveUser(this.user)
-    this.serverDB.saveLastBlock(this.user, this.userService.getSecretKey())
-
-    this.dataSource = this.dataSource.filter((row: any) => row.hash !== hash)
-
-    this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
+    this.pending.cash(hash)
   }
 }

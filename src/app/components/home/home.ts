@@ -9,6 +9,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { toDisplayRow } from '../../utils/transaction-display.util';
+import { PendingPaymentsService } from '../../services/pending-payments.service';
 
 @Component({
   selector: 'app-home',
@@ -26,6 +27,7 @@ export class Home {
   userService = inject(ConnectedUserService)
   localDB = inject(LocalDatabaseService)
   serverDB = inject(ServerConnexionService)
+  pending = inject(PendingPaymentsService)
   private snackBar = inject(MatSnackBar)
 
   user: any
@@ -35,7 +37,6 @@ export class Home {
   xp = 0
   remainingBeforeNextLevel = 0
   etaDays: number | null = null
-  pendingCount = 0
   recentTransactions: any[] = []
 
   constructor(private router: Router) {
@@ -46,7 +47,7 @@ export class Home {
     }
     this.createDailyMoney()
     this.update()
-    this.loadPendingCount()
+    this.pending.refresh()
   }
 
   update() {
@@ -71,14 +72,6 @@ export class Home {
       this.serverDB.saveLastBlock(this.user, sk)
       this.snackBar.open(`${result.money.length} unité(s) créée(s) aujourd'hui !`, 'OK', { duration: 3000 })
     }
-  }
-
-  private loadPendingCount() {
-    const sk = this.userService.getSecretKey()
-    this.serverDB.getTransactionList(this.user.serverUrl, this.user.publickey, sk).subscribe({
-      next: (list) => { this.pendingCount = list.length },
-      error: () => { /* offline or unreachable — badge just stays at 0 */ },
-    })
   }
 
 }

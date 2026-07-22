@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
 
 import { Home } from './home';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
+import { PendingPaymentsService } from '../../services/pending-payments.service';
 
 // A minimal stand-in for a logged-in account — this component (like Pay,
 // Contacts) has always assumed getConnectedUser() is non-null; it's not this
@@ -14,7 +14,8 @@ let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
-let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveLastBlock' | 'getTransactionList'>>;
+let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveLastBlock'>>;
+let pendingSpy: jasmine.SpyObj<Pick<PendingPaymentsService, 'refresh'>> & { dataSource: any[] };
 
 describe('Home', () => {
   let component: Home;
@@ -43,8 +44,9 @@ describe('Home', () => {
       getSecretKey: () => 'the-real-decrypted-sk',
     };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
-    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveLastBlock', 'getTransactionList']);
-    serverDBSpy.getTransactionList.and.returnValue(of([]));
+    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveLastBlock']);
+    pendingSpy = jasmine.createSpyObj('PendingPaymentsService', ['refresh']);
+    pendingSpy.dataSource = [];
 
     TestBed.configureTestingModule({
       imports: [Home],
@@ -53,6 +55,7 @@ describe('Home', () => {
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: LocalDatabaseService, useValue: localDBSpy },
         { provide: ServerConnexionService, useValue: serverDBSpy },
+        { provide: PendingPaymentsService, useValue: pendingSpy },
       ],
     });
   });
@@ -91,12 +94,9 @@ describe('Home', () => {
     expect(serverDBSpy.saveLastBlock).not.toHaveBeenCalled();
   });
 
-  it('should show the number of pending payments fetched on load', () => {
-    serverDBSpy.getTransactionList.and.returnValue(of([{}, {}, {}] as any));
-
+  it('should refresh the pending payments list on load', () => {
     createComponent();
-
-    expect(component.pendingCount).toBe(3);
+    expect(pendingSpy.refresh).toHaveBeenCalled();
   });
 
   it('should expose the blockchain\'s experience as xp', () => {

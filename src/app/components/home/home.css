@@ -53,23 +53,62 @@ mat-progress-bar {
     font-style: italic;
 }
 
-.pending-chip {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-top: 12px;
-    padding: 8px 12px;
-    border-radius: 8px;
-    background: var(--mat-sys-secondary-container, rgba(0, 0, 0, 0.05));
-    color: var(--mat-sys-on-secondary-container, var(--mat-sys-on-surface));
-    text-decoration: none;
-    font-size: 0.9rem;
-    width: 100%;
-    box-sizing: border-box;
-}
-
+.pending-card mat-card-content,
 .recent-card mat-card-content {
     padding: 8px 16px !important;
+}
+
+.pending-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.pending-row:last-child {
+    border-bottom: none;
+}
+
+.pending-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.pending-source {
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pending-date {
+    font-size: 0.78rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.pending-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.pending-amount {
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--mat-sys-primary);
+}
+
+.pending-right button {
+    height: 36px;
+    font-size: 0.85rem;
+    border-radius: 6px !important;
 }
 
 .tx-row {

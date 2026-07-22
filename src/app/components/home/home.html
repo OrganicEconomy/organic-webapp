@@ -16,14 +16,33 @@
             <span class="eta">(≈ {{ etaDays }} j)</span>
             }
         </p>
+    </mat-card-content>
+</mat-card>
 
-        @if (pendingCount > 0) {
-        <a class="pending-chip" routerLink="/cashpayment">
-            <i class="bi bi-bell"></i> {{ pendingCount }} paiement(s) en attente
-        </a>
+@if (pending.dataSource.length > 0) {
+<mat-card appearance="outlined" class="pending-card">
+    <mat-card-header>
+        <mat-card-title>Paiements en attente</mat-card-title>
+    </mat-card-header>
+
+    <mat-divider [inset]="true"></mat-divider>
+
+    <mat-card-content>
+        @for (row of pending.dataSource; track row.hash) {
+        <div class="pending-row">
+            <div class="pending-info">
+                <span class="pending-source">{{ row.source }}</span>
+                <span class="pending-date">{{ row.date }}</span>
+            </div>
+            <div class="pending-right">
+                <span class="pending-amount">{{ row.amount }} <i class="bi bi-cookie"></i></span>
+                <button mat-stroked-button (click)="pending.cash(row.hash)">Encaisser</button>
+            </div>
+        </div>
         }
     </mat-card-content>
 </mat-card>
+}
 
 <mat-card appearance="outlined" class="recent-card">
     <mat-card-header>
