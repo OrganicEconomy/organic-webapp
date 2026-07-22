@@ -11,6 +11,8 @@ import { CashPapers } from './components/cash-papers/cash-papers';
 import { Contacts } from './components/contacts/contacts';
 import { Logout } from './components/logout/logout';
 import { Pay } from './components/pay/pay';
+import { PayOffline } from './components/pay-offline/pay-offline';
+import { ReceiveOffline } from './components/receive-offline/receive-offline';
 import { PrintPapers } from './components/print-papers/print-papers';
 import { TransactionList } from './components/transaction-list/transaction-list';
 import { UserSelection } from './components/user-selection/user-selection';
@@ -27,6 +29,8 @@ export const routes: Routes = [
     { path: "addcontact", component: AddContact },
     { path: "cashpapers", component: CashPapers },
     { path: "printpapers", component: PrintPapers },
+    { path: "pay-offline", component: PayOffline },
+    { path: "receive-offline", component: ReceiveOffline },
     { path: "transactions", component: TransactionList },
     // The four permanent tabs (Phase-1.md §7) share the bottom-nav shell.
     {

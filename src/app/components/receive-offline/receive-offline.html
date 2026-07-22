@@ -1,0 +1,58 @@
+<mat-card appearance="outlined">
+    <mat-card-header>
+        <mat-card-title>Recevoir un paiement</mat-card-title>
+        <mat-card-subtitle>en scannant le QR du payeur</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+        @if (!userService.isReadOnlySession()) {
+        <zxing-scanner (scanSuccess)="scanSuccessHandler($event)"></zxing-scanner>
+        } @else {
+        <p class="read-only-notice">Ce compte est actif sur un autre appareil — lecture seule.</p>
+        }
+        @if (scanError) {
+        <p class="scan-error">{{ scanError }}</p>
+        }
+
+        <div class="pending-header">
+            <h2>En attente de vérification</h2>
+            <button mat-icon-button (click)="verifyAll()" title="Vérifier maintenant">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+
+        @if (displayRows.length === 0) {
+        <p class="empty">Aucun paiement en attente.</p>
+        } @else {
+        @for (row of displayRows; track row.hash) {
+        <div class="tx-row" [class.flagged]="row.status === 'invalid' || row.status === 'unknown-sender'">
+            <div class="tx-info">
+                <span class="tx-source">{{ row.source }}</span>
+                <span class="tx-meta">{{ row.date }}</span>
+            </div>
+            <div class="tx-right">
+                <span class="tx-amount">{{ row.amount }} <i class="bi bi-cookie"></i></span>
+                @switch (row.status) {
+                @case ('confirmed') {
+                <span class="status confirmed">✓ confirmé</span>
+                }
+                @case ('pending') {
+                <span class="status pending">⏳ à vérifier</span>
+                }
+                @default {
+                <span class="status invalid">⚠ INVALIDE</span>
+                <button mat-stroked-button (click)="dismiss(row.hash)">J'ai compris, retirer</button>
+                }
+                }
+            </div>
+        </div>
+        }
+        }
+    </mat-card-content>
+
+    <mat-card-actions>
+        <a mat-stroked-button routerLink="/pay">
+            <i class="bi bi-arrow-left"></i> Retour
+        </a>
+    </mat-card-actions>
+</mat-card>
