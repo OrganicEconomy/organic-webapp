@@ -5,7 +5,7 @@
     </mat-card-header>
 
     <mat-card-content>
-        <zxing-scanner (scanSuccess)="scanSuccessHandler($event)"></zxing-scanner>
+        <app-qr-scanner (scanSuccess)="scanSuccessHandler($event)"></app-qr-scanner>
 
         <!-- Desktop : table -->
         <table mat-table [dataSource]="paper_list" class="desktop-table">

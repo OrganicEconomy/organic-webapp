@@ -3,7 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ZXingScannerModule } from '@zxing/ngx-scanner';
+import { QrScanner } from '../qr-scanner/qr-scanner';
 import { decodeQr } from 'organic-protocol';
 import type { TxVerifyStatus } from 'organic-protocol';
 import { TransactionMaker } from 'organic-money/src/index.js';
@@ -18,7 +18,7 @@ import { getContactName } from '../../utils/transaction-display.util';
     RouterLink,
     MatButtonModule,
     MatCardModule,
-    ZXingScannerModule,
+    QrScanner,
   ],
   templateUrl: './receive-offline.html',
   styleUrl: './receive-offline.css',

@@ -6,7 +6,7 @@
 
     <mat-card-content>
         @if (!userService.isReadOnlySession()) {
-        <zxing-scanner (scanSuccess)="scanSuccessHandler($event)"></zxing-scanner>
+        <app-qr-scanner (scanSuccess)="scanSuccessHandler($event)"></app-qr-scanner>
         } @else {
         <p class="read-only-notice">Ce compte est actif sur un autre appareil — lecture seule.</p>
         }

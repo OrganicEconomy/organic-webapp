@@ -2,7 +2,7 @@
     <mat-card-content>
         <h1>Nouveau contact</h1>
 
-        <zxing-scanner (scanSuccess)="scanSuccessHandler($event)"></zxing-scanner>
+        <app-qr-scanner (scanSuccess)="scanSuccessHandler($event)"></app-qr-scanner>
         @if (scanError) {
             <p class="scan-error">{{ scanError }}</p>
         }
