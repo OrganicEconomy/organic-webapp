@@ -41,6 +41,15 @@ mat-checkbox {
    line-height: 1.4;
 }
 
+mat-checkbox ::ng-deep .mdc-form-field {
+   align-items: flex-start;
+   white-space: normal;
+}
+
+mat-checkbox ::ng-deep .mdc-label {
+   white-space: normal;
+}
+
 mat-card-actions {
    display: flex;
    flex-direction: column;
