@@ -44,7 +44,7 @@
             </div>
             <div class="pending-right">
                 <span class="pending-amount">{{ row.amount }} <i class="bi bi-cookie"></i></span>
-                <button mat-stroked-button (click)="pending.cash(row.hash)" [disabled]="userService.isReadOnlySession()">Encaisser</button>
+                <button mat-stroked-button (click)="cash(row.hash)" [disabled]="userService.isReadOnlySession()">Encaisser</button>
             </div>
         </div>
         }

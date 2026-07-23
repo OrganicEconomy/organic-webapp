@@ -12,7 +12,7 @@ import { BackupService } from '../../services/backup.service';
 let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let pendingSpy: jasmine.SpyObj<Pick<PendingPaymentsService, 'refresh'>> & { dataSource: any[] };
+let pendingSpy: jasmine.SpyObj<Pick<PendingPaymentsService, 'refresh' | 'cash'>> & { dataSource: any[] };
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
 
 describe('Home', () => {
@@ -42,7 +42,7 @@ describe('Home', () => {
       getSecretKey: () => 'the-real-decrypted-sk',
       isReadOnlySession: () => false,
     };
-    pendingSpy = jasmine.createSpyObj('PendingPaymentsService', ['refresh']);
+    pendingSpy = jasmine.createSpyObj('PendingPaymentsService', ['refresh', 'cash']);
     pendingSpy.dataSource = [];
     backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
 
@@ -134,6 +134,22 @@ describe('Home', () => {
     reloadBtn.click();
 
     expect(pendingSpy.refresh).toHaveBeenCalled();
+  });
+
+  it('should refresh the displayed stats (xp, level, solde…) after cashing a pending payment', () => {
+    pendingSpy.dataSource = [{ hash: 'h1', date: '22/07/2026', source: 'Alice', amount: 3 }];
+    pendingSpy.cash.and.callFake(() => {
+      // cash() mutates the shared blockchain instance directly — simulate that.
+      fakeBlockchain.experience = 100
+    });
+    createComponent();
+    expect(component.xp).toBe(42);
+
+    const cashBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.pending-row button');
+    cashBtn.click();
+
+    expect(pendingSpy.cash).toHaveBeenCalledWith('h1');
+    expect(component.xp).toBe(100);
   });
 
   it('should expose the blockchain\'s experience as xp', () => {

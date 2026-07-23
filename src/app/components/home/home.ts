@@ -49,6 +49,11 @@ export class Home {
     this.pending.refresh()
   }
 
+  cash(hash: string): void {
+    this.pending.cash(hash)
+    this.update()
+  }
+
   update() {
     const bc = this.user.blockchain
     this.solde = bc.getAvailableMoneyAmount()
