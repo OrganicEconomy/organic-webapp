@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { LocalDatabaseService } from './local-database.service';
 import { ServerConnexionService } from './server-connection.service';
 import { ConnectedUserService } from './connected-user.service';
@@ -39,20 +39,24 @@ export class BackupService {
     return this.pushToServer(user, sk)
   }
 
+  // A single, un-subscribed-to-twice pipe: side effects ride along via tap()
+  // rather than an internal subscribe(), so callers that subscribe to the
+  // returned Observable (pay.ts, "Sauvegarder maintenant") trigger exactly
+  // one HTTP request, not two.
   private pushToServer(user: LoadedAccount, sk: string): Observable<unknown> {
-    const obs = this.serverDB.saveLastBlock(user, sk)
-    obs.subscribe({
-      next: () => {
-        user.lastBackupAt = new Date().toISOString()
-        user.isuptodate = true
-        this.localDB.saveUser(user)
-      },
-      error: (err: any) => {
-        if (err.status === 409) {
-          this.userService.setReadOnly()
-        }
-      },
-    })
-    return obs
+    return this.serverDB.saveLastBlock(user, sk).pipe(
+      tap({
+        next: () => {
+          user.lastBackupAt = new Date().toISOString()
+          user.isuptodate = true
+          this.localDB.saveUser(user)
+        },
+        error: (err: any) => {
+          if (err.status === 409) {
+            this.userService.setReadOnly()
+          }
+        },
+      })
+    )
   }
 }

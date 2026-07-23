@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of, throwError } from 'rxjs';
+import { Observable, of, throwError } from 'rxjs';
 
 import { BackupService } from './backup.service';
 import { LocalDatabaseService } from './local-database.service';
@@ -61,7 +61,7 @@ describe('BackupService', () => {
   });
 
   it('should update lastBackupAt and isuptodate on a successful push', () => {
-    service.recordPayment(fakeUser, 'sk');
+    service.recordPayment(fakeUser, 'sk').subscribe();
     expect(fakeUser.isuptodate).toBeTrue();
     expect(fakeUser.lastBackupAt).not.toBeNull();
     expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeUser);
@@ -69,7 +69,21 @@ describe('BackupService', () => {
 
   it('should mark the session read-only on a 409', () => {
     serverDBSpy.saveLastBlock.and.returnValue(throwError(() => ({ status: 409 })));
-    service.recordPayment(fakeUser, 'sk');
+    service.recordPayment(fakeUser, 'sk').subscribe({ error: () => {} });
     expect(userServiceSpy.setReadOnly).toHaveBeenCalled();
+  });
+
+  it('recordPayment should not issue a second server request when the caller subscribes to the returned observable', () => {
+    let subscribeCount = 0;
+    serverDBSpy.saveLastBlock.and.returnValue(new Observable((subscriber) => {
+      subscribeCount++;
+      subscriber.next({});
+      subscriber.complete();
+    }));
+
+    // Mirrors real usage in pay.ts: the caller subscribes to what recordPayment returns.
+    service.recordPayment(fakeUser, 'sk').subscribe();
+
+    expect(subscribeCount).toBe(1);
   });
 });
