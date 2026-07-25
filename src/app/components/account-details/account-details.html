@@ -1,7 +1,6 @@
-
-<mat-card class="" appearance="outlined">
+<mat-card appearance="outlined">
     <mat-card-header>
-        <mat-card-title>Mon compte </mat-card-title>
+        <mat-card-title>Mon compte</mat-card-title>
         <mat-card-subtitle>Inscrit(e) depuis le {{ inscription_date }}</mat-card-subtitle>
     </mat-card-header>
 
@@ -19,9 +18,76 @@
     </mat-card-content>
 
     <qrcode [qrdata]="myContactQr" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
+</mat-card>
+
+<mat-card appearance="outlined">
+    <mat-card-header>
+        <mat-card-title>Sauvegarde</mat-card-title>
+    </mat-card-header>
+
+    <mat-divider [inset]="true"></mat-divider>
+
+    <mat-card-content>
+        <mat-radio-group [ngModel]="backupPolicy" (ngModelChange)="updateBackupPolicy($event)">
+            <mat-radio-button value="every-tx">À chaque transaction (recommandé)</mat-radio-button>
+            <mat-radio-button value="manual">Quand je le décide</mat-radio-button>
+            <mat-radio-button value="payments-only">Uniquement lors des paiements</mat-radio-button>
+        </mat-radio-group>
+
+        <button mat-stroked-button (click)="saveNow()" [disabled]="userService.isReadOnlySession()">
+            <i class="bi bi-cloud-upload"></i> Sauvegarder maintenant
+        </button>
+        <p class="last-backup">
+            @if (lastBackupAt) {
+            Dernière sauvegarde : {{ lastBackupAt | date:'dd/MM/yyyy HH:mm' }}
+            } @else {
+            Jamais sauvegardé.
+            }
+        </p>
+    </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined">
+    <mat-card-header>
+        <mat-card-title>Changer de mot de passe</mat-card-title>
+    </mat-card-header>
+
+    <mat-divider [inset]="true"></mat-divider>
+
+    <mat-card-content>
+        <mat-form-field>
+            <mat-label>Ancien mot de passe</mat-label>
+            <input matInput type="password" [(ngModel)]="oldPassword">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Nouveau mot de passe</mat-label>
+            <input matInput type="password" [(ngModel)]="newPassword">
+        </mat-form-field>
+        <mat-form-field>
+            <mat-label>Nouveau mot de passe (encore)</mat-label>
+            <input matInput type="password" [(ngModel)]="newPasswordConfirm">
+        </mat-form-field>
+        <button mat-flat-button (click)="changePassword()">Changer le mot de passe</button>
+    </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined">
+    <mat-card-header>
+        <mat-card-title>Serveur</mat-card-title>
+    </mat-card-header>
+
+    <mat-divider [inset]="true"></mat-divider>
+
+    <mat-card-content>
+        @if (serverInfo) {
+        <p>{{ serverInfo.name }} · {{ serverInfo.stats.users }} citoyens</p>
+        <p class="protocol">protocole v{{ serverInfo.protocolVersion }}</p>
+        } @else {
+        <p class="protocol">Infos serveur indisponibles.</p>
+        }
+    </mat-card-content>
 
     <mat-card-actions>
-        <a matButton routerLink="/user-selection" type="button"><i class="bi bi-power"></i>
-            Déconnexion</a>
+        <a mat-button routerLink="/user-selection"><i class="bi bi-power"></i> Déconnexion</a>
     </mat-card-actions>
 </mat-card>

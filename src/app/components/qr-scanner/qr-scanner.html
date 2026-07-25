@@ -1,0 +1,18 @@
+<div class="qr-scanner-wrap">
+  @if (scannerVisible) {
+  <zxing-scanner (scanSuccess)="onScanSuccess($event)" (autostarting)="onAutostarting($event)"
+    (camerasNotFound)="onCamerasNotFound()" (permissionResponse)="onPermissionResponse($event)"
+    (scanError)="onScanError($event)"></zxing-scanner>
+  }
+
+  @if (errorMessage) {
+  <div class="qr-scanner-overlay qr-scanner-error">
+    <p>{{ errorMessage }}</p>
+    <button type="button" class="qr-scanner-retry" (click)="retry()">Réessayer</button>
+  </div>
+  } @else if (loading) {
+  <div class="qr-scanner-overlay">
+    <p>Scanner de QR code en cours de lancement…</p>
+  </div>
+  }
+</div>

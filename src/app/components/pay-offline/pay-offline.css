@@ -14,32 +14,6 @@ mat-card {
     border-radius: 16px !important;
 }
 
-.hub-actions mat-card-content {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 16px !important;
-}
-
-.hub-actions a {
-    width: 100%;
-    display: flex !important;
-    align-items: center;
-    gap: 10px;
-    justify-content: flex-start;
-    padding: 10px 16px !important;
-    font-size: 0.95rem;
-    border-radius: 8px !important;
-    height: 44px;
-    box-sizing: border-box;
-}
-
-.hub-actions i {
-    font-size: 1.1rem;
-    width: 20px;
-    text-align: center;
-}
-
 mat-card-content {
     display: flex;
     flex-direction: column;
@@ -53,34 +27,16 @@ h1 {
     margin: 0 0 8px 0;
 }
 
+h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 12px 0 4px 0;
+}
+
 section {
     display: flex;
     flex-direction: column;
     width: 100%;
-}
-
-/* Ligne contact + bouton "Nouveau contact" */
-section:first-of-type {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-}
-
-section:first-of-type mat-form-field {
-    flex: 1;
-    min-width: 0;
-}
-
-section:first-of-type a {
-    flex-shrink: 0;
-    display: flex !important;
-    align-items: center;
-    gap: 6px;
-    height: 44px;
-    padding: 0 14px !important;
-    font-size: 0.875rem;
-    border-radius: 8px !important;
-    white-space: nowrap;
 }
 
 mat-form-field {
@@ -91,7 +47,6 @@ mat-slider {
     width: 100%;
 }
 
-/* Checkbox + label */
 section:has(input[type="checkbox"]) {
     flex-direction: row;
     align-items: flex-start;
@@ -114,12 +69,7 @@ section:has(input[type="checkbox"]) label {
     cursor: pointer;
 }
 
-/* Bouton Payer */
-section:last-of-type {
-    margin-top: 4px;
-}
-
-section:last-of-type button {
+.pay-btn {
     width: 100%;
     height: 44px;
     font-size: 1rem;
@@ -133,6 +83,32 @@ section:last-of-type button {
     text-align: center;
 }
 
+.sent-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.sent-row:last-child {
+    border-bottom: none;
+}
+
+.qr-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 16px 0;
+}
+
+.notice {
+    font-size: 0.85rem;
+    color: var(--mat-sys-on-surface-variant);
+    text-align: center;
+    margin: 4px 0;
+}
+
 @media (max-width: 599px) {
     :host {
         padding: 12px 8px;
@@ -140,19 +116,5 @@ section:last-of-type button {
 
     mat-card {
         border-radius: 12px !important;
-    }
-
-    section:first-of-type {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    section:first-of-type a {
-        height: 48px;
-        justify-content: center;
-    }
-
-    section:last-of-type button {
-        height: 48px;
     }
 }

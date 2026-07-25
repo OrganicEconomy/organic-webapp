@@ -1,7 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormGroup, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { LocalDatabaseService } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { MatFormField } from "@angular/material/form-field";
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
@@ -13,6 +12,7 @@ import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
+import { BackupService } from '../../services/backup.service';
 
 @Component({
   selector: 'app-pay',
@@ -32,9 +32,9 @@ import { LevelUpService } from '../../services/level-up.service';
 })
 export class Pay {
   userService = inject(ConnectedUserService)
-  localDB = inject(LocalDatabaseService)
   serverDB = inject(ServerConnexionService)
   levelUp = inject(LevelUpService)
+  backupService = inject(BackupService)
   user = this.userService.getConnectedUser()
   contacts: any = []
   amount = 0;
@@ -79,20 +79,49 @@ export class Pay {
       this.displayMessage("Veuillez cocher la case 'J'ai compris qu'en cliquant sur 'Payer' je ne reviendrai pas en arrière.'")
       return;
     }
+    if (this.userService.isReadOnlySession()) {
+      this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.")
+      return;
+    }
     try {
       const sk = this.userService.getSecretKey()
       const oldLevel = this.user.blockchain.getLevel()
       const tx = this.user.blockchain.pay(sk, this.target, this.amount)
 
-      this.localDB.saveUser(this.user)
-      this.serverDB.saveLastBlock(this.user, sk)
-      if (!this.itIsMe(tx.target)) {
-        this.serverDB.sendTransaction(this.user.serverUrl, tx.export())
+      const onDone = () => {
+        this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
+        this.router.navigate(['/home']);
       }
-      this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
 
-      this.displayMessage("Paiement enregistré et envoyé avec succès.")
-      this.router.navigate(['/home']);
+      if (this.itIsMe(tx.target)) {
+        // Self-pay never sends — a personal ledger update, not network-dependent.
+        // Respects the account's backup policy like any other automatic mutation.
+        this.backupService.recordAutomatic(this.user, sk)
+        this.displayMessage("Paiement enregistré avec succès.")
+        onDone()
+      } else {
+        // Paying someone else needs cross-verification server-side, so the save
+        // here is mandatory regardless of policy — send only after it succeeds
+        // (strict pay → save → send order).
+        this.backupService.recordPayment(this.user, sk).subscribe({
+          next: () => {
+            this.serverDB.sendTransaction(this.user.serverUrl, tx.export()).subscribe({
+              next: () => {
+                this.displayMessage("Paiement enregistré et envoyé avec succès.")
+                onDone()
+              },
+              error: (err) => {
+                console.log(err)
+                this.displayMessage("Paiement enregistré mais non transmis au destinataire — réessayez plus tard.")
+              },
+            })
+          },
+          error: (err) => {
+            console.log(err)
+            this.displayMessage("Paiement fait localement mais pas sauvegardé sur le serveur — le destinataire ne pourra pas encore le recevoir.")
+          },
+        })
+      }
     } catch (err) {
       console.log(err)
       this.displayMessage("Une erreur est survenue oO")

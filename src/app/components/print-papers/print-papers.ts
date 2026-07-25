@@ -1,7 +1,7 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { LocalDatabaseService } from '../../services/local-database.service';
+import { BackupService } from '../../services/backup.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
@@ -23,8 +23,7 @@ import { FormsModule } from '@angular/forms';
 import { jsPDF } from "jspdf";
 import { QRCodeComponent } from 'angularx-qrcode';
 import { environment } from '../../../../src/environments/environment';
-import { intToDate } from 'organic-money/src/index.js';
-import { ServerConnexionService } from '../../services/server-connection.service';
+import { encodePaperQr } from 'organic-protocol';
 
 export interface DialogData {
   waitFunction: any
@@ -54,8 +53,7 @@ const COL_PER_PAGE: number = 2;
 })
 export class PrintPapers {
   userService = inject(ConnectedUserService)
-  localDB = inject(LocalDatabaseService)
-  serverDB = inject(ServerConnexionService)
+  backupService = inject(BackupService)
   user = this.userService.getConnectedUser()
   dialog = inject(Dialog);
 
@@ -114,7 +112,7 @@ export class PrintPapers {
   }
 
   drawQRCode(paper: any, doc: jsPDF, col: number, row: number) {
-    const qrcode = document.getElementById('qrcode-' + paper.hash);
+    const qrcode = document.getElementById('qrcode-' + paper.signature);
     if (qrcode?.firstChild?.firstChild) {
       const imageData: any = this.getBase64Image(qrcode.firstChild.firstChild);
       doc.addImage(imageData, "JPG", 67 + 105 * col, 10 + ROW_HEIGHT * row, 32, 32)
@@ -122,7 +120,7 @@ export class PrintPapers {
   }
 
   getPaperTx(paper: any) {
-    return JSON.stringify(paper)
+    return encodePaperQr({ tx: paper.export() })
   }
 
   drawText(paper: any, doc: jsPDF, col: number, row: number) {
@@ -137,7 +135,7 @@ export class PrintPapers {
     doc.setFontSize(6)
     doc.text("Valable jusqu'au", 10 + col * 105, 24 + row * ROW_HEIGHT)
     doc.setFontSize(10)
-    const d = new Date(intToDate(paper.date))
+    const d = new Date(paper.date)
     d.setDate(d.getDate() + 30);
     doc.text(d.toLocaleDateString("fr-FR"), 10 + col * 105, 28 + row * ROW_HEIGHT)
 
@@ -151,9 +149,9 @@ export class PrintPapers {
 
     doc.setFontSize(5)
     doc.text("Code :", 10 + col * 105, 34 + row * ROW_HEIGHT)
-    doc.text(paper.hash.slice(0, 47), 10 + col * 105, 36 + row * ROW_HEIGHT)
-    doc.text(paper.hash.slice(47, 2 * 47), 10 + col * 105, 38 + row * ROW_HEIGHT)
-    doc.text(paper.hash.slice(2 * 47, -1), 10 + col * 105, 40 + row * ROW_HEIGHT)
+    doc.text(paper.signature.slice(0, 47), 10 + col * 105, 36 + row * ROW_HEIGHT)
+    doc.text(paper.signature.slice(47, 2 * 47), 10 + col * 105, 38 + row * ROW_HEIGHT)
+    doc.text(paper.signature.slice(2 * 47, -1), 10 + col * 105, 40 + row * ROW_HEIGHT)
   }
 
   endOfRowReached(row: number) {
@@ -176,6 +174,8 @@ export class PrintPapers {
   }
 
   generatePapers() {
+    if (this.userService.isReadOnlySession()) return
+
     const sk = this.userService.getSecretKey()
     for (let i = 0; i < this.papercounts.length; i++) {
       if (this.papercounts[i] > 0) {
@@ -184,8 +184,7 @@ export class PrintPapers {
         }
       }
     }
-    this.localDB.saveUser(this.user)
-    this.serverDB.saveLastBlock(this.user, sk)
+    this.backupService.recordAutomatic(this.user, sk)
     this.openDialog()
   }
 

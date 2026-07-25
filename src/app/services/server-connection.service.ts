@@ -9,6 +9,7 @@ import type {
   SaveBlockBody, SignBlockBody,
   PasswordChangeBody,
   TxSendBody, TxListResponse,
+  TxVerifyBody, TxVerifyResponse,
   PapersCashBody, IsCashedResponse,
   TxWire,
 } from 'organic-protocol';
@@ -94,5 +95,11 @@ export class ServerConnexionService {
     return this.http.get<IsCashedResponse>(`${serverUrl}${API_PATH}/papers/isCashed`, {
       params: { hash },
     })
+  }
+
+  /** Deferred verification of an offline-received payment — public, read-only. */
+  public verifyTransaction(serverUrl: string, tx: TxWire): Observable<TxVerifyResponse> {
+    const body: TxVerifyBody = { tx }
+    return this.http.post<TxVerifyResponse>(`${serverUrl}${API_PATH}/tx/verify`, body)
   }
 }

@@ -1,8 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { LocalDatabaseService } from '../../services/local-database.service';
-import { ServerConnexionService } from '../../services/server-connection.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
@@ -10,6 +8,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { toDisplayRow } from '../../utils/transaction-display.util';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
+import { BackupService } from '../../services/backup.service';
 
 @Component({
   selector: 'app-home',
@@ -25,9 +24,8 @@ import { PendingPaymentsService } from '../../services/pending-payments.service'
 })
 export class Home {
   userService = inject(ConnectedUserService)
-  localDB = inject(LocalDatabaseService)
-  serverDB = inject(ServerConnexionService)
   pending = inject(PendingPaymentsService)
+  backupService = inject(BackupService)
   private snackBar = inject(MatSnackBar)
 
   user: any
@@ -44,9 +42,16 @@ export class Home {
       this.router.navigate(['/user-selection']);
       return
     }
-    this.createDailyMoney()
+    if (!this.userService.isReadOnlySession()) {
+      this.createDailyMoney()
+    }
     this.update()
     this.pending.refresh()
+  }
+
+  cash(hash: string): void {
+    this.pending.cash(hash)
+    this.update()
   }
 
   update() {
@@ -64,8 +69,7 @@ export class Home {
     const sk = this.userService.getSecretKey()
     const result = this.user.blockchain.createMoneyAndInvests(sk)
     if (result) {
-      this.localDB.saveUser(this.user)
-      this.serverDB.saveLastBlock(this.user, sk)
+      this.backupService.recordAutomatic(this.user, sk)
       this.snackBar.open(`${result.money.length} unité(s) créée(s) aujourd'hui !`, 'OK', { duration: 3000 })
     }
   }

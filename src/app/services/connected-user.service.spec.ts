@@ -25,4 +25,13 @@ describe('ConnectedUserService', () => {
 
     expect(typeof service.getConnectedUser().blockchain.getMyPublicKey).toBe('function')
   });
+
+  it('should not be read-only by default', () => {
+    expect(service.isReadOnlySession()).toBeFalse();
+  });
+
+  it('should become read-only after setReadOnly()', () => {
+    service.setReadOnly();
+    expect(service.isReadOnlySession()).toBeTrue();
+  });
 });

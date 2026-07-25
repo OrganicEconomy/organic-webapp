@@ -1,3 +1,9 @@
+@if (userService.isReadOnlySession()) {
+<div class="read-only-banner">
+    ⚠ Ce compte est actif sur un autre appareil — lecture seule.
+</div>
+}
+
 <mat-card appearance="outlined" class="identity-card">
     <mat-card-header>
         <mat-card-title>{{ user.name }}</mat-card-title>
@@ -38,7 +44,7 @@
             </div>
             <div class="pending-right">
                 <span class="pending-amount">{{ row.amount }} <i class="bi bi-cookie"></i></span>
-                <button mat-stroked-button (click)="pending.cash(row.hash)">Encaisser</button>
+                <button mat-stroked-button (click)="cash(row.hash)" [disabled]="userService.isReadOnlySession()">Encaisser</button>
             </div>
         </div>
         }

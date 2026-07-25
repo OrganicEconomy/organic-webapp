@@ -1,0 +1,68 @@
+<mat-card appearance="outlined">
+    <mat-card-content>
+        @if (currentQr === null) {
+        <h1>Paiement hors-ligne</h1>
+
+        <section>
+            <mat-form-field>
+                <mat-select placeholder="À qui ?" (selectionChange)="selectedValue($event)" required>
+                    @for (contact of contacts; track contact) {
+                    <mat-option [value]="contact.pk">{{ contact.name }}</mat-option>
+                    }
+                </mat-select>
+            </mat-form-field>
+        </section>
+
+        <section>
+            <mat-form-field>
+                <mat-label>Combien ?</mat-label>
+                <input matInput type="number" [(ngModel)]="amount" [max]="max" min="0" required>
+            </mat-form-field>
+        </section>
+
+        <section>
+            <mat-slider [max]="max" [min]="0" [step]="1" [showTickMarks]="true">
+                <input matSliderThumb [(ngModel)]="amount">
+            </mat-slider>
+        </section>
+
+        <section>
+            <input id="validation" type="checkbox" name="validation" [(ngModel)]="validated">
+            <label for="validation">J'ai compris que les {{ amount }} unité(s) seront immédiatement retirées de mon
+                solde.</label>
+        </section>
+
+        <section>
+            <button mat-flat-button class="pay-btn" (click)="payOffline()" [disabled]="userService.isReadOnlySession()">Payer par QR</button>
+            @if (userService.isReadOnlySession()) {
+            <p class="read-only-notice">Ce compte est actif sur un autre appareil — lecture seule.</p>
+            }
+        </section>
+
+        @if (recentlySent.length > 0) {
+        <mat-divider></mat-divider>
+        <h2>QR émis récemment</h2>
+        @for (row of recentlySent; track row.wireTx.h) {
+        <div class="sent-row">
+            <span>{{ row.date }} · {{ row.amount }} <i class="bi bi-cookie"></i></span>
+            <button mat-stroked-button (click)="review(row.wireTx)">Revoir</button>
+        </div>
+        }
+        }
+        } @else {
+        <h1>Faites scanner ce code</h1>
+        <div class="qr-wrapper">
+            <qrcode [qrdata]="currentQr" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
+        </div>
+        <p class="notice">⚠ Les unités sont déjà retirées de votre solde.</p>
+        <p class="notice">ⓘ Sauvegardez dès que possible pour que le destinataire puisse vérifier ce paiement.</p>
+        <button mat-flat-button (click)="newPayment()">Nouveau paiement</button>
+        }
+    </mat-card-content>
+
+    <mat-card-actions>
+        <a mat-stroked-button routerLink="/pay">
+            <i class="bi bi-arrow-left"></i> Retour
+        </a>
+    </mat-card-actions>
+</mat-card>

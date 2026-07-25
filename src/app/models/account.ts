@@ -12,6 +12,17 @@ export interface Contact {
 export type BackupPolicy = 'every-tx' | 'manual' | 'payments-only'
 
 /**
+ * An offline payment received camera-to-screen, awaiting deferred server-side
+ * verification (POST tx/verify). The payer's own server url must travel with
+ * the tx — it can't be assumed to be OUR server, and there's no other way to
+ * know where to ask once we're past the scan screen (possibly much later).
+ */
+export interface PendingOfflineTx {
+  tx: TxWire
+  url: string
+}
+
+/**
  * One record per account on the device, keyed by publickey (Phase-1.md §5.1).
  * secretkey is always the AES-encrypted, serialized blob (see secret-key-crypto.util.ts) —
  * the plaintext secret key and the login password never get stored here.
@@ -26,7 +37,7 @@ export interface Account {
   backupPolicy: BackupPolicy
   lastBackupAt: string | null
   isuptodate: boolean
-  pendingOfflineTx: TxWire[]
+  pendingOfflineTx: PendingOfflineTx[]
   sentOfflineTx: TxWire[]
   status: 'active'
   devicetoken: string

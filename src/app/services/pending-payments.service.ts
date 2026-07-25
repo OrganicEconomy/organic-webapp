@@ -3,15 +3,15 @@ import { TransactionMaker } from 'organic-money/src/index.js';
 import type { TxWire } from 'organic-protocol';
 import { ConnectedUserService } from './connected-user.service';
 import { ServerConnexionService } from './server-connection.service';
-import { LocalDatabaseService } from './local-database.service';
 import { LevelUpService } from './level-up.service';
+import { BackupService } from './backup.service';
 
 @Injectable({ providedIn: 'root' })
 export class PendingPaymentsService {
   private userService = inject(ConnectedUserService)
   private serverDB = inject(ServerConnexionService)
-  private localDB = inject(LocalDatabaseService)
   private levelUp = inject(LevelUpService)
+  private backupService = inject(BackupService)
 
   tx_list: any[] = []
   dataSource: any[] = []
@@ -49,6 +49,8 @@ export class PendingPaymentsService {
   }
 
   cash(hash: string): void {
+    if (this.userService.isReadOnlySession()) return
+
     const user = this.userService.getConnectedUser()
     const tx = this.tx_list.find((tx: any) => tx.signature === hash)
     if (!tx) return
@@ -56,8 +58,7 @@ export class PendingPaymentsService {
     const oldLevel = user.blockchain.getLevel()
     user.blockchain.receivePay(tx)
 
-    this.localDB.saveUser(user)
-    this.serverDB.saveLastBlock(user, this.userService.getSecretKey())
+    this.backupService.recordAutomatic(user, this.userService.getSecretKey())
 
     this.tx_list = this.tx_list.filter((t: any) => t.signature !== hash)
     this.dataSource = this.dataSource.filter((row: any) => row.hash !== hash)

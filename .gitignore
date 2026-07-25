@@ -38,6 +38,9 @@ testem.log
 /typings
 __screenshots__/
 
+# Dev-only self-signed HTTPS cert (see organic-webserver/keys)
+/certs
+
 # System files
 .DS_Store
 Thumbs.db

@@ -9,7 +9,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { ZXingScannerModule } from '@zxing/ngx-scanner';
+import { QrScanner } from '../qr-scanner/qr-scanner';
 
 @Component({
   selector: 'app-add-contact',
@@ -19,7 +19,7 @@ import { ZXingScannerModule } from '@zxing/ngx-scanner';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    ZXingScannerModule,
+    QrScanner,
   ],
   templateUrl: './add-contact.html',
   styleUrl: './add-contact.css',

@@ -39,7 +39,7 @@
     </mat-card-content>
 
     <mat-card-actions>
-        <button mat-flat-button (click)="generatePapers()" [disabled]="!canGenerate">
+        <button mat-flat-button (click)="generatePapers()" [disabled]="!canGenerate || userService.isReadOnlySession()">
             <i class="bi bi-printer"></i> Générer PDF
         </button>
         <a mat-stroked-button routerLink="/pay">
@@ -49,8 +49,8 @@
 </mat-card>
 
 <div id="qrcodes">
-    @for (paper of papers; track paper.hash) {
-    <qrcode [id]="'qrcode-' + paper.hash" [qrdata]="getPaperTx(paper)" [width]="256" [errorCorrectionLevel]="'M'">
+    @for (paper of papers; track paper.signature) {
+    <qrcode [id]="'qrcode-' + paper.signature" [qrdata]="getPaperTx(paper)" [width]="256" [errorCorrectionLevel]="'M'">
     </qrcode>
     }
 </div>
