@@ -41,6 +41,13 @@ export interface Account {
   sentOfflineTx: TxWire[]
   status: 'active'
   devicetoken: string
+  /**
+   * Signature of the most recent block this device knows the server has
+   * confirmed (null until the first successful save). Lets a save catch up
+   * on any block closed locally in between, instead of only ever sending the
+   * current one and silently leaving older closed blocks behind.
+   */
+  lastSavedBlockSignature: string | null
 }
 
 /** The in-memory shape components work with: a stored Account plus its live blockchain. */
@@ -61,5 +68,6 @@ export function makeDefaultAccount(publickey: string): Account {
     sentOfflineTx: [],
     status: 'active',
     devicetoken: '',
+    lastSavedBlockSignature: null,
   }
 }

@@ -15,6 +15,13 @@ export class ConnectedUserService {
         this.connectedUser = user
         this.secretKey = secretKey
         user.blockchain = new CitizenBlockchain(user.blocks)
+        // First time this account is loaded with the field unset (just
+        // registered/logged in, or an account that predates this field):
+        // whatever the chain currently holds is, as far as we know, what the
+        // server just confirmed — a safe baseline for BackupService's catch-up.
+        if (user.lastSavedBlockSignature == null && user.blocks.length > 0) {
+            user.lastSavedBlockSignature = user.blockchain.lastblock.signature
+        }
     }
 
     public getConnectedUser() : any {
