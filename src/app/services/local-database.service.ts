@@ -51,6 +51,7 @@ export class LocalDatabaseService {
             sentOfflineTx: data.sentOfflineTx,
             status: data.status,
             devicetoken: data.devicetoken,
+            lastSavedBlockSignature: data.lastSavedBlockSignature,
         }
 
         try {

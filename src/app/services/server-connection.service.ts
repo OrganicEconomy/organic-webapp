@@ -52,11 +52,15 @@ export class ServerConnexionService {
     return this.http.post<LoginResponse>(`${serverUrl}${API_PATH}/users/login`, body)
   }
 
-  public saveLastBlock(user: LoadedAccount, sk: string): Observable<unknown> {
-    const block = user.blockchain.lastblock
+  /** Saves one specific block — not necessarily the current one, see BackupService.blocksNeedingSync. */
+  public saveBlock(user: LoadedAccount, sk: string, block: any): Observable<unknown> {
     const headers = blockAuthHeaders(block, sk)
     const body: SaveBlockBody = { publickey: user.blockchain.getMyPublicKey(), block: block.export(), devicetoken: user.devicetoken }
     return this.http.put(`${user.serverUrl}${API_PATH}/users/save`, body, { headers })
+  }
+
+  public saveLastBlock(user: LoadedAccount, sk: string): Observable<unknown> {
+    return this.saveBlock(user, sk, user.blockchain.lastblock)
   }
 
   public signLastBlock(user: LoadedAccount, sk: string): Observable<unknown> {
