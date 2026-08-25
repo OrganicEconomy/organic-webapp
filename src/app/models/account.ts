@@ -1,4 +1,4 @@
-import type { BlockWire, TxWire } from 'organic-protocol'
+import type { BlockWire, MembershipStatus, TxWire } from 'organic-protocol'
 
 export type ContactType = 'citizen' | 'ecosystem'
 
@@ -39,7 +39,7 @@ export interface Account {
   isuptodate: boolean
   pendingOfflineTx: PendingOfflineTx[]
   sentOfflineTx: TxWire[]
-  status: 'active'
+  status: MembershipStatus
   devicetoken: string
   /**
    * Signature of the most recent block this device knows the server has

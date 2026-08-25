@@ -38,6 +38,17 @@ describe('LocalDatabaseService', () => {
     expect(loaded.sentOfflineTx).toEqual([])
   });
 
+  it('should round-trip a non-default membership status (pending-validation)', async () => {
+    const pk = uniquePk('pending-status')
+    const account = makeDefaultAccount(pk)
+    account.status = 'pending-validation'
+
+    await service.saveUser(account)
+    const loaded: any = await service.getUser(pk)
+
+    expect(loaded.status).toBe('pending-validation')
+  });
+
   it('should never persist a plaintext password field', async () => {
     const pk = uniquePk('nopassword')
     const account: any = makeDefaultAccount(pk)
