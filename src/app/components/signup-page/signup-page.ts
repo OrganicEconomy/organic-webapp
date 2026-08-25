@@ -80,6 +80,7 @@ export class SignupPage {
         account.blocks = res.blocks
         account.secretkey = secretkey
         account.devicetoken = res.devicetoken
+        account.status = res.status
         account.contacts = [{ name: 'moi', pk: res.publickey, url: serverUrl, type: 'citizen' }]
 
         const user = await this.localDB.saveUser(account)

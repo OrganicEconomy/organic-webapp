@@ -72,6 +72,7 @@ export class RestoreAccount {
         account.blocks = res.blocks
         account.secretkey = res.secretkey
         account.devicetoken = res.devicetoken
+        account.status = res.status
         account.isuptodate = true
 
         const user = await this.localDB.saveUser(account)

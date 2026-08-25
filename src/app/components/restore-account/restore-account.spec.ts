@@ -77,7 +77,7 @@ describe('RestoreAccount', () => {
     component.restore()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/login`)
-    req.flush({ publickey: TEST_PK, name: 'Alice', mail: 'alice@ex.fr', secretkey: secretkeyForCorrectPassword, blocks: [], devicetoken: 'dt-1' })
+    req.flush({ publickey: TEST_PK, name: 'Alice', mail: 'alice@ex.fr', secretkey: secretkeyForCorrectPassword, status: 'pending-validation', blocks: [], devicetoken: 'dt-1' })
     await waitUntil(() => connectSpy.calls.count() > 0 || component.error !== '')
 
     expect(saveSpy).toHaveBeenCalled()
@@ -85,6 +85,7 @@ describe('RestoreAccount', () => {
     expect(savedAccount.publickey).toBe(TEST_PK)
     expect(savedAccount.serverUrl).toBe(SERVER_URL)
     expect(savedAccount.devicetoken).toBe('dt-1')
+    expect(savedAccount.status).toBe('pending-validation')
 
     expect(connectSpy).toHaveBeenCalled()
     expect(connectSpy.calls.mostRecent().args[1]).toBe(TEST_SK)
