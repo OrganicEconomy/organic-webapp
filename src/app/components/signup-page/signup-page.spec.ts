@@ -78,4 +78,32 @@ describe('SignupPage', () => {
     const savedAccount = saveSpy.calls.mostRecent().args[0]
     expect(savedAccount.status).toBe('pending-validation')
   });
+
+  it('should navigate to /pending-validation when the server reports pending-validation', async () => {
+    const connectSpy = spyOn(userService, 'setConnectedUser').and.callThrough()
+
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '2000-01-01', password: 'a-password' })
+    await component.signup()
+
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
+    const publickey = req.request.body.publickey
+    req.flush({ publickey, status: 'pending-validation', blocks: [], devicetoken: 'dt-1' })
+    await waitUntil(() => connectSpy.calls.count() > 0)
+
+    expect(router.navigate).toHaveBeenCalledWith(['/pending-validation'])
+  });
+
+  it('should navigate to /home when the server reports the account is already active', async () => {
+    const connectSpy = spyOn(userService, 'setConnectedUser').and.callThrough()
+
+    component.signupForm.setValue({ email: 'alice@ex.fr', name: 'Alice', birthdate: '2000-01-01', password: 'a-password' })
+    await component.signup()
+
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
+    const publickey = req.request.body.publickey
+    req.flush({ publickey, status: 'active', blocks: [], devicetoken: 'dt-1' })
+    await waitUntil(() => connectSpy.calls.count() > 0)
+
+    expect(router.navigate).toHaveBeenCalledWith(['/home'])
+  });
 });

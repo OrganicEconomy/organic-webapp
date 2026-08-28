@@ -62,7 +62,11 @@ export class UserSelection {
         return
       }
       this.userService.setConnectedUser(this.users[index], secretKey);
-      this.router.navigate(['/home']);
+      if (this.users[index].status !== 'active') {
+        this.router.navigate(['/pending-validation']);
+      } else {
+        this.router.navigate(['/home']);
+      }
     });
   }
 
