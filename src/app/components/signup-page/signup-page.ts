@@ -85,7 +85,11 @@ export class SignupPage {
 
         const user = await this.localDB.saveUser(account)
         this.userService.setConnectedUser(user, sk)
-        this.router.navigate(['/home']);
+        if (res.status !== 'active') {
+          this.router.navigate(['/pending-validation']);
+        } else {
+          this.router.navigate(['/home']);
+        }
       },
       error: (err) => {
         alert("Utilisateur ou mot de passe invalide")

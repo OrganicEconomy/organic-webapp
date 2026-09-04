@@ -78,7 +78,11 @@ export class RestoreAccount {
         const user = await this.localDB.saveUser(account)
         this.userService.setConnectedUser(user, sk)
         this.restoring = false
-        this.router.navigate(['/home'])
+        if (res.status !== 'active') {
+          this.router.navigate(['/pending-validation'])
+        } else {
+          this.router.navigate(['/home'])
+        }
       },
       error: () => {
         this.error = "Identifiants invalides ou serveur injoignable."

@@ -7,6 +7,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
+import { of } from 'rxjs';
 
 import { UserSelection } from './user-selection';
 import { LocalDatabaseService } from '../../services/local-database.service';
@@ -88,5 +89,43 @@ describe('UserSelection', () => {
     const result = await component.tryUnlock(user, 'a-wrong-password')
 
     expect(result).toBeNull()
+  });
+
+  function waitUntil(predicate: () => boolean, timeoutMs = 2000): Promise<void> {
+    const start = Date.now()
+    return new Promise((resolve, reject) => {
+      const check = () => {
+        if (predicate()) return resolve()
+        if (Date.now() - start > timeoutMs) return reject(new Error('waitUntil: timed out'))
+        setTimeout(check, 10)
+      }
+      check()
+    })
+  }
+
+  it('should navigate to /home when the locally cached status is active', async () => {
+    const secretkey = await encryptSecretKey('ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f', 'correct-password')
+    getUserListSpy.and.resolveTo([{ name: 'Alice', publickey: 'pk', secretkey, status: 'active', blocks: [] }])
+    fixture.detectChanges();
+    await fixture.whenStable();
+    spyOn(component.dialog, 'open').and.returnValue({ afterClosed: () => of('correct-password') } as any)
+
+    component.selectUser(0)
+    await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0)
+
+    expect(router.navigate).toHaveBeenCalledWith(['/home']);
+  });
+
+  it('should navigate to /pending-validation when the locally cached status is pending-validation', async () => {
+    const secretkey = await encryptSecretKey('ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f', 'correct-password')
+    getUserListSpy.and.resolveTo([{ name: 'Camille', publickey: 'pk', secretkey, status: 'pending-validation', blocks: [] }])
+    fixture.detectChanges();
+    await fixture.whenStable();
+    spyOn(component.dialog, 'open').and.returnValue({ afterClosed: () => of('correct-password') } as any)
+
+    component.selectUser(0)
+    await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0)
+
+    expect(router.navigate).toHaveBeenCalledWith(['/pending-validation']);
   });
 });

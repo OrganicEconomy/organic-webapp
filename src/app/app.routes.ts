@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 import { SignupPage } from './components/signup-page/signup-page';
 import { ServerSelection } from './components/server-selection/server-selection';
 import { RestoreAccount } from './components/restore-account/restore-account';
+import { PendingValidation } from './components/pending-validation/pending-validation';
 import { MainLayout } from './components/main-layout/main-layout';
 import { Home } from './components/home/home';
 import { AccountDetails } from './components/account-details/account-details';
@@ -25,6 +26,7 @@ export const routes: Routes = [
     { path: "server-selection", component: ServerSelection },
     { path: "signup", component: SignupPage },
     { path: "restore-account", component: RestoreAccount },
+    { path: "pending-validation", component: PendingValidation },
     // Secondary screens reached from within a tab: full-screen, back arrow, no bottom bar.
     { path: "addcontact", component: AddContact },
     { path: "cashpapers", component: CashPapers },
