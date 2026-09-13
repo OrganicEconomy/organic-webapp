@@ -89,8 +89,21 @@ describe('RestoreAccount', () => {
 
     expect(connectSpy).toHaveBeenCalled()
     expect(connectSpy.calls.mostRecent().args[1]).toBe(TEST_SK)
-    expect(router.navigate).toHaveBeenCalledWith(['/home'])
+    expect(router.navigate).toHaveBeenCalledWith(['/pending-validation'])
     expect(component.error).toBe('')
+  });
+
+  it('should navigate to /home when the server reports the account is already active', async () => {
+    const connectSpy = spyOn(userService, 'setConnectedUser').and.callThrough()
+
+    component.restoreForm.setValue({ serverUrl: SERVER_URL, email: 'alice@ex.fr', password: 'correct-password' })
+    component.restore()
+
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/login`)
+    req.flush({ publickey: TEST_PK, name: 'Alice', mail: 'alice@ex.fr', secretkey: secretkeyForCorrectPassword, status: 'active', blocks: [], devicetoken: 'dt-1' })
+    await waitUntil(() => connectSpy.calls.count() > 0)
+
+    expect(router.navigate).toHaveBeenCalledWith(['/home'])
   });
 
   it('should show an error and NOT connect when the password is wrong, without comparing it directly', async () => {

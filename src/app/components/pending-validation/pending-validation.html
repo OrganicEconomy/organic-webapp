@@ -1,0 +1,33 @@
+@if (user) {
+  <mat-card appearance="outlined">
+    @if (user.status === 'rejected') {
+      <mat-card-header>
+        <mat-card-title>Compte refusé</mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <p>Votre demande d'inscription a été refusée par un membre du cœur.</p>
+      </mat-card-content>
+    } @else {
+      <mat-card-header>
+        <mat-card-title>Compte en attente de validation</mat-card-title>
+      </mat-card-header>
+
+      <mat-card-content>
+        <p>Bonjour {{ user.name }}, votre compte est créé mais pas encore actif.</p>
+        <p>Montrez ce code à un membre du cœur pour valider votre compte tout de suite :</p>
+      </mat-card-content>
+
+      <qrcode [qrdata]="qrData" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
+
+      <mat-card-content>
+        <p>Sinon, un membre du cœur validera votre demande depuis son appli — patientez.</p>
+        <p class="auto-check"><i class="bi bi-arrow-repeat"></i> Vérification automatique</p>
+      </mat-card-content>
+    }
+
+    <mat-card-actions>
+      <a mat-button routerLink="/user-selection"><i class="bi bi-power"></i> Déconnexion</a>
+    </mat-card-actions>
+  </mat-card>
+}
