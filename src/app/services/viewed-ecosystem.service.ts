@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core'
 import { EcosystemBlockchain } from 'organic-money/src/index.js'
 import type { EcosystemInfoResponse } from 'organic-protocol'
 
-export type LoadedEcosystem = EcosystemInfoResponse & { blockchain: EcosystemBlockchain }
+export type LoadedEcosystem = EcosystemInfoResponse & { blockchain: any }
 
 @Injectable({ providedIn: 'root' })
 export class ViewedEcosystemService {
