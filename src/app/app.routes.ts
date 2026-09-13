@@ -17,6 +17,9 @@ import { ReceiveOffline } from './components/receive-offline/receive-offline';
 import { PrintPapers } from './components/print-papers/print-papers';
 import { TransactionList } from './components/transaction-list/transaction-list';
 import { UserSelection } from './components/user-selection/user-selection';
+import { ValidationQueue } from './components/validation-queue/validation-queue';
+import { ValidationDetail } from './components/validation-detail/validation-detail';
+import { ScanCandidate } from './components/scan-candidate/scan-candidate';
 
 
 export const routes: Routes = [
@@ -34,6 +37,9 @@ export const routes: Routes = [
     { path: "pay-offline", component: PayOffline },
     { path: "receive-offline", component: ReceiveOffline },
     { path: "transactions", component: TransactionList },
+    { path: "validations", component: ValidationQueue },
+    { path: "validations/:pk", component: ValidationDetail },
+    { path: "scan-candidate", component: ScanCandidate },
     // The four permanent tabs (Phase-1.md §7) share the bottom-nav shell.
     {
         path: "", component: MainLayout, children: [

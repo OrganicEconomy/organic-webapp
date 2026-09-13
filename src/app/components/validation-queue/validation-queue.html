@@ -1,0 +1,34 @@
+@if (user) {
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Validations en attente</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (candidates.length === 0) {
+    <p class="empty">Personne n'attend.</p>
+    } @else {
+    <div class="candidate-list">
+      @for (candidate of candidates; track candidate.pk) {
+      <div class="candidate-card">
+        <div class="candidate-info">
+          <span class="candidate-name">{{ candidate.name }}</span>
+          <span class="candidate-meta">demandé {{ requestedAgo(candidate.requestedAt) }}</span>
+        </div>
+        <a mat-stroked-button [routerLink]="['/validations', candidate.pk]">Examiner</a>
+      </div>
+      }
+    </div>
+    }
+  </mat-card-content>
+
+  <mat-card-actions>
+    <a mat-stroked-button routerLink="/scan-candidate">
+      <i class="bi bi-qr-code-scan"></i> Ou scanner quelqu'un présent avec vous
+    </a>
+    <a mat-stroked-button routerLink="/account">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+  </mat-card-actions>
+</mat-card>
+}
