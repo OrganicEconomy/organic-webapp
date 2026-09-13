@@ -5,6 +5,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { decodeQr } from 'organic-protocol';
+import { CitizenBlockchain } from 'organic-money/src/index.js';
 
 import { PendingValidation } from './pending-validation';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -12,6 +13,20 @@ import { LocalDatabaseService } from '../../services/local-database.service';
 
 const SERVER_URL = 'https://trifouillis.fr'
 const STATUS_URL = `${SERVER_URL}/api/v1/validations/status/camille-pk`
+const ADMIN_SK_HEX = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f'
+
+function makeValidatedBlocks(): unknown[] {
+  const bc = new CitizenBlockchain()
+  bc.makeBirthBlock('Camille', new Date(2000, 0, 1))
+  bc.validateAccount(ADMIN_SK_HEX)
+  return bc.export()
+}
+
+function makePendingBlocks(): unknown[] {
+  const bc = new CitizenBlockchain()
+  bc.makeBirthBlock('Camille', new Date(2000, 0, 1))
+  return bc.export()
+}
 
 let fakeAccount: any;
 let stubConnectedUserService: any;
@@ -108,7 +123,7 @@ describe('PendingValidation', () => {
   it('should navigate to /home when the server reports active on the first check', () => {
     createComponent();
 
-    httpMock.expectOne(STATUS_URL).flush({ status: 'active' });
+    httpMock.expectOne(STATUS_URL).flush({ status: 'active', blocks: makeValidatedBlocks() });
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
@@ -117,11 +132,20 @@ describe('PendingValidation', () => {
     const saveSpy = spyOn(localDB, 'saveUser').and.callThrough();
     createComponent();
 
-    httpMock.expectOne(STATUS_URL).flush({ status: 'active' });
+    httpMock.expectOne(STATUS_URL).flush({ status: 'active', blocks: makeValidatedBlocks() });
 
     expect(saveSpy).toHaveBeenCalled();
     expect(saveSpy.calls.mostRecent().args[0].status).toBe('active');
     expect(fakeAccount.status).toBe('active');
+  });
+
+  it('should adopt the server\'s validated chain so the home screen shows the earned level', () => {
+    createComponent();
+
+    httpMock.expectOne(STATUS_URL).flush({ status: 'active', blocks: makeValidatedBlocks() });
+
+    expect(component.user.blockchain.isValidated()).toBe(true);
+    expect(component.user.blockchain.getLevel()).toBe(1);
   });
 
   it('should schedule a follow-up check 30s later when still pending', fakeAsync(() => {
@@ -139,7 +163,7 @@ describe('PendingValidation', () => {
     httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
 
     tick(30000);
-    httpMock.expectOne(STATUS_URL).flush({ status: 'active' });
+    httpMock.expectOne(STATUS_URL).flush({ status: 'active', blocks: makeValidatedBlocks() });
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
   }));
@@ -180,7 +204,7 @@ describe('PendingValidation', () => {
     httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
 
     tick(30000);
-    httpMock.expectOne(STATUS_URL).flush({ status: 'rejected' });
+    httpMock.expectOne(STATUS_URL).flush({ status: 'rejected', blocks: makePendingBlocks() });
 
     expect(router.navigate).not.toHaveBeenCalledWith(['/home']);
     expect(component.user.status).toBe('rejected');
