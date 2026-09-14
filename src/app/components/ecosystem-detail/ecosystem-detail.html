@@ -11,13 +11,13 @@
     <p>Vous êtes : {{ roleLabel }}</p>
 
     <p>Solde : {{ balance }} ⬡</p>
-    <p>Invests disponibles : {{ affordableInvests }}</p>
+    <p>Investissements disponibles : {{ affordableInvests }}</p>
 
     <p>Admins : {{ admins.length > 0 ? admins.join(', ') : 'aucun' }}</p>
     <p>Actants : {{ actorCount }} personne{{ actorCount > 1 ? 's' : '' }}</p>
     <p>Payants : {{ payers.length > 0 ? payers.join(', ') : 'aucun' }}</p>
 
-    <h3>Invests à venir</h3>
+    <h3>Investissements à venir</h3>
     <div class="invest-table">
       @for (row of upcomingInvests; track row.label) {
       <div class="invest-row">
@@ -31,7 +31,7 @@
 
   <mat-card-actions>
     <a mat-stroked-button class="invest-link" [routerLink]="['/ecosystems', ecosystemPk, 'invest']">
-      <i class="bi bi-piggy-bank"></i> Engager mes invests
+      <i class="bi bi-piggy-bank"></i> Engager mes investissements
     </a>
     @if (isAdmin) {
     <a mat-stroked-button class="roles-link" [routerLink]="['/ecosystems', ecosystemPk, 'roles']">
