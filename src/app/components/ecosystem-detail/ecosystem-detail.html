@@ -1,0 +1,38 @@
+@if (user) {
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>{{ name || 'Écosystème' }}</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (loadError) {
+    <p class="error">{{ loadError }}</p>
+    } @else {
+    <p>Vous êtes : {{ roleLabel }}</p>
+
+    <p>Solde : {{ balance }} ⬡</p>
+    <p>Invests disponibles : {{ affordableInvests }}</p>
+
+    <p>Admins : {{ admins.length > 0 ? admins.join(', ') : 'aucun' }}</p>
+    <p>Actants : {{ actorCount }} personne{{ actorCount > 1 ? 's' : '' }}</p>
+    <p>Payants : {{ payers.length > 0 ? payers.join(', ') : 'aucun' }}</p>
+
+    <h3>Invests à venir</h3>
+    <div class="invest-table">
+      @for (row of upcomingInvests; track row.label) {
+      <div class="invest-row">
+        <span>{{ row.label }}</span>
+        <span>{{ row.count }}</span>
+      </div>
+      }
+    </div>
+    }
+  </mat-card-content>
+
+  <mat-card-actions>
+    <a mat-stroked-button routerLink="/ecosystems">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+  </mat-card-actions>
+</mat-card>
+}

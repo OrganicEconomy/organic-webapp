@@ -1,0 +1,37 @@
+@if (user) {
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Créer un écosystème</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <mat-form-field>
+      <mat-label>Nom</mat-label>
+      <input matInput [(ngModel)]="name">
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Description (optionnel)</mat-label>
+      <textarea matInput [(ngModel)]="description"></textarea>
+    </mat-form-field>
+
+    <mat-checkbox [(ngModel)]="usePosition">Utiliser ma position</mat-checkbox>
+
+    <p class="hint">
+      <i class="bi bi-info-circle"></i>
+      Vous en devenez admin et actant automatiquement. Aucune validation requise.
+    </p>
+
+    @if (actionError) {
+    <p class="error">{{ actionError }}</p>
+    }
+  </mat-card-content>
+
+  <mat-card-actions>
+    <button mat-flat-button [disabled]="!name" (click)="create()">Créer</button>
+    <a mat-stroked-button routerLink="/ecosystems">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+  </mat-card-actions>
+</mat-card>
+}

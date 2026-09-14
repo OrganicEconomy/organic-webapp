@@ -78,7 +78,22 @@
 
     <mat-divider [inset]="true"></mat-divider>
 
+    <mat-card-content>
+        @if (myEcosystems.length === 0) {
+        <p class="no-ecosystems">Vous n'avez de rôle dans aucun écosystème pour l'instant.</p>
+        } @else {
+        <mat-list>
+            @for (eco of myEcosystems; track eco.publickey) {
+            <mat-list-item role="listitem">
+                <a [routerLink]="['/ecosystems', eco.publickey]">{{ eco.name }} — {{ eco.role }}</a>
+            </mat-list-item>
+            }
+        </mat-list>
+        }
+    </mat-card-content>
+
     <mat-card-actions>
+        <a mat-button routerLink="/ecosystems"><i class="bi bi-compass"></i> Annuaire</a>
         <a mat-button routerLink="/validations"><i class="bi bi-person-check"></i> Validations en attente</a>
     </mat-card-actions>
 </mat-card>

@@ -1,4 +1,6 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import type { EcosystemInfoResponse } from 'organic-protocol';
 
 import { ViewedEcosystemService } from './viewed-ecosystem.service';
@@ -7,14 +9,18 @@ import { makeDefaultAccount } from '../models/account';
 
 describe('ViewedEcosystemService', () => {
   let service: ViewedEcosystemService;
+  let httpMock: HttpTestingController;
 
   const ECO_INFO: EcosystemInfoResponse = {
     publickey: 'eco-pk', name: 'Boulangerie associative', description: null, lat: null, lng: null, iscore: false, blocks: [],
   }
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     service = TestBed.inject(ViewedEcosystemService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
   it('should have no viewed ecosystem before setViewedEcosystem is called', () => {
@@ -31,6 +37,7 @@ describe('ViewedEcosystemService', () => {
     const connectedUserService = TestBed.inject(ConnectedUserService);
     const account: any = makeDefaultAccount('pk-1')
     connectedUserService.setConnectedUser(account, 'sk')
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([]);
 
     service.setViewedEcosystem(ECO_INFO);
 

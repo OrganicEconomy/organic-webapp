@@ -6,7 +6,7 @@ import { LocalDatabaseService } from '../../services/local-database.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { BackupService } from '../../services/backup.service';
 import { encodeContactQr } from 'organic-protocol';
-import type { InfoResponse } from 'organic-protocol';
+import type { InfoResponse, MyEcosystemEntry } from 'organic-protocol';
 import type { BackupPolicy } from '../../models/account';
 import { encryptSecretKey, decryptSecretKey } from '../../services/secret-key-crypto.util';
 import { MatButtonModule } from '@angular/material/button';
@@ -55,6 +55,7 @@ export class AccountDetails {
   lastBackupAt: string | null = null
 
   serverInfo: InfoResponse | null = null
+  myEcosystems: MyEcosystemEntry[] = []
 
   oldPassword = ""
   newPassword = ""
@@ -75,6 +76,7 @@ export class AccountDetails {
 
     this.backupPolicy = this.user.backupPolicy
     this.lastBackupAt = this.user.lastBackupAt
+    this.myEcosystems = this.user.myEcosystems ?? []
 
     this.serverDB.getServerInfo(this.user.serverUrl).subscribe({
       next: (info) => { this.serverInfo = info },

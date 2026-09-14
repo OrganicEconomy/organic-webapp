@@ -72,6 +72,19 @@ describe('AccountDetails', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should default to an empty myEcosystems list when the account has none cached yet', () => {
+    expect(component.myEcosystems).toEqual([]);
+  });
+
+  it('should expose the cached myEcosystems list from the connected user', () => {
+    fakeAccount.myEcosystems = [{ publickey: 'eco-pk', name: 'Boulangerie associative', role: 'actor' }];
+
+    const localFixture = TestBed.createComponent(AccountDetails);
+    const localComponent = localFixture.componentInstance;
+
+    expect(localComponent.myEcosystems).toEqual([{ publickey: 'eco-pk', name: 'Boulangerie associative', role: 'actor' }]);
+  });
+
   it('should show the birth block\'s close date as the inscription date', () => {
     expect(component.inscription_date).toBe(new Date(2026, 0, 15).toLocaleDateString('fr-FR'));
   });
