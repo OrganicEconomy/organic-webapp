@@ -10,6 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { BackupService } from '../../services/backup.service';
+import { extractServerErrorMessage } from '../../services/server-error.util';
 
 @Component({
   selector: 'app-ecosystem-invest',
@@ -75,13 +76,13 @@ export class EcosystemInvest {
             },
             error: (err) => {
               console.log(err);
-              this.displayMessage("Engagement enregistré mais non transmis — réessayez plus tard.");
+              this.displayMessage(extractServerErrorMessage(err) ?? "Engagement enregistré mais non transmis — réessayez plus tard.");
             },
           });
         },
         error: (err) => {
           console.log(err);
-          this.displayMessage("Engagement fait localement mais pas sauvegardé sur le serveur.");
+          this.displayMessage(extractServerErrorMessage(err) ?? "Engagement fait localement mais pas sauvegardé sur le serveur.");
         },
       });
     } catch (err) {

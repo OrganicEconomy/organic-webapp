@@ -173,5 +173,27 @@ describe('EcosystemInvest', () => {
 
       expect(router.navigate).not.toHaveBeenCalledWith(['/ecosystems', ECO_PK]);
     });
+
+    it("should show the server's own error message when the send is rejected", () => {
+      spyOn(component, 'displayMessage');
+      serverSpy.sendEcosystemTx.and.returnValue(throwError(() => ({ error: { error: 'Unsufficient funds.' } })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Unsufficient funds.');
+    });
+
+    it('should fall back to a generic message when the rejection carries no server message', () => {
+      spyOn(component, 'displayMessage');
+      serverSpy.sendEcosystemTx.and.returnValue(throwError(() => ({ status: 0 })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Engagement enregistré mais non transmis — réessayez plus tard.');
+    });
   });
 });

@@ -14,6 +14,7 @@ import { ServerConnexionService } from '../../services/server-connection.service
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { BackupService } from '../../services/backup.service';
 import { resolveContactName } from '../../services/resolve-contact-name.util';
+import { extractServerErrorMessage } from '../../services/server-error.util';
 
 type RoleType = 'admin' | 'actor' | 'payer';
 
@@ -138,13 +139,13 @@ export class EcosystemRoles {
             },
             error: (err) => {
               console.log(err);
-              this.displayMessage("Action enregistrée mais non transmise — réessayez plus tard.");
+              this.displayMessage(extractServerErrorMessage(err) ?? "Action enregistrée mais non transmise — réessayez plus tard.");
             },
           });
         },
         error: (err) => {
           console.log(err);
-          this.displayMessage("Action faite localement mais pas sauvegardée sur le serveur.");
+          this.displayMessage(extractServerErrorMessage(err) ?? "Action faite localement mais pas sauvegardée sur le serveur.");
         },
       });
     } catch (err) {

@@ -161,6 +161,24 @@ describe('EcosystemRoles', () => {
       expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
     });
 
+    it("should show the server's own error message when the removal is rejected (e.g. still payer)", () => {
+      spyOn(component, 'displayMessage');
+      serverSpy.sendEcosystemTx.and.returnValue(throwError(() => ({ error: { error: 'Cannot remove actor who is still payer.' } })));
+
+      component.removeRole('actor', 'actor-pk');
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Cannot remove actor who is still payer.');
+    });
+
+    it('should fall back to a generic message when the rejection carries no server message', () => {
+      spyOn(component, 'displayMessage');
+      serverSpy.sendEcosystemTx.and.returnValue(throwError(() => ({ status: 0 })));
+
+      component.removeRole('actor', 'actor-pk');
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Action enregistrée mais non transmise — réessayez plus tard.');
+    });
+
     it('should not remove when the session is read-only', () => {
       stubConnectedUserService.isReadOnlySession = () => true;
 
