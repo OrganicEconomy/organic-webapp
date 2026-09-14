@@ -5,7 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
-import { resolveContactName } from '../../utils/resolve-contact-name.util';
+import { resolveContactName } from '../../services/resolve-contact-name.util';
 
 interface InvestHorizon {
   label: string
