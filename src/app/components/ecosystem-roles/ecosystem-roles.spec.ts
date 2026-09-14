@@ -122,6 +122,14 @@ describe('EcosystemRoles', () => {
     expect(component.payers).toEqual([{ pk: 'payer-pk', name: 'payer-pk…' }]);
   });
 
+  it('should show "Moi" for the connected user\'s own public key instead of a truncated key', () => {
+    fakeBlockchain.getAdmins.and.returnValue(new Set(['admin-pk', 'my-pk']));
+
+    createComponent();
+
+    expect(component.admins).toEqual([{ pk: 'admin-pk', name: 'Camille' }, { pk: 'my-pk', name: 'Moi' }]);
+  });
+
   describe('removeRole', () => {
     beforeEach(() => createComponent());
 

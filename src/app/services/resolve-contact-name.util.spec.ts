@@ -17,5 +17,17 @@ describe('resolve-contact-name.util', () => {
     it('should return a truncated key when there are no contacts at all', () => {
       expect(resolveContactName('3f9a2b7c1d0e5f6a8b9c0d1e2f3a4b5c', [])).toBe('3f9a2b7c…');
     });
+
+    it('should return "Moi" when the public key is the connected user\'s own', () => {
+      const contacts: any = [{ pk: 'farid-pk', name: 'Farid', url: '', type: 'citizen' }]
+
+      expect(resolveContactName('my-pk', contacts, 'my-pk')).toBe('Moi');
+    });
+
+    it('should still resolve a contact name when a myPublicKey is given but does not match', () => {
+      const contacts: any = [{ pk: 'farid-pk', name: 'Farid', url: '', type: 'citizen' }]
+
+      expect(resolveContactName('farid-pk', contacts, 'my-pk')).toBe('Farid');
+    });
   });
 });

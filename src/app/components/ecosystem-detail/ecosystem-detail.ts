@@ -69,8 +69,8 @@ export class EcosystemDetail {
     this.balance = blockchain.getAvailableMoneyAmount();
     this.affordableInvests = blockchain.getAffordableInvestAmount();
     this.upcomingInvests = this.computeUpcomingInvests(blockchain);
-    this.admins = [...blockchain.getAdmins() as Set<string>].map((pk) => resolveContactName(pk, this.user.contacts));
-    this.payers = [...(blockchain.getPayers() as Map<string, number>).keys()].map((pk) => resolveContactName(pk, this.user.contacts));
+    this.admins = [...blockchain.getAdmins() as Set<string>].map((pk) => resolveContactName(pk, this.user.contacts, this.user.publickey));
+    this.payers = [...(blockchain.getPayers() as Map<string, number>).keys()].map((pk) => resolveContactName(pk, this.user.contacts, this.user.publickey));
     this.actorCount = blockchain.getActors().size;
   }
 

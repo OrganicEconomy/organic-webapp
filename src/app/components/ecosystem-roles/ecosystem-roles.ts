@@ -93,7 +93,7 @@ export class EcosystemRoles {
   }
 
   private toRoleHolder(pk: string): RoleHolder {
-    return { pk, name: resolveContactName(pk, this.user.contacts) };
+    return { pk, name: resolveContactName(pk, this.user.contacts, this.user.publickey) };
   }
 
   removeRole(role: RoleType, pk: string): void {

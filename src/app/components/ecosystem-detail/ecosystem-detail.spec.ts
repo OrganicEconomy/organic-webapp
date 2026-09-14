@@ -151,6 +151,15 @@ describe('EcosystemDetail', () => {
     expect(component.admins).toEqual(['Camille']);
   });
 
+  it('should show "Moi" for the connected user\'s own public key instead of a truncated key', () => {
+    fakeBlockchain.getAdmins.and.returnValue(new Set(['admin-pk', 'farid-pk']));
+
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+
+    expect(component.admins).toEqual(['Camille', 'Moi']);
+  });
+
   it('should fall back to a truncated key for a payer who is not a contact', () => {
     createComponent();
     httpMock.expectOne(INFO_URL).flush(ECO_INFO);
