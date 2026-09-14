@@ -1,0 +1,19 @@
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Scanner un candidat</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    <app-qr-scanner (scanSuccess)="scanSuccessHandler($event)"></app-qr-scanner>
+    @if (scanError) {
+    <p class="scan-error">{{ scanError }}</p>
+    }
+    <p>Visez le QR affiché par la personne à valider.</p>
+  </mat-card-content>
+
+  <mat-card-actions>
+    <a mat-stroked-button routerLink="/validations">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+  </mat-card-actions>
+</mat-card>

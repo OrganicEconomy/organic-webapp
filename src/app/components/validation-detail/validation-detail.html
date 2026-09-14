@@ -1,0 +1,28 @@
+@if (user) {
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>{{ candidateName || 'Examiner' }}</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (loadError) {
+    <p class="error">{{ loadError }}</p>
+    } @else {
+    <p>Nom : {{ candidateName }}</p>
+    }
+    @if (actionError) {
+    <p class="error">{{ actionError }}</p>
+    }
+  </mat-card-content>
+
+  <mat-card-actions>
+    @if (!loadError) {
+    <button mat-flat-button (click)="approve()">Approuver</button>
+    <button mat-stroked-button (click)="reject()">Refuser</button>
+    }
+    <a mat-stroked-button routerLink="/validations">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+  </mat-card-actions>
+</mat-card>
+}

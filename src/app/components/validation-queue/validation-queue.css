@@ -1,0 +1,87 @@
+:host {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 24px 16px;
+  box-sizing: border-box;
+}
+
+mat-card {
+  width: 100%;
+  max-width: 640px;
+  border-radius: 16px !important;
+}
+
+mat-card-header {
+  padding: 16px 16px 0 !important;
+}
+
+mat-card-content {
+  padding: 16px !important;
+}
+
+mat-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 16px 16px !important;
+}
+
+mat-card-actions a {
+  width: 100%;
+  height: 44px;
+  font-size: 1rem;
+  border-radius: 8px !important;
+}
+
+.candidate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.candidate-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant, #ccc);
+  border-radius: 8px;
+}
+
+.candidate-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.candidate-name {
+  font-weight: 500;
+}
+
+.candidate-meta {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.empty {
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+  padding: 16px 0;
+}
+
+@media (max-width: 599px) {
+  :host {
+    padding: 12px 8px;
+  }
+
+  mat-card {
+    border-radius: 12px !important;
+  }
+
+  mat-card-actions a {
+    height: 48px;
+  }
+}
