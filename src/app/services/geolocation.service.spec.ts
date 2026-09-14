@@ -1,7 +1,15 @@
-import { getCurrentPosition } from './geolocation.util';
+import { TestBed } from '@angular/core/testing';
 
-describe('geolocation.util', () => {
+import { GeolocationService } from './geolocation.service';
+
+describe('GeolocationService', () => {
+  let service: GeolocationService;
   const originalGeolocation = (navigator as any).geolocation
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = TestBed.inject(GeolocationService);
+  });
 
   afterEach(() => {
     Object.defineProperty(navigator, 'geolocation', { value: originalGeolocation, configurable: true })
@@ -18,7 +26,7 @@ describe('geolocation.util', () => {
         },
       })
 
-      const position = await getCurrentPosition()
+      const position = await service.getCurrentPosition()
 
       expect(position).toEqual({ lat: 45.75, lng: 4.85 })
     });
@@ -33,7 +41,7 @@ describe('geolocation.util', () => {
         },
       })
 
-      const position = await getCurrentPosition()
+      const position = await service.getCurrentPosition()
 
       expect(position).toBeNull()
     });
@@ -41,7 +49,7 @@ describe('geolocation.util', () => {
     it('should resolve null without throwing when the browser has no geolocation support', async () => {
       Object.defineProperty(navigator, 'geolocation', { configurable: true, value: undefined })
 
-      const position = await getCurrentPosition()
+      const position = await service.getCurrentPosition()
 
       expect(position).toBeNull()
     });

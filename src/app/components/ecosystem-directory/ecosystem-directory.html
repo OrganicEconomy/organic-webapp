@@ -1,0 +1,33 @@
+@if (user) {
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Écosystèmes</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (ecosystems.length === 0) {
+    <p class="empty">Aucun écosystème pour l'instant.</p>
+    } @else {
+    <div class="ecosystem-list">
+      @for (eco of ecosystems; track eco.publickey) {
+      <a class="ecosystem-card" [routerLink]="['/ecosystems', eco.publickey]">
+        <span class="ecosystem-name">{{ eco.name }}</span>
+        @if (eco.distanceKm !== undefined) {
+        <span class="ecosystem-distance">{{ formatDistance(eco.distanceKm) }}</span>
+        }
+      </a>
+      }
+    </div>
+    }
+  </mat-card-content>
+
+  <mat-card-actions>
+    <a mat-flat-button routerLink="/ecosystems/new">
+      <i class="bi bi-plus-lg"></i> Créer le mien
+    </a>
+    <a mat-stroked-button routerLink="/account">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+  </mat-card-actions>
+</mat-card>
+}
