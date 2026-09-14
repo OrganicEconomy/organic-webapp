@@ -24,12 +24,6 @@ mat-card-content {
   gap: 0.5rem;
 }
 
-mat-radio-group {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 8px;
-}
-
 mat-form-field {
   width: 100%;
 }

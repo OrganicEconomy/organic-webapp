@@ -5,14 +5,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { BackupService } from '../../services/backup.service';
-
-type Pocket = 'invests' | 'money';
 
 @Component({
   selector: 'app-ecosystem-invest',
@@ -23,7 +20,6 @@ type Pocket = 'invests' | 'money';
     MatButtonModule,
     MatFormFieldModule,
     MatInputModule,
-    MatRadioModule,
     MatSliderModule,
   ],
   templateUrl: './ecosystem-invest.html',
@@ -37,7 +33,6 @@ export class EcosystemInvest {
 
   user: any;
   ecosystemPk = '';
-  pocket: Pocket = 'invests';
   dailyAmount = 0;
   days = 1;
 
@@ -51,9 +46,7 @@ export class EcosystemInvest {
   }
 
   get max(): number {
-    return this.pocket === 'invests'
-      ? this.user.blockchain.getAffordableInvestAmount()
-      : this.user.blockchain.getAffordableMoneyAmount();
+    return this.user.blockchain.getAffordableInvestAmount();
   }
 
   engage(): void {
@@ -71,9 +64,7 @@ export class EcosystemInvest {
     }
     try {
       const sk = this.userService.getSecretKey();
-      const tx = this.pocket === 'invests'
-        ? this.user.blockchain.engageInvests(sk, this.ecosystemPk, this.dailyAmount, this.days)
-        : this.user.blockchain.engageMoney(sk, this.ecosystemPk, this.dailyAmount, this.days);
+      const tx = this.user.blockchain.engageInvests(sk, this.ecosystemPk, this.dailyAmount, this.days);
 
       this.backupService.recordPayment(this.user, sk).subscribe({
         next: () => {

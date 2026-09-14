@@ -28,9 +28,7 @@ describe('EcosystemInvest', () => {
     fakeTx = { export: () => ({ exported: true }) };
     fakeBlockchain = {
       engageInvests: jasmine.createSpy('engageInvests').and.returnValue(fakeTx),
-      engageMoney: jasmine.createSpy('engageMoney').and.returnValue(fakeTx),
       getAffordableInvestAmount: jasmine.createSpy('getAffordableInvestAmount').and.returnValue(12),
-      getAffordableMoneyAmount: jasmine.createSpy('getAffordableMoneyAmount').and.returnValue(7),
     };
     fakeAccount = { serverUrl: SERVER_URL, blockchain: fakeBlockchain };
     stubConnectedUserService = {
@@ -72,14 +70,8 @@ describe('EcosystemInvest', () => {
   });
 
   describe('max', () => {
-    it("should read the invests daily cap when the pocket is 'invests'", () => {
-      component.pocket = 'invests';
+    it('should read the invests daily cap', () => {
       expect(component.max).toBe(12);
-    });
-
-    it("should read the money daily cap when the pocket is 'money'", () => {
-      component.pocket = 'money';
-      expect(component.max).toBe(7);
     });
   });
 
@@ -112,26 +104,13 @@ describe('EcosystemInvest', () => {
       expect(fakeBlockchain.engageInvests).not.toHaveBeenCalled();
     });
 
-    it("should call engageInvests when the pocket is 'invests'", () => {
-      component.pocket = 'invests';
+    it('should call engageInvests with the daily amount and number of days', () => {
       component.dailyAmount = 3;
       component.days = 5;
 
       component.engage();
 
       expect(fakeBlockchain.engageInvests).toHaveBeenCalledWith(SK, ECO_PK, 3, 5);
-      expect(fakeBlockchain.engageMoney).not.toHaveBeenCalled();
-    });
-
-    it("should call engageMoney when the pocket is 'money'", () => {
-      component.pocket = 'money';
-      component.dailyAmount = 2;
-      component.days = 4;
-
-      component.engage();
-
-      expect(fakeBlockchain.engageMoney).toHaveBeenCalledWith(SK, ECO_PK, 2, 4);
-      expect(fakeBlockchain.engageInvests).not.toHaveBeenCalled();
     });
 
     it('should not save or send when building the transaction throws (e.g. insufficient funds)', () => {
