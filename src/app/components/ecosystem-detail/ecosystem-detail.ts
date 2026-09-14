@@ -75,8 +75,8 @@ export class EcosystemDetail {
   private computeRoleLabel(blockchain: any): string {
     const roles: string[] = [];
     if (blockchain.isAdmin(this.user.publickey)) roles.push('Admin');
-    if (blockchain.isActor(this.user.publickey)) roles.push('Actrice');
-    if (blockchain.isPayer(this.user.publickey)) roles.push('Payeuse');
+    if (blockchain.isActor(this.user.publickey)) roles.push('Actant');
+    if (blockchain.isPayer(this.user.publickey)) roles.push('Payant');
     return roles.length > 0 ? roles.join(', ') : 'Aucun rôle';
   }
 

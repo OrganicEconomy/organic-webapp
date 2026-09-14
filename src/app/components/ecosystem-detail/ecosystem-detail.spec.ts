@@ -108,7 +108,7 @@ describe('EcosystemDetail', () => {
     createComponent();
     httpMock.expectOne(INFO_URL).flush(ECO_INFO);
 
-    expect(component.roleLabel).toBe('Admin, Actrice');
+    expect(component.roleLabel).toBe('Admin, Actant');
   });
 
   it('should say "Aucun rôle" when the connected user has no role at all', () => {
