@@ -1,4 +1,4 @@
-import type { BlockWire, MembershipStatus, TxWire } from 'organic-protocol'
+import type { BlockWire, MembershipStatus, MyEcosystemEntry, TxWire } from 'organic-protocol'
 
 export type ContactType = 'citizen' | 'ecosystem'
 
@@ -48,6 +48,12 @@ export interface Account {
    * current one and silently leaving older closed blocks behind.
    */
   lastSavedBlockSignature: string | null
+  /**
+   * Which ecosystems this citizen has a role in, refreshed once per app
+   * launch (Phase-2.md §5) rather than on every visit to "Mes écosystèmes" —
+   * kept here so it's still readable offline between two launches.
+   */
+  myEcosystems: MyEcosystemEntry[]
 }
 
 /** The in-memory shape components work with: a stored Account plus its live blockchain. */
@@ -69,5 +75,6 @@ export function makeDefaultAccount(publickey: string): Account {
     status: 'active',
     devicetoken: '',
     lastSavedBlockSignature: null,
+    myEcosystems: [],
   }
 }

@@ -73,6 +73,7 @@ describe('SignupPage', () => {
     const publickey = req.request.body.publickey
     req.flush({ publickey, status: 'pending-validation', blocks: [], devicetoken: 'dt-1' })
     await waitUntil(() => connectSpy.calls.count() > 0)
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
 
     expect(saveSpy).toHaveBeenCalled()
     const savedAccount = saveSpy.calls.mostRecent().args[0]
@@ -89,6 +90,7 @@ describe('SignupPage', () => {
     const publickey = req.request.body.publickey
     req.flush({ publickey, status: 'pending-validation', blocks: [], devicetoken: 'dt-1' })
     await waitUntil(() => connectSpy.calls.count() > 0)
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
 
     expect(router.navigate).toHaveBeenCalledWith(['/pending-validation'])
   });
@@ -103,6 +105,7 @@ describe('SignupPage', () => {
     const publickey = req.request.body.publickey
     req.flush({ publickey, status: 'active', blocks: [], devicetoken: 'dt-1' })
     await waitUntil(() => connectSpy.calls.count() > 0)
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
 
     expect(router.navigate).toHaveBeenCalledWith(['/home'])
   });

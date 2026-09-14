@@ -7,6 +7,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { of } from 'rxjs';
 
 import { UserSelection } from './user-selection';
@@ -17,6 +19,7 @@ describe('UserSelection', () => {
   let component: UserSelection;
   let fixture: ComponentFixture<UserSelection>;
   let router: Router;
+  let httpMock: HttpTestingController;
   // Stubbed rather than the real localforage-backed service: getUserList's
   // result now drives real navigation logic (redirect on first launch), and
   // the real service shares IndexedDB state across every spec in this run.
@@ -39,16 +42,23 @@ describe('UserSelection', () => {
         MatListModule,
       ],
       providers: [
-        { provide: LocalDatabaseService, useValue: { getUserList: getUserListSpy } },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: LocalDatabaseService, useValue: { getUserList: getUserListSpy, saveUser: jasmine.createSpy('saveUser') } },
       ],
     })
     .compileComponents();
 
     router = TestBed.inject(Router)
+    httpMock = TestBed.inject(HttpTestingController)
     spyOn(router, 'navigate')
 
     fixture = TestBed.createComponent(UserSelection);
     component = fixture.componentInstance;
+  });
+
+  afterEach(() => {
+    httpMock.verify();
   });
 
   it('should create', () => {
@@ -112,6 +122,7 @@ describe('UserSelection', () => {
 
     component.selectUser(0)
     await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0)
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
@@ -125,6 +136,7 @@ describe('UserSelection', () => {
 
     component.selectUser(0)
     await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0)
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
 
     expect(router.navigate).toHaveBeenCalledWith(['/pending-validation']);
   });

@@ -1,14 +1,23 @@
 import { TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { ConnectedUserService } from './connected-user.service';
 import { makeDefaultAccount } from '../models/account';
 
+const SERVER_URL = 'https://trifouillis.fr';
+const MINE_URL = `${SERVER_URL}/api/v1/ecosystems/mine`;
+
 describe('ConnectedUserService', () => {
   let service: ConnectedUserService;
+  let httpMock: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
+    });
     service = TestBed.inject(ConnectedUserService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
   it('should hold the decrypted secret key in memory alongside the account', () => {
@@ -57,5 +66,33 @@ describe('ConnectedUserService', () => {
   it('should become read-only after setReadOnly()', () => {
     service.setReadOnly();
     expect(service.isReadOnlySession()).toBeTrue();
+  });
+
+  describe('refreshing myEcosystems on connect', () => {
+    it('should fetch and store the ecosystems the connecting user has a role in', () => {
+      const account: any = makeDefaultAccount('pk-eco')
+      account.serverUrl = SERVER_URL
+      service.setConnectedUser(account, 'sk')
+
+      const req = httpMock.expectOne((r) => r.url === MINE_URL)
+      req.flush([{ publickey: 'eco-pk', name: 'Boulangerie', role: 'actor' }])
+
+      expect(service.getConnectedUser().myEcosystems).toEqual([
+        { publickey: 'eco-pk', name: 'Boulangerie', role: 'actor' },
+      ])
+    });
+
+    it('should keep the previously cached list if the refresh fails', () => {
+      const account: any = makeDefaultAccount('pk-eco-2')
+      account.serverUrl = SERVER_URL
+      account.myEcosystems = [{ publickey: 'old-pk', name: 'Old', role: 'admin' }]
+      service.setConnectedUser(account, 'sk')
+
+      httpMock.expectOne((r) => r.url === MINE_URL).error(new ProgressEvent('network error'))
+
+      expect(service.getConnectedUser().myEcosystems).toEqual([
+        { publickey: 'old-pk', name: 'Old', role: 'admin' },
+      ])
+    });
   });
 });

@@ -39,6 +39,7 @@ declare module 'organic-money/src/index.js' {
     isPayer(publickey: string): boolean
 
     getAffordableInvestAmount(date?: Date): number
+    getAvailableMoneyAmount(): number
 
     receiveSetAdmin(tx: any): void
     receiveUnsetAdmin(tx: any): void

@@ -49,6 +49,17 @@ describe('LocalDatabaseService', () => {
     expect(loaded.status).toBe('pending-validation')
   });
 
+  it('should round-trip the cached myEcosystems list', async () => {
+    const pk = uniquePk('my-ecosystems')
+    const account = makeDefaultAccount(pk)
+    account.myEcosystems = [{ publickey: 'eco-pk', name: 'Boulangerie', role: 'actor' }]
+
+    await service.saveUser(account)
+    const loaded: any = await service.getUser(pk)
+
+    expect(loaded.myEcosystems).toEqual([{ publickey: 'eco-pk', name: 'Boulangerie', role: 'actor' }])
+  });
+
   it('should never persist a plaintext password field', async () => {
     const pk = uniquePk('nopassword')
     const account: any = makeDefaultAccount(pk)

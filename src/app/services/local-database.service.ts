@@ -52,6 +52,7 @@ export class LocalDatabaseService {
             status: data.status,
             devicetoken: data.devicetoken,
             lastSavedBlockSignature: data.lastSavedBlockSignature,
+            myEcosystems: data.myEcosystems,
         }
 
         try {
