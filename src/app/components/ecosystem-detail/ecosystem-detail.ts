@@ -33,6 +33,7 @@ export class EcosystemDetail {
 
   name = '';
   roleLabel = '';
+  isAdmin = false;
   balance = 0;
   affordableInvests = 0;
   upcomingInvests: InvestHorizon[] = [];
@@ -64,6 +65,7 @@ export class EcosystemDetail {
     const blockchain = this.viewedEcosystemService.getViewedEcosystem()!.blockchain;
 
     this.roleLabel = this.computeRoleLabel(blockchain);
+    this.isAdmin = blockchain.isAdmin(this.user.publickey);
     this.balance = blockchain.getAvailableMoneyAmount();
     this.affordableInvests = blockchain.getAffordableInvestAmount();
     this.upcomingInvests = this.computeUpcomingInvests(blockchain);

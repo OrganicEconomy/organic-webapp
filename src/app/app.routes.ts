@@ -23,6 +23,8 @@ import { ScanCandidate } from './components/scan-candidate/scan-candidate';
 import { EcosystemDirectory } from './components/ecosystem-directory/ecosystem-directory';
 import { EcosystemCreate } from './components/ecosystem-create/ecosystem-create';
 import { EcosystemDetail } from './components/ecosystem-detail/ecosystem-detail';
+import { EcosystemInvest } from './components/ecosystem-invest/ecosystem-invest';
+import { EcosystemRoles } from './components/ecosystem-roles/ecosystem-roles';
 
 
 export const routes: Routes = [
@@ -46,6 +48,8 @@ export const routes: Routes = [
     { path: "ecosystems", component: EcosystemDirectory },
     { path: "ecosystems/new", component: EcosystemCreate },
     { path: "ecosystems/:pk", component: EcosystemDetail },
+    { path: "ecosystems/:pk/invest", component: EcosystemInvest },
+    { path: "ecosystems/:pk/roles", component: EcosystemRoles },
     // The four permanent tabs (Phase-1.md §7) share the bottom-nav shell.
     {
         path: "", component: MainLayout, children: [

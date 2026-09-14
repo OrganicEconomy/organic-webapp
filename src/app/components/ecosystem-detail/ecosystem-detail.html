@@ -30,6 +30,14 @@
   </mat-card-content>
 
   <mat-card-actions>
+    <a mat-stroked-button class="invest-link" [routerLink]="['/ecosystems', ecosystemPk, 'invest']">
+      <i class="bi bi-piggy-bank"></i> Engager mes invests
+    </a>
+    @if (isAdmin) {
+    <a mat-stroked-button class="roles-link" [routerLink]="['/ecosystems', ecosystemPk, 'roles']">
+      <i class="bi bi-people"></i> Gérer les rôles
+    </a>
+    }
     <a mat-stroked-button routerLink="/ecosystems">
       <i class="bi bi-arrow-left"></i> Retour
     </a>
