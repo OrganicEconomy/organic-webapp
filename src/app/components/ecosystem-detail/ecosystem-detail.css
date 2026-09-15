@@ -47,7 +47,8 @@ mat-card-actions {
   padding: 0 16px 16px !important;
 }
 
-mat-card-actions a {
+mat-card-actions a,
+mat-card-actions button {
   width: 100%;
   height: 44px;
   font-size: 1rem;
@@ -63,7 +64,8 @@ mat-card-actions a {
     border-radius: 12px !important;
   }
 
-  mat-card-actions a {
+  mat-card-actions a,
+  mat-card-actions button {
     height: 48px;
   }
 }
