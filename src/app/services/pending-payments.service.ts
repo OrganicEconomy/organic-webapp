@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { TransactionMaker } from 'organic-money/src/index.js';
+import { TXTYPE } from 'organic-money/src/Transaction.js';
 import type { TxWire } from 'organic-protocol';
 import { ConnectedUserService } from './connected-user.service';
 import { ServerConnexionService } from './server-connection.service';
@@ -56,7 +57,11 @@ export class PendingPaymentsService {
     if (!tx) return
 
     const oldLevel = user.blockchain.getLevel()
-    user.blockchain.receivePay(tx)
+    if (tx.type === TXTYPE.EARN) {
+      user.blockchain.receiveEarn(tx)
+    } else {
+      user.blockchain.receivePay(tx)
+    }
 
     this.backupService.recordAutomatic(user, this.userService.getSecretKey())
 

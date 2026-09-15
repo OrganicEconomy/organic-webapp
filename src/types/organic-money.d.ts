@@ -86,3 +86,21 @@ declare module 'organic-money/src/crypto.js' {
   export function verifySignature(hash: Uint8Array, signature: string, publickey: string): boolean
   export function hashTimestampAuth(publickey: string, timestamp: string | number): Uint8Array
 }
+
+declare module 'organic-money/src/Transaction.js' {
+  export const TXTYPE: {
+    INIT: number
+    CREATE: number
+    PAY: number
+    ENGAGE: number
+    PAPER: number
+    SETADMIN: number
+    SETACTOR: number
+    SETPAYER: number
+    UNSETADMIN: number
+    UNSETACTOR: number
+    UNSETPAYER: number
+    PAYERORDER: number
+    EARN: number
+  }
+}
