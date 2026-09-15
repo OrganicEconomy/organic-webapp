@@ -32,4 +32,16 @@ describe('toDisplayRow', () => {
     expect(row.type).toBe('Paiement');
     expect(row.amount).toBe(3);
   });
+
+  it('should map PAYERORDER (12) to a French label instead of showing the raw number', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 12, signer: 'alice-pk', target: 'my-pk', money: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.type).toBe('Ordre de paiement');
+  });
+
+  it('should map EARN (13) to a French label instead of showing the raw number', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 13, signer: 'alice-pk', target: 'my-pk', money: [1] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.type).toBe('Gain');
+  });
 });
