@@ -21,6 +21,15 @@ function makePayTxWire(overrides: Partial<any> = {}): any {
   };
 }
 
+// An EARN TxWire (t: 13) — what a payer order routed to a citizen beneficiary
+// queues as (Phase-2.md §6 étape 8): same queue as a normal PAY, different type.
+function makeEarnTxWire(overrides: Partial<any> = {}): any {
+  return {
+    v: 1, d: 20260722, t: 13, p: MY_PK, s: SENDER_PK, m: '', i: '', h: 'earnhash', x: 'ordersig',
+    ...overrides,
+  };
+}
+
 let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
@@ -34,6 +43,7 @@ describe('PendingPaymentsService', () => {
   beforeEach(() => {
     fakeBlockchain = {
       receivePay: jasmine.createSpy('receivePay'),
+      receiveEarn: jasmine.createSpy('receiveEarn'),
       getLevel: () => 2,
     };
     fakeAccount = {
@@ -121,6 +131,21 @@ describe('PendingPaymentsService', () => {
     service.cash(hash);
 
     expect(levelUpSpy.celebrateIfLevelUp).toHaveBeenCalledWith(2, 3);
+  });
+
+  it('should call receiveEarn (not receivePay) for a queued EARN transaction (e.g. a payer order routed to a citizen)', () => {
+    const wireTx = makeEarnTxWire();
+    serverDBSpy.getTransactionList.and.returnValue(of([wireTx]));
+    service.refresh();
+    const hash = service.dataSource[0].hash;
+
+    service.cash(hash);
+
+    expect(fakeBlockchain.receiveEarn).toHaveBeenCalledTimes(1);
+    expect(fakeBlockchain.receivePay).not.toHaveBeenCalled();
+    const receivedArg = fakeBlockchain.receiveEarn.calls.mostRecent().args[0];
+    expect(receivedArg).not.toBe(wireTx);
+    expect(receivedArg.signer).toBe(SENDER_PK);
   });
 
   it('should skip a malformed transaction instead of crashing', () => {
