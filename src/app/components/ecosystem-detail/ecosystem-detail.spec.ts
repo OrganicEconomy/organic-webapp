@@ -7,6 +7,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { EcosystemDetail } from './ecosystem-detail';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
+import { LocalDatabaseService } from '../../services/local-database.service';
 
 const SERVER_URL = 'https://trifouillis.fr';
 const ECO_PK = 'eco-pk';
@@ -16,6 +17,7 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let stubViewedEcosystemService: any;
 let fakeBlockchain: any;
+let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
 
 describe('EcosystemDetail', () => {
   let component: EcosystemDetail;
@@ -48,6 +50,9 @@ describe('EcosystemDetail', () => {
       getViewedEcosystem: () => ({ blockchain: fakeBlockchain }),
     };
 
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
+    localDBSpy.saveUser.and.resolveTo(fakeAccount);
+
     await TestBed.configureTestingModule({
       imports: [EcosystemDetail, RouterTestingModule],
       providers: [
@@ -55,6 +60,7 @@ describe('EcosystemDetail', () => {
         provideHttpClientTesting(),
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: ViewedEcosystemService, useValue: stubViewedEcosystemService },
+        { provide: LocalDatabaseService, useValue: localDBSpy },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ pk: ECO_PK }) } } },
       ],
     }).compileComponents();
@@ -215,5 +221,66 @@ describe('EcosystemDetail', () => {
     const link: HTMLAnchorElement = fixture.nativeElement.querySelector('.roles-link');
     expect(link).toBeTruthy();
     expect(link.getAttribute('href')).toBe(`/ecosystems/${ECO_PK}/roles`);
+  });
+
+  it('should expose isContact false when the ecosystem is not yet a contact', () => {
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+
+    expect(component.isContact).toBeFalse();
+  });
+
+  it('should expose isContact true when the ecosystem is already a contact', () => {
+    fakeAccount.contacts.push({ pk: ECO_PK, name: 'Boulangerie associative', url: SERVER_URL, type: 'ecosystem' });
+
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+
+    expect(component.isContact).toBeTrue();
+  });
+
+  it('should only show a button to add the ecosystem to contacts when it is not already one', () => {
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.add-contact-button')).toBeTruthy();
+
+    fakeAccount.contacts.push({ pk: ECO_PK, name: 'Boulangerie associative', url: SERVER_URL, type: 'ecosystem' });
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.add-contact-button')).toBeFalsy();
+  });
+
+  describe('addToContacts', () => {
+    beforeEach(() => {
+      createComponent();
+      httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+    });
+
+    it('should push the ecosystem as a contact and save it', async () => {
+      await component.addToContacts();
+
+      expect(fakeAccount.contacts).toContain({ pk: ECO_PK, name: 'Boulangerie associative', url: SERVER_URL, type: 'ecosystem' });
+      expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
+    });
+
+    it('should flip isContact to true after adding', async () => {
+      await component.addToContacts();
+
+      expect(component.isContact).toBeTrue();
+    });
+
+    it('should not add a duplicate contact when already added', async () => {
+      fakeAccount.contacts.push({ pk: ECO_PK, name: 'Boulangerie associative', url: SERVER_URL, type: 'ecosystem' });
+      component.isContact = true;
+
+      await component.addToContacts();
+
+      expect(fakeAccount.contacts.length).toBe(2); // the pre-existing admin-pk contact + the ecosystem, not 3
+      expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+    });
   });
 });

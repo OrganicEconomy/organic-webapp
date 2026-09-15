@@ -30,6 +30,11 @@
   </mat-card-content>
 
   <mat-card-actions>
+    @if (!isContact) {
+    <button mat-stroked-button class="add-contact-button" (click)="addToContacts()">
+      <i class="bi bi-person-plus"></i> Ajouter aux contacts
+    </button>
+    }
     <a mat-stroked-button class="invest-link" [routerLink]="['/ecosystems', ecosystemPk, 'invest']">
       <i class="bi bi-piggy-bank"></i> Engager mes investissements
     </a>

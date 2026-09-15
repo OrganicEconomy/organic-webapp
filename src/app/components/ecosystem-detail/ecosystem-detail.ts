@@ -5,7 +5,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
+import { LocalDatabaseService } from '../../services/local-database.service';
 import { resolveContactName } from '../../services/resolve-contact-name.util';
+import type { Contact } from '../../models/account';
 
 interface InvestHorizon {
   label: string
@@ -26,6 +28,7 @@ export class EcosystemDetail {
   userService = inject(ConnectedUserService);
   server = inject(ServerConnexionService);
   viewedEcosystemService = inject(ViewedEcosystemService);
+  localDB = inject(LocalDatabaseService);
 
   user: any;
   ecosystemPk = '';
@@ -34,6 +37,7 @@ export class EcosystemDetail {
   name = '';
   roleLabel = '';
   isAdmin = false;
+  isContact = false;
   balance = 0;
   affordableInvests = 0;
   upcomingInvests: InvestHorizon[] = [];
@@ -66,6 +70,7 @@ export class EcosystemDetail {
 
     this.roleLabel = this.computeRoleLabel(blockchain);
     this.isAdmin = blockchain.isAdmin(this.user.publickey);
+    this.isContact = this.user.contacts.some((contact: Contact) => contact.pk === this.ecosystemPk);
     this.balance = blockchain.getAvailableMoneyAmount();
     this.affordableInvests = blockchain.getAffordableInvestAmount();
     this.upcomingInvests = this.computeUpcomingInvests(blockchain);
@@ -95,5 +100,13 @@ export class EcosystemDetail {
       date.setDate(date.getDate() + days);
       return { label, count: blockchain.getAffordableInvestAmount(date) };
     });
+  }
+
+  async addToContacts(): Promise<void> {
+    if (this.isContact) return;
+    const contact: Contact = { name: this.name, pk: this.ecosystemPk, url: this.user.serverUrl, type: 'ecosystem' };
+    this.user.contacts.push(contact);
+    await this.localDB.saveUser(this.user);
+    this.isContact = true;
   }
 }
