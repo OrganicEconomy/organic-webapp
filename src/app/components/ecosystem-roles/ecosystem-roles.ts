@@ -111,6 +111,14 @@ export class EcosystemRoles {
       this.displayMessage("Choisissez un contact.");
       return;
     }
+    if (this.roleType === 'actor' && !this.isNonNegativeInteger(this.ratio)) {
+      this.displayMessage("Le ratio doit être un nombre entier positif ou nul.");
+      return;
+    }
+    if (this.roleType === 'payer' && !this.capUnlimited && !this.isNonNegativeInteger(this.cap)) {
+      this.displayMessage("Le plafond doit être un nombre entier positif ou nul.");
+      return;
+    }
     this.sendRoleTx(() => {
       const chain = this.user.blockchain;
       const sk = this.userService.getSecretKey();
@@ -119,6 +127,10 @@ export class EcosystemRoles {
       const cap = this.capUnlimited ? -1 : this.cap;
       return chain.setPayer(sk, this.ecosystemPk, this.targetPk, cap);
     });
+  }
+
+  private isNonNegativeInteger(value: number): boolean {
+    return Number.isInteger(value) && value >= 0;
   }
 
   private sendRoleTx(buildTx: () => any): void {

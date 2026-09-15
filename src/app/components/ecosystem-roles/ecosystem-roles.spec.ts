@@ -219,6 +219,28 @@ describe('EcosystemRoles', () => {
       expect(fakeBlockchain.setActor).toHaveBeenCalledWith(SK, ECO_PK, 'admin-pk', 2);
     });
 
+    it('should not call setActor when the ratio is negative', () => {
+      spyOn(component, 'displayMessage');
+      component.targetPk = 'admin-pk';
+      component.roleType = 'actor';
+      component.ratio = -1;
+
+      component.addRole();
+
+      expect(fakeBlockchain.setActor).not.toHaveBeenCalled();
+      expect(component.displayMessage).toHaveBeenCalledWith('Le ratio doit être un nombre entier positif ou nul.');
+    });
+
+    it('should not call setActor when the ratio is not an integer', () => {
+      component.targetPk = 'admin-pk';
+      component.roleType = 'actor';
+      component.ratio = 1.5;
+
+      component.addRole();
+
+      expect(fakeBlockchain.setActor).not.toHaveBeenCalled();
+    });
+
     it('should call setPayer with the given cap when the role type is payer', () => {
       component.targetPk = 'admin-pk';
       component.roleType = 'payer';
@@ -238,6 +260,30 @@ describe('EcosystemRoles', () => {
       component.addRole();
 
       expect(fakeBlockchain.setPayer).toHaveBeenCalledWith(SK, ECO_PK, 'admin-pk', -1);
+    });
+
+    it('should not call setPayer when the cap is negative and not unlimited', () => {
+      spyOn(component, 'displayMessage');
+      component.targetPk = 'admin-pk';
+      component.roleType = 'payer';
+      component.capUnlimited = false;
+      component.cap = -3;
+
+      component.addRole();
+
+      expect(fakeBlockchain.setPayer).not.toHaveBeenCalled();
+      expect(component.displayMessage).toHaveBeenCalledWith('Le plafond doit être un nombre entier positif ou nul.');
+    });
+
+    it('should allow setPayer with cap 0 (not unlimited)', () => {
+      component.targetPk = 'admin-pk';
+      component.roleType = 'payer';
+      component.capUnlimited = false;
+      component.cap = 0;
+
+      component.addRole();
+
+      expect(fakeBlockchain.setPayer).toHaveBeenCalledWith(SK, ECO_PK, 'admin-pk', 0);
     });
 
     it('should save via recordPayment then send via sendEcosystemTx only after it succeeds', () => {
