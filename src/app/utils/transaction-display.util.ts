@@ -17,6 +17,8 @@ export const TX_TYPE_LABELS: Record<string, string> = {
   "9": "Suppression Admin",
   "10": "Suppression Acteur",
   "11": "Suppression Payeur",
+  "12": "Ordre de paiement",
+  "13": "Gain",
 }
 
 export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]) {
