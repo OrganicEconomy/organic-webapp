@@ -10,6 +10,7 @@ import { EcosystemDetail } from './ecosystem-detail';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
+import { LocalDatabaseService } from '../../services/local-database.service';
 
 const SERVER_URL = 'https://trifouillis.fr';
 const ECO_PK = 'eco-pk';
@@ -22,6 +23,7 @@ let stubConnectedUserService: any;
 let stubViewedEcosystemService: any;
 let fakeBlockchain: any;
 let dialogSpy: jasmine.SpyObj<MatDialog>;
+let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
 
 describe('EcosystemDetail', () => {
   let component: EcosystemDetail;
@@ -61,6 +63,9 @@ describe('EcosystemDetail', () => {
     dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
     dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
 
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
+    localDBSpy.saveUser.and.resolveTo(fakeAccount);
+
     await TestBed.configureTestingModule({
       imports: [EcosystemDetail, RouterTestingModule],
       providers: [
@@ -69,6 +74,7 @@ describe('EcosystemDetail', () => {
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: ViewedEcosystemService, useValue: stubViewedEcosystemService },
         { provide: MatDialog, useValue: dialogSpy },
+        { provide: LocalDatabaseService, useValue: localDBSpy },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ pk: ECO_PK }) } } },
       ],
     }).compileComponents();
@@ -279,6 +285,37 @@ describe('EcosystemDetail', () => {
     expect(fixture.nativeElement.querySelector('.distribute-button')).toBeTruthy();
   });
 
+  it('should expose isContact false when the ecosystem is not yet a contact', () => {
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+
+    expect(component.isContact).toBeFalse();
+  });
+
+  it('should expose isContact true when the ecosystem is already a contact', () => {
+    fakeAccount.contacts.push({ pk: ECO_PK, name: 'Boulangerie associative', url: SERVER_URL, type: 'ecosystem' });
+
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+
+    expect(component.isContact).toBeTrue();
+  });
+
+  it('should only show a button to add the ecosystem to contacts when it is not already one', () => {
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.add-contact-button')).toBeTruthy();
+
+    fakeAccount.contacts.push({ pk: ECO_PK, name: 'Boulangerie associative', url: SERVER_URL, type: 'ecosystem' });
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.add-contact-button')).toBeFalsy();
+  });
+
   describe('distributeSalary', () => {
     beforeEach(() => {
       createComponent();
@@ -347,6 +384,36 @@ describe('EcosystemDetail', () => {
       component.distributeSalary();
 
       expect(dialogSpy.open).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('addToContacts', () => {
+    beforeEach(() => {
+      createComponent();
+      httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+    });
+
+    it('should push the ecosystem as a contact and save it', async () => {
+      await component.addToContacts();
+
+      expect(fakeAccount.contacts).toContain({ pk: ECO_PK, name: 'Boulangerie associative', url: SERVER_URL, type: 'ecosystem' });
+      expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
+    });
+
+    it('should flip isContact to true after adding', async () => {
+      await component.addToContacts();
+
+      expect(component.isContact).toBeTrue();
+    });
+
+    it('should not add a duplicate contact when already added', async () => {
+      fakeAccount.contacts.push({ pk: ECO_PK, name: 'Boulangerie associative', url: SERVER_URL, type: 'ecosystem' });
+      component.isContact = true;
+
+      await component.addToContacts();
+
+      expect(fakeAccount.contacts.length).toBe(2); // the pre-existing admin-pk contact + the ecosystem, not 3
+      expect(localDBSpy.saveUser).not.toHaveBeenCalled();
     });
   });
 });
