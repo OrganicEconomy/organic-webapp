@@ -102,10 +102,17 @@ export class Pay {
       } else {
         // Paying someone else needs cross-verification server-side, so the save
         // here is mandatory regardless of policy — send only after it succeeds
-        // (strict pay → save → send order).
+        // (strict pay → save → send order). An ecosystem contact has no phone
+        // polling /tx/send's waiting queue, so it must go through its own
+        // dedicated endpoint instead — the only thing that actually credits it.
+        const targetContact = this.contacts.find((contact: any) => contact.pk === this.target)
+        const send = () => targetContact?.type === 'ecosystem'
+          ? this.serverDB.sendEcosystemTx(this.user.serverUrl, this.target, tx.export())
+          : this.serverDB.sendTransaction(this.user.serverUrl, tx.export())
+
         this.backupService.recordPayment(this.user, sk).subscribe({
           next: () => {
-            this.serverDB.sendTransaction(this.user.serverUrl, tx.export()).subscribe({
+            send().subscribe({
               next: () => {
                 this.displayMessage("Paiement enregistré et envoyé avec succès.")
                 onDone()

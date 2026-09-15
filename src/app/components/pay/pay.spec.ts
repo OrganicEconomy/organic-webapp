@@ -15,7 +15,7 @@ let fakeTx: any;
 let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'sendTransaction'>>;
+let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'sendTransaction' | 'sendEcosystemTx'>>;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic' | 'recordPayment'>>;
 
@@ -45,8 +45,9 @@ describe('Pay', () => {
       getSecretKey: () => 'the-real-sk',
       isReadOnlySession: () => false,
     };
-    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['sendTransaction']);
+    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['sendTransaction', 'sendEcosystemTx']);
     serverDBSpy.sendTransaction.and.returnValue(of({}));
+    serverDBSpy.sendEcosystemTx.and.returnValue(of({}));
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
     backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic', 'recordPayment']);
     backupSpy.recordPayment.and.returnValue(of({}));
@@ -108,6 +109,30 @@ describe('Pay', () => {
 
     subject.next({});
     expect(serverDBSpy.sendTransaction).toHaveBeenCalledWith('https://trifouillis.fr', { exported: true } as any);
+  });
+
+  it("should send via sendEcosystemTx (not sendTransaction) when paying a contact of type 'ecosystem'", () => {
+    fakeAccount.contacts.push({ pk: 'eco-pk', name: 'Boulangerie', url: '', type: 'ecosystem' });
+    component.target = 'eco-pk';
+    component.amount = 5;
+    component.validated = true;
+
+    component.pay();
+
+    expect(serverDBSpy.sendEcosystemTx).toHaveBeenCalledWith('https://trifouillis.fr', 'eco-pk', { exported: true } as any);
+    expect(serverDBSpy.sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it("should send via sendTransaction when paying a contact of type 'citizen'", () => {
+    fakeAccount.contacts.push({ pk: 'citizen-pk', name: 'Farid', url: '', type: 'citizen' });
+    component.target = 'citizen-pk';
+    component.amount = 5;
+    component.validated = true;
+
+    component.pay();
+
+    expect(serverDBSpy.sendTransaction).toHaveBeenCalledWith('https://trifouillis.fr', { exported: true } as any);
+    expect(serverDBSpy.sendEcosystemTx).not.toHaveBeenCalled();
   });
 
   it('should not send when recordPayment fails (e.g. offline) — payment stays local-only', () => {
