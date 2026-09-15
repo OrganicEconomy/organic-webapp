@@ -1,0 +1,86 @@
+@if (user) {
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Gérer les rôles</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (loadError) {
+    <p class="error">{{ loadError }}</p>
+    } @else if (!isAdmin) {
+    <p class="error">Vous n'êtes pas admin de cet écosystème.</p>
+    } @else {
+    <h3>Admins</h3>
+    <div class="role-list">
+      @for (holder of admins; track holder.pk) {
+      <div class="role-row">
+        <span>{{ holder.name }}</span>
+        <button mat-stroked-button (click)="removeRole('admin', holder.pk)">Retirer</button>
+      </div>
+      }
+    </div>
+
+    <h3>Actants</h3>
+    <div class="role-list">
+      @for (holder of actors; track holder.pk) {
+      <div class="role-row">
+        <span>{{ holder.name }}</span>
+        <button mat-stroked-button (click)="removeRole('actor', holder.pk)">Retirer</button>
+      </div>
+      }
+    </div>
+
+    <h3>Payants</h3>
+    <div class="role-list">
+      @for (holder of payers; track holder.pk) {
+      <div class="role-row">
+        <span>{{ holder.name }}</span>
+        <button mat-stroked-button (click)="removeRole('payer', holder.pk)">Retirer</button>
+      </div>
+      }
+    </div>
+
+    <h3>Ajouter un rôle</h3>
+    <mat-form-field>
+      <mat-label>Contact</mat-label>
+      <mat-select [(ngModel)]="targetPk">
+        @for (contact of user.contacts; track contact.pk) {
+        <mat-option [value]="contact.pk">{{ contact.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-radio-group [(ngModel)]="roleType">
+      <mat-radio-button value="admin">Admin</mat-radio-button>
+      <mat-radio-button value="actor">Actant</mat-radio-button>
+      <mat-radio-button value="payer">Payant</mat-radio-button>
+    </mat-radio-group>
+
+    @if (roleType === 'actor') {
+    <mat-form-field>
+      <mat-label>Ratio</mat-label>
+      <input matInput type="number" [(ngModel)]="ratio" min="0">
+    </mat-form-field>
+    }
+
+    @if (roleType === 'payer') {
+    <mat-checkbox [(ngModel)]="capUnlimited">Illimité</mat-checkbox>
+    @if (!capUnlimited) {
+    <mat-form-field>
+      <mat-label>Plafond</mat-label>
+      <input matInput type="number" [(ngModel)]="cap" min="0">
+    </mat-form-field>
+    }
+    }
+
+    <button mat-flat-button (click)="addRole()" [disabled]="userService.isReadOnlySession()">Ajouter</button>
+    }
+  </mat-card-content>
+
+  <mat-card-actions>
+    <a mat-stroked-button [routerLink]="['/ecosystems', ecosystemPk]">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+  </mat-card-actions>
+</mat-card>
+}

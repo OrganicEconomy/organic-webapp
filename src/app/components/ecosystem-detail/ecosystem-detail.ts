@@ -33,6 +33,7 @@ export class EcosystemDetail {
 
   name = '';
   roleLabel = '';
+  isAdmin = false;
   balance = 0;
   affordableInvests = 0;
   upcomingInvests: InvestHorizon[] = [];
@@ -64,11 +65,12 @@ export class EcosystemDetail {
     const blockchain = this.viewedEcosystemService.getViewedEcosystem()!.blockchain;
 
     this.roleLabel = this.computeRoleLabel(blockchain);
+    this.isAdmin = blockchain.isAdmin(this.user.publickey);
     this.balance = blockchain.getAvailableMoneyAmount();
     this.affordableInvests = blockchain.getAffordableInvestAmount();
     this.upcomingInvests = this.computeUpcomingInvests(blockchain);
-    this.admins = [...blockchain.getAdmins() as Set<string>].map((pk) => resolveContactName(pk, this.user.contacts));
-    this.payers = [...(blockchain.getPayers() as Map<string, number>).keys()].map((pk) => resolveContactName(pk, this.user.contacts));
+    this.admins = [...blockchain.getAdmins() as Set<string>].map((pk) => resolveContactName(pk, this.user.contacts, this.user.publickey));
+    this.payers = [...(blockchain.getPayers() as Map<string, number>).keys()].map((pk) => resolveContactName(pk, this.user.contacts, this.user.publickey));
     this.actorCount = blockchain.getActors().size;
   }
 

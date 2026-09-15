@@ -151,6 +151,15 @@ describe('EcosystemDetail', () => {
     expect(component.admins).toEqual(['Camille']);
   });
 
+  it('should show "Moi" for the connected user\'s own public key instead of a truncated key', () => {
+    fakeBlockchain.getAdmins.and.returnValue(new Set(['admin-pk', 'farid-pk']));
+
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+
+    expect(component.admins).toEqual(['Camille', 'Moi']);
+  });
+
   it('should fall back to a truncated key for a payer who is not a contact', () => {
     createComponent();
     httpMock.expectOne(INFO_URL).flush(ECO_INFO);
@@ -163,5 +172,48 @@ describe('EcosystemDetail', () => {
     httpMock.expectOne(INFO_URL).flush(ECO_INFO);
 
     expect(component.actorCount).toBe(3);
+  });
+
+  it('should expose isAdmin true when the connected user is admin of the viewed ecosystem', () => {
+    fakeBlockchain.isAdmin.and.returnValue(true);
+
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+
+    expect(component.isAdmin).toBeTrue();
+  });
+
+  it('should expose isAdmin false when the connected user is not admin of the viewed ecosystem', () => {
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+
+    expect(component.isAdmin).toBeFalse();
+  });
+
+  it('should always show a link to engage invests', () => {
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+    fixture.detectChanges();
+
+    const link: HTMLAnchorElement = fixture.nativeElement.querySelector('.invest-link');
+    expect(link).toBeTruthy();
+    expect(link.getAttribute('href')).toBe(`/ecosystems/${ECO_PK}/invest`);
+  });
+
+  it('should only show a link to manage roles when the connected user is admin', () => {
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.roles-link')).toBeFalsy();
+
+    fakeBlockchain.isAdmin.and.returnValue(true);
+    createComponent();
+    httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+    fixture.detectChanges();
+
+    const link: HTMLAnchorElement = fixture.nativeElement.querySelector('.roles-link');
+    expect(link).toBeTruthy();
+    expect(link.getAttribute('href')).toBe(`/ecosystems/${ECO_PK}/roles`);
   });
 });
