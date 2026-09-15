@@ -73,6 +73,12 @@ describe('EcosystemInvest', () => {
     it('should read the invests daily cap', () => {
       expect(component.max).toBe(12);
     });
+
+    it("should ask for today's affordable invests, not every invest ever engaged in the open block", () => {
+      void component.max;
+
+      expect(fakeBlockchain.getAffordableInvestAmount).toHaveBeenCalledWith(jasmine.any(Date));
+    });
   });
 
   describe('engage', () => {

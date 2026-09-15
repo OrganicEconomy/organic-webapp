@@ -47,7 +47,7 @@ export class EcosystemInvest {
   }
 
   get max(): number {
-    return this.user.blockchain.getAffordableInvestAmount();
+    return this.user.blockchain.getAffordableInvestAmount(new Date());
   }
 
   engage(): void {
