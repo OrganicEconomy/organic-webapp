@@ -1,0 +1,35 @@
+@if (user) {
+<mat-card appearance="outlined">
+  <mat-card-header>
+    <mat-card-title>Émettre un ordre</mat-card-title>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (loadError) {
+    <p class="error">{{ loadError }}</p>
+    } @else {
+    <mat-form-field>
+      <mat-label>Bénéficiaire</mat-label>
+      <mat-select [(ngModel)]="targetPk">
+        @for (contact of user.contacts; track contact.pk) {
+        <mat-option [value]="contact.pk">{{ contact.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Montant</mat-label>
+      <input matInput type="number" [(ngModel)]="amount" [max]="max" min="0">
+    </mat-form-field>
+    <p class="hint">Maximum : {{ max }}</p>
+    }
+  </mat-card-content>
+
+  <mat-card-actions>
+    <button mat-flat-button (click)="submitOrder()" [disabled]="userService.isReadOnlySession()">Émettre</button>
+    <a mat-stroked-button [routerLink]="['/ecosystems', ecosystemPk]">
+      <i class="bi bi-arrow-left"></i> Retour
+    </a>
+  </mat-card-actions>
+</mat-card>
+}

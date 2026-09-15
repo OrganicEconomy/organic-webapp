@@ -19,25 +19,23 @@ mat-card-header {
 
 mat-card-content {
   padding: 16px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+mat-form-field {
+  width: 100%;
+}
+
+.hint {
+  font-size: 0.85rem;
+  opacity: 0.8;
 }
 
 .error {
   color: var(--mat-sys-error, #b3261e);
-}
-
-.invest-table {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  margin-top: 0.5rem;
-}
-
-.invest-row {
-  display: flex;
-  justify-content: space-between;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--mat-sys-outline-variant, #ccc);
-  border-radius: 8px;
+  font-size: 0.9rem;
 }
 
 mat-card-actions {
