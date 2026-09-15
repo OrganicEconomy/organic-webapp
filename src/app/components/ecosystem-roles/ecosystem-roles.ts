@@ -111,11 +111,11 @@ export class EcosystemRoles {
       this.displayMessage("Choisissez un contact.");
       return;
     }
-    if (this.roleType === 'actor' && !this.isNonNegativeInteger(this.ratio)) {
+    if (this.roleType === 'actor' && this.isInvalidRatioOrCap(this.ratio)) {
       this.displayMessage("Le ratio doit être un nombre entier positif ou nul.");
       return;
     }
-    if (this.roleType === 'payer' && !this.capUnlimited && !this.isNonNegativeInteger(this.cap)) {
+    if (this.roleType === 'payer' && !this.capUnlimited && this.isInvalidRatioOrCap(this.cap)) {
       this.displayMessage("Le plafond doit être un nombre entier positif ou nul.");
       return;
     }
@@ -129,8 +129,8 @@ export class EcosystemRoles {
     });
   }
 
-  private isNonNegativeInteger(value: number): boolean {
-    return Number.isInteger(value) && value >= 0;
+  private isInvalidRatioOrCap(value: number): boolean {
+    return !Number.isInteger(value) || value < 0;
   }
 
   private sendRoleTx(buildTx: () => any): void {
