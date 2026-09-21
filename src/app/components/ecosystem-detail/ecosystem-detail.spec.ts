@@ -357,7 +357,7 @@ describe('EcosystemDetail', () => {
       httpMock.expectOne(DISTRIBUTE_URL).flush({});
       httpMock.expectOne(INFO_URL).flush(ECO_INFO);
 
-      expect(component.displayMessage).toHaveBeenCalledWith('Salaires distribués avec succès.');
+      expect(component.displayMessage).toHaveBeenCalledWith('Demande de versement de salaires envoyée avec succès.');
     });
 
     it("should show the server's own error message when the distribution is rejected", () => {
