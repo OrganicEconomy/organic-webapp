@@ -135,7 +135,7 @@ export class EcosystemDetail {
       const sk = this.userService.getSecretKey();
       this.server.distributeSalary(this.user.serverUrl, this.ecosystemPk, this.user.publickey, sk).subscribe({
         next: () => {
-          this.displayMessage("Salaires distribués avec succès.");
+          this.displayMessage("Demande de versement de salaires envoyée avec succès.");
           this.fetchAndPopulate();
         },
         error: (err) => {
