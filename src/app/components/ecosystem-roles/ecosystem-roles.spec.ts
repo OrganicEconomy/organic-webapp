@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
+import { InvalidTransactionError } from 'organic-money/src/errors.js';
 
 import { EcosystemRoles } from './ecosystem-roles';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -185,6 +186,15 @@ describe('EcosystemRoles', () => {
       component.removeRole('admin', 'admin-pk');
 
       expect(fakeBlockchain.unsetAdmin).not.toHaveBeenCalled();
+    });
+
+    it('should show a clear message when the exact same role change was already made today', () => {
+      spyOn(component, 'displayMessage');
+      fakeBlockchain.unsetAdmin.and.throwError(new InvalidTransactionError('Transaction duplicate abc123'));
+
+      component.removeRole('admin', 'admin-pk');
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été effectuée aujourd'hui — réessayez demain.");
     });
   });
 

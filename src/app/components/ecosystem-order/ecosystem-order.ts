@@ -11,7 +11,7 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { BackupService } from '../../services/backup.service';
-import { extractServerErrorMessage } from '../../services/server-error.util';
+import { extractServerErrorMessage, isDuplicateTransactionError } from '../../services/server-error.util';
 
 @Component({
   selector: 'app-ecosystem-order',
@@ -41,6 +41,7 @@ export class EcosystemOrder {
 
   targetPk = '';
   amount = 0;
+  submitting = false;
 
   private ecosystemBlockchain: any;
 
@@ -69,6 +70,7 @@ export class EcosystemOrder {
   }
 
   submitOrder(): void {
+    if (this.submitting) return;
     if (!this.targetPk) {
       this.displayMessage("Choisissez un bénéficiaire.");
       return;
@@ -85,6 +87,7 @@ export class EcosystemOrder {
       this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.");
       return;
     }
+    this.submitting = true;
     try {
       const sk = this.userService.getSecretKey();
       const invests = this.ecosystemBlockchain.invests.slice(0, this.amount);
@@ -94,21 +97,29 @@ export class EcosystemOrder {
         next: () => {
           this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, tx.export()).subscribe({
             next: () => {
+              this.submitting = false;
               this.displayMessage("Ordre enregistré et envoyé avec succès.");
               this.router.navigate(['/ecosystems', this.ecosystemPk]);
             },
             error: (err) => {
+              this.submitting = false;
               console.log(err);
               this.displayMessage(extractServerErrorMessage(err) ?? "Ordre enregistré mais non transmis — réessayez plus tard.");
             },
           });
         },
         error: (err) => {
+          this.submitting = false;
           console.log(err);
           this.displayMessage(extractServerErrorMessage(err) ?? "Ordre fait localement mais pas sauvegardé sur le serveur.");
         },
       });
     } catch (err) {
+      this.submitting = false;
+      if (isDuplicateTransactionError(err)) {
+        this.displayMessage("Cette action a déjà été effectuée aujourd'hui — réessayez demain.");
+        return;
+      }
       console.log(err);
       this.displayMessage("Une erreur est survenue oO");
     }

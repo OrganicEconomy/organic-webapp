@@ -14,7 +14,7 @@ import { ServerConnexionService } from '../../services/server-connection.service
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { BackupService } from '../../services/backup.service';
 import { resolveContactName } from '../../services/resolve-contact-name.util';
-import { extractServerErrorMessage } from '../../services/server-error.util';
+import { extractServerErrorMessage, isDuplicateTransactionError } from '../../services/server-error.util';
 
 type RoleType = 'admin' | 'actor' | 'payer';
 
@@ -161,6 +161,10 @@ export class EcosystemRoles {
         },
       });
     } catch (err) {
+      if (isDuplicateTransactionError(err)) {
+        this.displayMessage("Cette action a déjà été effectuée aujourd'hui — réessayez demain.");
+        return;
+      }
       console.log(err);
       this.displayMessage("Une erreur est survenue oO");
     }
