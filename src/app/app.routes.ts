@@ -25,6 +25,7 @@ import { EcosystemCreate } from './components/ecosystem-create/ecosystem-create'
 import { EcosystemDetail } from './components/ecosystem-detail/ecosystem-detail';
 import { EcosystemInvest } from './components/ecosystem-invest/ecosystem-invest';
 import { EcosystemRoles } from './components/ecosystem-roles/ecosystem-roles';
+import { EcosystemOrder } from './components/ecosystem-order/ecosystem-order';
 
 
 export const routes: Routes = [
@@ -50,6 +51,7 @@ export const routes: Routes = [
     { path: "ecosystems/:pk", component: EcosystemDetail },
     { path: "ecosystems/:pk/invest", component: EcosystemInvest },
     { path: "ecosystems/:pk/roles", component: EcosystemRoles },
+    { path: "ecosystems/:pk/order", component: EcosystemOrder },
     // The four permanent tabs (Phase-1.md §7) share the bottom-nav shell.
     {
         path: "", component: MainLayout, children: [

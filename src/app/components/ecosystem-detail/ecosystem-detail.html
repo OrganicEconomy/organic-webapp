@@ -38,10 +38,18 @@
     <a mat-stroked-button class="invest-link" [routerLink]="['/ecosystems', ecosystemPk, 'invest']">
       <i class="bi bi-piggy-bank"></i> Engager mes investissements
     </a>
+    @if (isPayer) {
+    <a mat-stroked-button class="order-link" [routerLink]="['/ecosystems', ecosystemPk, 'order']">
+      <i class="bi bi-send"></i> Émettre un ordre
+    </a>
+    }
     @if (isAdmin) {
     <a mat-stroked-button class="roles-link" [routerLink]="['/ecosystems', ecosystemPk, 'roles']">
       <i class="bi bi-people"></i> Gérer les rôles
     </a>
+    <button mat-stroked-button class="distribute-button" (click)="distributeSalary()">
+      <i class="bi bi-cash-coin"></i> Distribuer les salaires
+    </button>
     }
     <a mat-stroked-button routerLink="/ecosystems">
       <i class="bi bi-arrow-left"></i> Retour
