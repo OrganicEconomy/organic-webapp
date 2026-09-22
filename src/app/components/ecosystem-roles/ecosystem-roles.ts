@@ -14,7 +14,7 @@ import { ServerConnexionService } from '../../services/server-connection.service
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { BackupService } from '../../services/backup.service';
 import { resolveContactName } from '../../services/resolve-contact-name.util';
-import { extractServerErrorMessage, isDuplicateTransactionError } from '../../services/server-error.util';
+import { extractServerErrorMessage, duplicateTransactionMessage } from '../../services/server-error.util';
 
 type RoleType = 'admin' | 'actor' | 'payer';
 
@@ -141,10 +141,11 @@ export class EcosystemRoles {
     try {
       const sk = this.userService.getSecretKey();
       const tx = buildTx();
+      const wire = tx.export();
 
       this.backupService.recordPayment(this.user, sk).subscribe({
         next: () => {
-          this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, tx.export()).subscribe({
+          this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, wire).subscribe({
             next: () => {
               this.displayMessage("Action enregistrée et envoyée avec succès.");
               this.fetchAndPopulate();
@@ -161,8 +162,9 @@ export class EcosystemRoles {
         },
       });
     } catch (err) {
-      if (isDuplicateTransactionError(err)) {
-        this.displayMessage("Cette action a déjà été effectuée aujourd'hui — réessayez demain.");
+      const message = duplicateTransactionMessage(err);
+      if (message) {
+        this.displayMessage(message);
         return;
       }
       console.log(err);

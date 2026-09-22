@@ -10,3 +10,9 @@ export function extractServerErrorMessage(err: any): string | null {
 export function isDuplicateTransactionError(err: unknown): boolean {
   return err instanceof InvalidTransactionError && err.message.startsWith('Transaction duplicate')
 }
+
+const DUPLICATE_TRANSACTION_MESSAGE = "Cette action a déjà été tentée aujourd'hui — réessayez demain.";
+
+export function duplicateTransactionMessage(err: unknown): string | null {
+  return isDuplicateTransactionError(err) ? DUPLICATE_TRANSACTION_MESSAGE : null
+}

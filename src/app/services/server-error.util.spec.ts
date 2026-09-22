@@ -1,4 +1,4 @@
-import { extractServerErrorMessage, isDuplicateTransactionError } from './server-error.util';
+import { extractServerErrorMessage, isDuplicateTransactionError, duplicateTransactionMessage } from './server-error.util';
 import { InvalidTransactionError } from 'organic-money/src/errors.js';
 
 describe('server-error.util', () => {
@@ -24,6 +24,31 @@ describe('server-error.util', () => {
     it('should return false for a null/undefined input', () => {
       expect(isDuplicateTransactionError(null)).toBeFalse();
       expect(isDuplicateTransactionError(undefined)).toBeFalse();
+    });
+  });
+
+  describe('duplicateTransactionMessage', () => {
+    it('should return a clear message for a duplicate-transaction error', () => {
+      const err = new InvalidTransactionError('Transaction duplicate abc123');
+
+      expect(duplicateTransactionMessage(err)).toBe("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
+    });
+
+    it('should return null for an InvalidTransactionError with a different message', () => {
+      const err = new InvalidTransactionError('Unsufficient funds.');
+
+      expect(duplicateTransactionMessage(err)).toBeNull();
+    });
+
+    it('should return null for a non-InvalidTransactionError error', () => {
+      const err = new Error('Transaction duplicate abc123');
+
+      expect(duplicateTransactionMessage(err)).toBeNull();
+    });
+
+    it('should return null for a null/undefined input', () => {
+      expect(duplicateTransactionMessage(null)).toBeNull();
+      expect(duplicateTransactionMessage(undefined)).toBeNull();
     });
   });
 

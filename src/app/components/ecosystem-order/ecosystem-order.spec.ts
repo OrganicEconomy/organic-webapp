@@ -29,7 +29,7 @@ describe('EcosystemOrder', () => {
   let router: Router;
 
   beforeEach(() => {
-    fakeTx = { export: () => ({ exported: true }) };
+    fakeTx = { export: jasmine.createSpy('export').and.returnValue({ exported: true }) };
     fakeCitizenBlockchain = {
       payerOrder: jasmine.createSpy('payerOrder').and.returnValue(fakeTx),
     };
@@ -203,7 +203,7 @@ describe('EcosystemOrder', () => {
 
       component.submitOrder();
 
-      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été effectuée aujourd'hui — réessayez demain.");
+      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
     });
 
     it('should not build a second order while the first is still pending (double-click guard)', () => {
@@ -232,14 +232,32 @@ describe('EcosystemOrder', () => {
     });
 
     it('should re-enable the submit button once the submission settles', () => {
+      const subject = new Subject<unknown>();
+      backupSpy.recordPayment.and.returnValue(subject.asObservable());
       component.targetPk = 'contact-pk';
       component.amount = 2;
 
       component.submitOrder();
       fixture.detectChanges();
-
       const submitButton: HTMLButtonElement = fixture.nativeElement.querySelector('.submit-order-button');
+      expect(submitButton.disabled).toBeTrue();
+
+      subject.next({});
+      fixture.detectChanges();
       expect(submitButton.disabled).toBeFalse();
+    });
+
+    it('should not leave submitting stuck true if building the wire payload throws asynchronously', () => {
+      const subject = new Subject<unknown>();
+      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      fakeTx.export.and.callFake(() => { throw new Error('boom'); });
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+
+      expect(() => subject.next({})).not.toThrow();
+      expect(component.submitting).toBeFalse();
     });
   });
 });

@@ -28,7 +28,7 @@ describe('EcosystemRoles', () => {
   let router: Router;
 
   beforeEach(() => {
-    fakeTx = { export: () => ({ exported: true }) };
+    fakeTx = { export: jasmine.createSpy('export').and.returnValue({ exported: true }) };
     fakeBlockchain = {
       isAdmin: jasmine.createSpy('isAdmin').and.returnValue(true),
       getAdmins: jasmine.createSpy('getAdmins').and.returnValue(new Set(['admin-pk'])),
@@ -194,7 +194,17 @@ describe('EcosystemRoles', () => {
 
       component.removeRole('admin', 'admin-pk');
 
-      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été effectuée aujourd'hui — réessayez demain.");
+      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
+    });
+
+    it('should not throw uncaught if building the wire payload throws asynchronously', () => {
+      const subject = new Subject<unknown>();
+      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      fakeTx.export.and.callFake(() => { throw new Error('boom'); });
+
+      component.removeRole('admin', 'admin-pk');
+
+      expect(() => subject.next({})).not.toThrow();
     });
   });
 
@@ -326,6 +336,17 @@ describe('EcosystemRoles', () => {
       component.addRole();
 
       expect(fakeBlockchain.setAdmin).not.toHaveBeenCalled();
+    });
+
+    it('should show a clear message when the exact same role change was already made today', () => {
+      spyOn(component, 'displayMessage');
+      fakeBlockchain.setAdmin.and.throwError(new InvalidTransactionError('Transaction duplicate abc123'));
+      component.targetPk = 'actor-pk';
+      component.roleType = 'admin';
+
+      component.addRole();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
     });
   });
 });

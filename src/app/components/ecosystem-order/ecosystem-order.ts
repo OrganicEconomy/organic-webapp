@@ -11,7 +11,7 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { BackupService } from '../../services/backup.service';
-import { extractServerErrorMessage, isDuplicateTransactionError } from '../../services/server-error.util';
+import { extractServerErrorMessage, duplicateTransactionMessage } from '../../services/server-error.util';
 
 @Component({
   selector: 'app-ecosystem-order',
@@ -92,10 +92,11 @@ export class EcosystemOrder {
       const sk = this.userService.getSecretKey();
       const invests = this.ecosystemBlockchain.invests.slice(0, this.amount);
       const tx = this.user.blockchain.payerOrder(sk, this.ecosystemPk, this.targetPk, invests);
+      const wire = tx.export();
 
       this.backupService.recordPayment(this.user, sk).subscribe({
         next: () => {
-          this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, tx.export()).subscribe({
+          this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, wire).subscribe({
             next: () => {
               this.submitting = false;
               this.displayMessage("Ordre enregistré et envoyé avec succès.");
@@ -116,8 +117,9 @@ export class EcosystemOrder {
       });
     } catch (err) {
       this.submitting = false;
-      if (isDuplicateTransactionError(err)) {
-        this.displayMessage("Cette action a déjà été effectuée aujourd'hui — réessayez demain.");
+      const message = duplicateTransactionMessage(err);
+      if (message) {
+        this.displayMessage(message);
         return;
       }
       console.log(err);
