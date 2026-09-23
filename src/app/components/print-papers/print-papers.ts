@@ -22,7 +22,6 @@ import { FormsModule } from '@angular/forms';
 
 import { jsPDF } from "jspdf";
 import { QRCodeComponent } from 'angularx-qrcode';
-import { environment } from '../../../../src/environments/environment';
 import { encodePaperQr } from 'organic-protocol';
 
 export interface DialogData {
@@ -84,11 +83,15 @@ export class PrintPapers {
   }
 
   validationCheck() {
-    this.canGenerate = this.validated && this.total > 0 && !this.isTooMuch()
+    this.canGenerate = this.validated && this.total > 0 && !this.isTooMuch() && !this.isMissingCore()
   }
 
   isTooMuch() {
     return this.total > this.max
+  }
+
+  isMissingCore() {
+    return !this.user.corePk
   }
 
   getBase64Image(img: any) {
@@ -174,13 +177,13 @@ export class PrintPapers {
   }
 
   generatePapers() {
-    if (this.userService.isReadOnlySession()) return
+    if (this.userService.isReadOnlySession() || this.isMissingCore()) return
 
     const sk = this.userService.getSecretKey()
     for (let i = 0; i < this.papercounts.length; i++) {
       if (this.papercounts[i] > 0) {
         for (let j = 0; j < this.papercounts[i]; j++) {
-          this.papers.push(this.user.blockchain.generatePaper(sk, i, environment.refPublicKey))
+          this.papers.push(this.user.blockchain.generatePaper(sk, i, this.user.corePk))
         }
       }
     }

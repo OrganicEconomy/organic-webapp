@@ -80,6 +80,7 @@ describe('RestoreAccount', () => {
     req.flush({ publickey: TEST_PK, name: 'Alice', mail: 'alice@ex.fr', secretkey: secretkeyForCorrectPassword, status: 'pending-validation', blocks: [], devicetoken: 'dt-1' })
     await waitUntil(() => connectSpy.calls.count() > 0 || component.error !== '')
     httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
 
     expect(saveSpy).toHaveBeenCalled()
     const savedAccount = saveSpy.calls.mostRecent().args[0]
@@ -104,6 +105,7 @@ describe('RestoreAccount', () => {
     req.flush({ publickey: TEST_PK, name: 'Alice', mail: 'alice@ex.fr', secretkey: secretkeyForCorrectPassword, status: 'active', blocks: [], devicetoken: 'dt-1' })
     await waitUntil(() => connectSpy.calls.count() > 0)
     httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
 
     expect(router.navigate).toHaveBeenCalledWith(['/home'])
   });

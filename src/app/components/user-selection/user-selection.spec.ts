@@ -123,6 +123,7 @@ describe('UserSelection', () => {
     component.selectUser(0)
     await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0)
     httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
@@ -137,6 +138,7 @@ describe('UserSelection', () => {
     component.selectUser(0)
     await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0)
     httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
 
     expect(router.navigate).toHaveBeenCalledWith(['/pending-validation']);
   });

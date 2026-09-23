@@ -54,6 +54,11 @@ export interface Account {
    * kept here so it's still readable offline between two launches.
    */
   myEcosystems: MyEcosystemEntry[]
+  /**
+   * The server's core ecosystem public key, cached the same way as
+   * myEcosystems — null until the server has one (Phase-2.md §5).
+   */
+  corePk: string | null
 }
 
 /** The in-memory shape components work with: a stored Account plus its live blockchain. */
@@ -76,5 +81,6 @@ export function makeDefaultAccount(publickey: string): Account {
     devicetoken: '',
     lastSavedBlockSignature: null,
     myEcosystems: [],
+    corePk: null,
   }
 }

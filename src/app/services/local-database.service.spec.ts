@@ -60,6 +60,17 @@ describe('LocalDatabaseService', () => {
     expect(loaded.myEcosystems).toEqual([{ publickey: 'eco-pk', name: 'Boulangerie', role: 'actor' }])
   });
 
+  it('should round-trip the cached corePk', async () => {
+    const pk = uniquePk('core-pk')
+    const account = makeDefaultAccount(pk)
+    account.corePk = 'core-ecosystem-pk'
+
+    await service.saveUser(account)
+    const loaded: any = await service.getUser(pk)
+
+    expect(loaded.corePk).toBe('core-ecosystem-pk')
+  });
+
   it('should never persist a plaintext password field', async () => {
     const pk = uniquePk('nopassword')
     const account: any = makeDefaultAccount(pk)
