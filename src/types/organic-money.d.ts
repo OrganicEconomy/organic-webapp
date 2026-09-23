@@ -104,3 +104,9 @@ declare module 'organic-money/src/Transaction.js' {
     EARN: number
   }
 }
+
+declare module 'organic-money/src/errors.js' {
+  export class InvalidTransactionError extends Error {}
+  export class UnauthorizedError extends Error {}
+  export class InvalidBlockchainError extends Error {}
+}

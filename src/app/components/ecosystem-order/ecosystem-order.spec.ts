@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
+import { InvalidTransactionError } from 'organic-money/src/errors.js';
 
 import { EcosystemOrder } from './ecosystem-order';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -28,7 +29,7 @@ describe('EcosystemOrder', () => {
   let router: Router;
 
   beforeEach(() => {
-    fakeTx = { export: () => ({ exported: true }) };
+    fakeTx = { export: jasmine.createSpy('export').and.returnValue({ exported: true }) };
     fakeCitizenBlockchain = {
       payerOrder: jasmine.createSpy('payerOrder').and.returnValue(fakeTx),
     };
@@ -192,6 +193,71 @@ describe('EcosystemOrder', () => {
       component.submitOrder();
 
       expect(component.displayMessage).toHaveBeenCalledWith('Ordre enregistré mais non transmis — réessayez plus tard.');
+    });
+
+    it('should show a clear message when the exact same order was already made today', () => {
+      spyOn(component, 'displayMessage');
+      fakeCitizenBlockchain.payerOrder.and.throwError(new InvalidTransactionError('Transaction duplicate abc123'));
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
+    });
+
+    it('should not build a second order while the first is still pending (double-click guard)', () => {
+      const subject = new Subject<unknown>();
+      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+      component.submitOrder();
+
+      expect(fakeCitizenBlockchain.payerOrder).toHaveBeenCalledTimes(1);
+    });
+
+    it('should disable the submit button while a submission is pending', () => {
+      const subject = new Subject<unknown>();
+      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+      fixture.detectChanges();
+
+      const submitButton: HTMLButtonElement = fixture.nativeElement.querySelector('.submit-order-button');
+      expect(submitButton.disabled).toBeTrue();
+    });
+
+    it('should re-enable the submit button once the submission settles', () => {
+      const subject = new Subject<unknown>();
+      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+      fixture.detectChanges();
+      const submitButton: HTMLButtonElement = fixture.nativeElement.querySelector('.submit-order-button');
+      expect(submitButton.disabled).toBeTrue();
+
+      subject.next({});
+      fixture.detectChanges();
+      expect(submitButton.disabled).toBeFalse();
+    });
+
+    it('should not leave submitting stuck true if building the wire payload throws asynchronously', () => {
+      const subject = new Subject<unknown>();
+      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      fakeTx.export.and.callFake(() => { throw new Error('boom'); });
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+
+      expect(() => subject.next({})).not.toThrow();
+      expect(component.submitting).toBeFalse();
     });
   });
 });

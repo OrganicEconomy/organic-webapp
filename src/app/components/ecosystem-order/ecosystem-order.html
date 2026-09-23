@@ -26,7 +26,7 @@
   </mat-card-content>
 
   <mat-card-actions>
-    <button mat-flat-button (click)="submitOrder()" [disabled]="userService.isReadOnlySession()">Émettre</button>
+    <button mat-flat-button class="submit-order-button" (click)="submitOrder()" [disabled]="submitting || userService.isReadOnlySession()">Émettre</button>
     <a mat-stroked-button [routerLink]="['/ecosystems', ecosystemPk]">
       <i class="bi bi-arrow-left"></i> Retour
     </a>
