@@ -53,6 +53,7 @@ export class LocalDatabaseService {
             devicetoken: data.devicetoken,
             lastSavedBlockSignature: data.lastSavedBlockSignature,
             myEcosystems: data.myEcosystems,
+            corePk: data.corePk,
         }
 
         try {

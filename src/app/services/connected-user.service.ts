@@ -28,6 +28,7 @@ export class ConnectedUserService {
             user.lastSavedBlockSignature = user.blockchain.lastblock.signature
         }
         this.refreshMyEcosystems()
+        this.refreshCorePk()
     }
 
     /**
@@ -42,6 +43,21 @@ export class ConnectedUserService {
         this.server.getMyEcosystems(user.serverUrl, user.publickey).subscribe({
             next: (myEcosystems) => {
                 user.myEcosystems = myEcosystems
+                this.localDB.saveUser(user)
+            },
+            error: () => { /* keep whatever was already cached */ },
+        })
+    }
+
+    /**
+     * Refreshes the server's core ecosystem public key — same policy as
+     * refreshMyEcosystems: once per app launch, silent on error.
+     */
+    public refreshCorePk(): void {
+        const user = this.connectedUser as any
+        this.server.getServerInfo(user.serverUrl).subscribe({
+            next: (info) => {
+                user.corePk = info.corePk
                 this.localDB.saveUser(user)
             },
             error: () => { /* keep whatever was already cached */ },

@@ -40,6 +40,7 @@ describe('PrintPapers', () => {
       name: 'Alice',
       contacts: [],
       blockchain: fakeBlockchain,
+      corePk: REFERENT_PK,
     };
     stubConnectedUserService = {
       getConnectedUser: () => fakeAccount,
@@ -98,5 +99,48 @@ describe('PrintPapers', () => {
 
     expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
     expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+  });
+
+  it('generatePapers() should target the real core ecosystem public key', () => {
+    component.papercounts[5] = 1;
+
+    component.generatePapers();
+
+    expect(fakeBlockchain.generatePaper).toHaveBeenCalledWith('the-real-sk', 5, REFERENT_PK);
+  });
+
+  describe('isMissingCore', () => {
+    it('should be true when the account has no cached corePk', () => {
+      fakeAccount.corePk = null;
+
+      expect(component.isMissingCore()).toBeTrue();
+    });
+
+    it('should be false when the account has a cached corePk', () => {
+      expect(component.isMissingCore()).toBeFalse();
+    });
+  });
+
+  it('should not generate any paper when the server has no core ecosystem yet', () => {
+    fakeAccount.corePk = null;
+    component.papercounts[5] = 1;
+
+    component.generatePapers();
+
+    expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
+    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+  });
+
+  describe('validationCheck', () => {
+    it('should keep canGenerate false when the server has no core ecosystem yet, even if otherwise valid', () => {
+      fakeAccount.corePk = null;
+      component.total = 10;
+      component.max = 100;
+      component.validated = true;
+
+      component.validationCheck();
+
+      expect(component.canGenerate).toBeFalse();
+    });
   });
 });

@@ -7,6 +7,7 @@ import { makeDefaultAccount } from '../models/account';
 
 const SERVER_URL = 'https://trifouillis.fr';
 const MINE_URL = `${SERVER_URL}/api/v1/ecosystems/mine`;
+const INFO_URL = `${SERVER_URL}/api/v1/info`;
 
 describe('ConnectedUserService', () => {
   let service: ConnectedUserService;
@@ -89,10 +90,47 @@ describe('ConnectedUserService', () => {
       service.setConnectedUser(account, 'sk')
 
       httpMock.expectOne((r) => r.url === MINE_URL).error(new ProgressEvent('network error'))
+      httpMock.expectOne((r) => r.url === INFO_URL).flush({ corePk: null })
 
       expect(service.getConnectedUser().myEcosystems).toEqual([
         { publickey: 'old-pk', name: 'Old', role: 'admin' },
       ])
+    });
+  });
+
+  describe('refreshing corePk on connect', () => {
+    it('should fetch and cache the server core ecosystem public key', () => {
+      const account: any = makeDefaultAccount('pk-core')
+      account.serverUrl = SERVER_URL
+      service.setConnectedUser(account, 'sk')
+
+      httpMock.expectOne((r) => r.url === MINE_URL).flush([])
+      httpMock.expectOne((r) => r.url === INFO_URL).flush({ corePk: 'core-ecosystem-pk' })
+
+      expect(service.getConnectedUser().corePk).toBe('core-ecosystem-pk')
+    });
+
+    it('should cache a null corePk when the server has no core ecosystem yet', () => {
+      const account: any = makeDefaultAccount('pk-core-2')
+      account.serverUrl = SERVER_URL
+      service.setConnectedUser(account, 'sk')
+
+      httpMock.expectOne((r) => r.url === MINE_URL).flush([])
+      httpMock.expectOne((r) => r.url === INFO_URL).flush({ corePk: null })
+
+      expect(service.getConnectedUser().corePk).toBeNull()
+    });
+
+    it('should keep the previously cached corePk if the refresh fails', () => {
+      const account: any = makeDefaultAccount('pk-core-3')
+      account.serverUrl = SERVER_URL
+      account.corePk = 'old-core-pk'
+      service.setConnectedUser(account, 'sk')
+
+      httpMock.expectOne((r) => r.url === MINE_URL).flush([])
+      httpMock.expectOne((r) => r.url === INFO_URL).error(new ProgressEvent('network error'))
+
+      expect(service.getConnectedUser().corePk).toBe('old-core-pk')
     });
   });
 });

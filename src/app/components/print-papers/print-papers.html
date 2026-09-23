@@ -30,6 +30,12 @@
                 </p>
             </mat-list-item>
 
+            @if (isMissingCore()) {
+            <mat-list-item>
+                <span class="warning">Ce serveur n'a pas encore d'écosystème cœur — impossible de générer des billets pour l'instant.</span>
+            </mat-list-item>
+            }
+
             <mat-list-item>
                 <mat-checkbox [(ngModel)]="validated" (change)="validationCheck()">
                     J'ai compris qu'en cliquant sur "Générer" je ne reviendrai pas en arrière.
