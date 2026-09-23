@@ -83,30 +83,42 @@ describe('PrintPapers', () => {
     }
   });
 
-  it('generatePapers() should record the mutation via backup.service', () => {
-    component.papercounts[5] = 1;
+  describe('generatePapers', () => {
+    it('should record the mutation via backup.service', () => {
+      component.papercounts[5] = 1;
 
-    component.generatePapers();
+      component.generatePapers();
 
-    expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
-  });
+      expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+    });
 
-  it('should not generate any paper when the session is read-only', () => {
-    stubConnectedUserService.isReadOnlySession = () => true;
-    component.papercounts[5] = 1;
+    it('should not generate any paper when the session is read-only', () => {
+      stubConnectedUserService.isReadOnlySession = () => true;
+      component.papercounts[5] = 1;
 
-    component.generatePapers();
+      component.generatePapers();
 
-    expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
-    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
-  });
+      expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
+      expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+    });
 
-  it('generatePapers() should target the real core ecosystem public key', () => {
-    component.papercounts[5] = 1;
+    it('should target the real core ecosystem public key', () => {
+      component.papercounts[5] = 1;
 
-    component.generatePapers();
+      component.generatePapers();
 
-    expect(fakeBlockchain.generatePaper).toHaveBeenCalledWith('the-real-sk', 5, REFERENT_PK);
+      expect(fakeBlockchain.generatePaper).toHaveBeenCalledWith('the-real-sk', 5, REFERENT_PK);
+    });
+
+    it('should not generate any paper when the server has no core ecosystem yet', () => {
+      fakeAccount.corePk = null;
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
+      expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+    });
   });
 
   describe('isMissingCore', () => {
@@ -119,16 +131,6 @@ describe('PrintPapers', () => {
     it('should be false when the account has a cached corePk', () => {
       expect(component.isMissingCore()).toBeFalse();
     });
-  });
-
-  it('should not generate any paper when the server has no core ecosystem yet', () => {
-    fakeAccount.corePk = null;
-    component.papercounts[5] = 1;
-
-    component.generatePapers();
-
-    expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
-    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
   });
 
   describe('validationCheck', () => {

@@ -49,10 +49,6 @@ export class ConnectedUserService {
         })
     }
 
-    /**
-     * Refreshes the server's core ecosystem public key — same policy as
-     * refreshMyEcosystems: once per app launch, silent on error.
-     */
     public refreshCorePk(): void {
         const user = this.connectedUser as any
         this.server.getServerInfo(user.serverUrl).subscribe({
