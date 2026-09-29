@@ -4,6 +4,20 @@
   <meta charset="utf-8">
   <title>Monnaie organique</title>
   <base href="/">
+  <script>
+    // GitHub Pages has no server-side routing: a deep link (e.g. /app/pay)
+    // that doesn't match a real file gets redirected here by the site's
+    // 404.html, with the intended path stashed in sessionStorage — restore
+    // it before Angular's router reads location.pathname, so a refresh or
+    // shared link still lands on the right screen instead of always /app/.
+    (function () {
+      var redirect = sessionStorage.getItem('app-redirect-path');
+      if (redirect) {
+        sessionStorage.removeItem('app-redirect-path');
+        history.replaceState(null, '', redirect);
+      }
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap" rel="stylesheet">
