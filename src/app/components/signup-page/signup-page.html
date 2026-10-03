@@ -25,18 +25,32 @@
             <input matInput type="email" formControlName="email" placeholder="turlututu@chapeau.tu">
             <mat-icon matSuffix>email</mat-icon>
             <mat-hint>Votre email ne sera jamais partagé.</mat-hint>
+            @if (signupForm.get('email')?.hasError('required')) {
+              <mat-error>Ce champ est obligatoire.</mat-error>
+            } @else if (signupForm.get('email')?.hasError('email')) {
+              <mat-error>Adresse email invalide.</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Nom & prénom</mat-label>
             <input matInput type="text" formControlName="name" placeholder="Alain Terrieur">
             <mat-icon matSuffix>person</mat-icon>
+            @if (signupForm.get('name')?.hasError('required')) {
+              <mat-error>Ce champ est obligatoire.</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
             <mat-label>Date de naissance</mat-label>
-            <input matInput type="date" formControlName="birthdate">
+            <input matInput type="text" inputmode="numeric" maxlength="10" placeholder="JJ/MM/AAAA"
+                   formControlName="birthdate" (input)="onBirthdateInput($event)">
             <mat-icon matSuffix>cake</mat-icon>
+            @if (signupForm.get('birthdate')?.hasError('required')) {
+              <mat-error>Ce champ est obligatoire.</mat-error>
+            } @else if (signupForm.get('birthdate')?.hasError('invalidDate')) {
+              <mat-error>Cette date n'existe pas.</mat-error>
+            }
           </mat-form-field>
 
           <mat-form-field appearance="outline" class="full-width">
@@ -45,9 +59,12 @@
             <button mat-icon-button matSuffix type="button" (click)="hidePassword = !hidePassword" [attr.aria-label]="'Afficher le mot de passe'" [attr.aria-pressed]="!hidePassword">
               <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
             </button>
+            @if (signupForm.get('password')?.hasError('required')) {
+              <mat-error>Ce champ est obligatoire.</mat-error>
+            }
           </mat-form-field>
 
-          <button mat-flat-button color="primary" type="submit" class="full-width submit-btn">
+          <button mat-flat-button color="primary" type="submit" class="full-width submit-btn" [disabled]="signupForm.invalid">
             Créer mon compte
           </button>
 
