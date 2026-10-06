@@ -95,7 +95,7 @@ mat-slider {
     font-size: 2.2rem;
     font-weight: 700;
     color: var(--mat-sys-primary);
-    width: 4ch;
+    width: 5ch;
     flex: 0 0 auto;
     padding: 0;
 }
