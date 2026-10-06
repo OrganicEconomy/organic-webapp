@@ -92,6 +92,11 @@ section:last-of-type button {
     margin: 0 0 4px 0;
 }
 
+.history-card mat-card-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .tx-row {
     display: flex;
     align-items: center;
