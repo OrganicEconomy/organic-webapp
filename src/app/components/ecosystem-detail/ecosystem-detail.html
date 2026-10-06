@@ -10,19 +10,19 @@
     } @else {
     <p>Vous êtes : {{ roleLabel }}</p>
 
-    <p>Solde : {{ balance }} ⬡</p>
-    <p>Investissements disponibles : {{ affordableInvests }}</p>
+    <p>Salaires à distribuer : <span>{{ balance }} <mat-icon svgIcon="currency-mark"></mat-icon></span></p>
+    <p>Trésorerie : <span>{{ affordableInvests }} <mat-icon svgIcon="currency-mark"></mat-icon></span></p>
 
     <p>Admins : {{ admins.length > 0 ? admins.join(', ') : 'aucun' }}</p>
     <p>Actants : {{ actorCount }} personne{{ actorCount > 1 ? 's' : '' }}</p>
     <p>Payants : {{ payers.length > 0 ? payers.join(', ') : 'aucun' }}</p>
 
-    <h3>Investissements à venir</h3>
+    <h3>Trésorerie à venir</h3>
     <div class="invest-table">
       @for (row of upcomingInvests; track row.label) {
       <div class="invest-row">
         <span>{{ row.label }}</span>
-        <span>{{ row.count }}</span>
+        <span>{{ row.count }} <mat-icon svgIcon="currency-mark"></mat-icon></span>
       </div>
       }
     </div>

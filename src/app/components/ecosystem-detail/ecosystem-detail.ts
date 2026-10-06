@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Location } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -25,6 +26,7 @@ interface InvestHorizon {
     RouterLink,
     MatCardModule,
     MatButtonModule,
+    MatIconModule,
   ],
   templateUrl: './ecosystem-detail.html',
   styleUrl: './ecosystem-detail.css',
