@@ -10,5 +10,15 @@ mat-icon[svgIcon="currency-mark"] {
   width: 1em;
   height: 1em;
   font-size: inherit;
-  vertical-align: middle;
+}
+
+/* Any inline amount wrapper ending in "<amount> <mat-icon currency-mark>" —
+   vertical-align keeps landing wrong depending on the digits' own metrics
+   (text-bottom too low, middle still off for bold numerals). Flex-centering
+   the wrapper itself doesn't depend on font metrics, so it's reliable
+   everywhere this pattern is used, not just wherever we happened to notice it. */
+span:has(> mat-icon[svgIcon="currency-mark"]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2em;
 }
