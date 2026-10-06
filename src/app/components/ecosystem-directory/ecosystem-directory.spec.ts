@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
@@ -19,6 +20,7 @@ describe('EcosystemDirectory', () => {
   let component: EcosystemDirectory;
   let fixture: ComponentFixture<EcosystemDirectory>;
   let router: Router;
+  let location: Location;
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
@@ -37,8 +39,10 @@ describe('EcosystemDirectory', () => {
     }).compileComponents();
 
     router = TestBed.inject(Router);
+    location = TestBed.inject(Location);
     httpMock = TestBed.inject(HttpTestingController);
     spyOn(router, 'navigate');
+    spyOn(location, 'back');
   });
 
   afterEach(() => {
@@ -107,6 +111,18 @@ describe('EcosystemDirectory', () => {
       httpMock.expectOne((r) => r.url === LIST_URL).flush([]);
 
       expect(component.formatDistance(1.2)).toBe('1,2 km');
+    });
+  });
+
+  describe('template', () => {
+    it('should go back in history when "Retour" is clicked, not to a fixed route', async () => {
+      await createComponent();
+      httpMock.expectOne((r) => r.url === LIST_URL).flush([]);
+
+      const backBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.back-btn');
+      backBtn.click();
+
+      expect(location.back).toHaveBeenCalled();
     });
   });
 });

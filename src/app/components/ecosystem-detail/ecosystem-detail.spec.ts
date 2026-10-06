@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
+import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { MatDialog } from '@angular/material/dialog';
@@ -29,6 +30,7 @@ describe('EcosystemDetail', () => {
   let component: EcosystemDetail;
   let fixture: ComponentFixture<EcosystemDetail>;
   let router: Router;
+  let location: Location;
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
@@ -80,8 +82,10 @@ describe('EcosystemDetail', () => {
     }).compileComponents();
 
     router = TestBed.inject(Router);
+    location = TestBed.inject(Location);
     httpMock = TestBed.inject(HttpTestingController);
     spyOn(router, 'navigate');
+    spyOn(location, 'back');
   });
 
   afterEach(() => {
@@ -414,6 +418,18 @@ describe('EcosystemDetail', () => {
 
       expect(fakeAccount.contacts.length).toBe(2); // the pre-existing admin-pk contact + the ecosystem, not 3
       expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('template', () => {
+    it('should go back in history when "Retour" is clicked, not to a fixed route', () => {
+      createComponent();
+      httpMock.expectOne(INFO_URL).flush(ECO_INFO);
+
+      const backBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.back-btn');
+      backBtn.click();
+
+      expect(location.back).toHaveBeenCalled();
     });
   });
 });

@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { Location } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -25,7 +26,7 @@ export class EcosystemDirectory {
   user: any;
   ecosystems: EcosystemListEntry[] = [];
 
-  constructor(private router: Router) {
+  constructor(private router: Router, private location: Location) {
     this.user = this.userService.getConnectedUser();
     if (!this.user) {
       this.router.navigate(['/user-selection']);
@@ -42,5 +43,9 @@ export class EcosystemDirectory {
 
   formatDistance(km: number): string {
     return `${km.toFixed(1).replace('.', ',')} km`;
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 }
