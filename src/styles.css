@@ -10,6 +10,17 @@ mat-icon[svgIcon="currency-mark"] {
   width: 1em;
   height: 1em;
   font-size: inherit;
+  overflow: visible;
+}
+
+/* Material's own .mat-icon base rule hardcodes overflow:hidden on the host —
+   if the inner <svg> (no explicit width/height, only a viewBox) doesn't end
+   up scaling to exactly fill the 1em box above for any reason, the mismatch
+   gets silently cropped instead of just looking slightly off. Force it
+   directly instead of trusting implicit SVG sizing. */
+mat-icon[svgIcon="currency-mark"] svg {
+  width: 100%;
+  height: 100%;
 }
 
 /* Any inline amount wrapper ending in "<amount> <mat-icon currency-mark>" —
