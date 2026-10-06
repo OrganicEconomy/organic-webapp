@@ -78,9 +78,9 @@
   </mat-card-content>
 
   <mat-card-actions>
-    <a mat-stroked-button [routerLink]="['/ecosystems', ecosystemPk]">
+    <button mat-stroked-button class="back-btn" (click)="goBack()">
       <i class="bi bi-arrow-left"></i> Retour
-    </a>
+    </button>
   </mat-card-actions>
 </mat-card>
 }

@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,7 +17,6 @@ import { extractServerErrorMessage } from '../../services/server-error.util';
   selector: 'app-ecosystem-invest',
   imports: [
     FormsModule,
-    RouterLink,
     MatCardModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -37,13 +37,17 @@ export class EcosystemInvest {
   dailyAmount = 0;
   days = 1;
 
-  constructor(private route: ActivatedRoute, private router: Router) {
+  constructor(private route: ActivatedRoute, private router: Router, private location: Location) {
     this.user = this.userService.getConnectedUser();
     if (!this.user) {
       this.router.navigate(['/user-selection']);
       return;
     }
     this.ecosystemPk = this.route.snapshot.paramMap.get('pk') ?? '';
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   get max(): number {
