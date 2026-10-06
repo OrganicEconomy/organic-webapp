@@ -33,6 +33,14 @@ html {
   --mat-sys-on-background: #090302;
   --mat-sys-on-surface-variant: #7a6e65;
   --mat-sys-outline-variant: #ddc2a5;
+  --mat-sys-surface-variant: #efe2d0;
+
+  // Fill-appearance mat-form-field (the default when a template doesn't ask
+  // for appearance="outline") reads its own baked-in token, not --mat-sys-
+  // surface-variant above — override it directly so every select/input that
+  // forgot to opt into "outline" still lands on-brand instead of the cyan-
+  // derived default.
+  --mat-form-field-filled-container-color: #efe2d0;
 
   // No Material equivalent (hover is modeled as an opacity overlay on
   // --mat-sys-primary there) — for any hand-rolled hover rule outside mat-button.
