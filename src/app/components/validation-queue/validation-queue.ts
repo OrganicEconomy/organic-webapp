@@ -4,9 +4,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
+import { requestedAgo } from '../../utils/requested-ago.util';
 import type { ValidationListEntry } from 'organic-protocol';
-
-const MS_PER_HOUR = 3600000;
 
 @Component({
   selector: 'app-validation-queue',
@@ -39,12 +38,5 @@ export class ValidationQueue {
     });
   }
 
-  requestedAgo(requestedAt: string): string {
-    const elapsedHours = Math.floor((Date.now() - new Date(requestedAt).getTime()) / MS_PER_HOUR);
-    if (elapsedHours < 1) return "il y a moins d'une heure";
-    if (elapsedHours < 24) return `il y a ${elapsedHours}h`;
-    const elapsedDays = Math.floor(elapsedHours / 24);
-    if (elapsedDays === 1) return 'hier';
-    return `il y a ${elapsedDays} jours`;
-  }
+  requestedAgo = requestedAgo;
 }

@@ -22,9 +22,33 @@
     </mat-card-content>
 </mat-card>
 
+@if (pendingValidations.length > 0) {
+<mat-card appearance="outlined" class="validations-card">
+    <mat-card-header>
+        <mat-card-title>Validations en attente</mat-card-title>
+    </mat-card-header>
+
+    <mat-divider [inset]="true"></mat-divider>
+
+    <mat-card-content>
+        <div class="candidate-list">
+            @for (candidate of pendingValidations; track candidate.pk) {
+            <div class="candidate-card">
+                <div class="candidate-info">
+                    <span class="candidate-name">{{ candidate.name }}</span>
+                    <span class="candidate-meta">demandé {{ requestedAgo(candidate.requestedAt) }}</span>
+                </div>
+                <a mat-stroked-button [routerLink]="['/validations', candidate.pk]">Examiner</a>
+            </div>
+            }
+        </div>
+    </mat-card-content>
+</mat-card>
+}
+
 <mat-card appearance="outlined" class="pending-card">
     <mat-card-header>
-        <mat-card-title>Paiements en attente</mat-card-title>
+        <mat-card-title>Paiements à encaisser</mat-card-title>
         <button mat-icon-button class="reload-btn" (click)="pending.refresh()" title="Recharger">
             <i class="bi bi-arrow-clockwise"></i>
         </button>

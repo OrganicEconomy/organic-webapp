@@ -61,9 +61,63 @@ mat-progress-bar {
     color: var(--mat-sys-on-surface-variant);
 }
 
+/* Night-blue balance card — a one-off accent, not a global token remap
+   (--mat-sys-tertiary stays Material's orange, used elsewhere for confetti). */
+.identity-card {
+    background: #0b2027;
+}
+
+.identity-card mat-card-title,
+.identity-card .level-line,
+.identity-card .solde-value {
+    color: #faf7f3;
+}
+
+.identity-card .xp-line {
+    color: rgba(250, 247, 243, 0.75);
+}
+
+.identity-card mat-progress-bar {
+    --mat-progress-bar-track-color: rgba(250, 247, 243, 0.18);
+    --mat-progress-bar-active-indicator-color: #ddc2a5;
+}
+
 .pending-card mat-card-content,
-.recent-card mat-card-content {
+.recent-card mat-card-content,
+.validations-card mat-card-content {
     padding: 8px 16px !important;
+}
+
+.candidate-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.candidate-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: 8px;
+}
+
+.candidate-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.candidate-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.candidate-meta {
+    font-size: 0.78rem;
+    color: var(--mat-sys-on-surface-variant);
 }
 
 .pending-card mat-card-header {
