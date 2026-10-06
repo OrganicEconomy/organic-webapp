@@ -47,7 +47,13 @@ export class ServerSelection {
     this.server.getKnownServers(environment.serverUrl).subscribe({
       next: (servers) => {
         this.knownServers = servers
-        if (servers.length > 0) this.selectedUrl = servers[0].url
+        if (servers.length > 0) {
+          this.selectedUrl = servers[0].url
+        } else {
+          // No directory to show — go straight to the URL field, same as the
+          // unreachable-root-server case below.
+          this.useCustom = true
+        }
       },
       // The root server is just a convenience directory — being unreachable
       // shouldn't block someone who wants to type a server URL directly.

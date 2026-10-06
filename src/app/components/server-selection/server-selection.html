@@ -5,22 +5,34 @@
   </mat-card-header>
 
   <mat-card-content>
-    @if (knownServers.length > 0) {
-      <mat-radio-group [(ngModel)]="selectedUrl" (ngModelChange)="useCustom = false; verifiedInfo = null; error = ''" class="server-list">
+    @if (knownServers.length > 0 && !useCustom) {
+      <mat-radio-group [(ngModel)]="selectedUrl" (ngModelChange)="verifiedInfo = null; error = ''" class="server-list">
         @for (server of knownServers; track server.url) {
           <mat-radio-button [value]="server.url">{{ server.name }}</mat-radio-button>
         }
       </mat-radio-group>
       <p class="hint">(liste fournie par le serveur racine)</p>
+      <button mat-button class="use-custom-link" (click)="useCustom = true; verifiedInfo = null; error = ''">
+        Utiliser une autre adresse
+      </button>
     }
 
-    <mat-radio-button [checked]="useCustom" (click)="useCustom = true; verifiedInfo = null; error = ''">
-      Autre (URL ou IP)
-    </mat-radio-button>
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Adresse du serveur</mat-label>
-      <input matInput type="text" [(ngModel)]="customUrl" (focus)="useCustom = true" placeholder="https://…">
-    </mat-form-field>
+    @if (useCustom) {
+      @if (knownServers.length === 0) {
+        <p class="admin-hint">
+          Aucun serveur n'a été trouvé automatiquement. Demandez l'adresse à la personne qui gère votre monnaie locale.
+        </p>
+      }
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Adresse du serveur</mat-label>
+        <input matInput type="text" [(ngModel)]="customUrl" placeholder="https://…">
+      </mat-form-field>
+      @if (knownServers.length > 0) {
+        <button mat-button class="use-list-link" (click)="useCustom = false; verifiedInfo = null; error = ''">
+          ← Revenir à la liste
+        </button>
+      }
+    }
 
     <button mat-flat-button color="primary" class="full-width" (click)="verify()" [disabled]="!chosenUrl || verifying">
       @if (verifying) {
