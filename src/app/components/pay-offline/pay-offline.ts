@@ -5,7 +5,6 @@ import { MatFormField } from '@angular/material/form-field';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatButtonModule } from '@angular/material/button';
-import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -28,7 +27,6 @@ import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
     MatSelectModule,
     MatSliderModule,
     MatButtonModule,
-    MatInputModule,
     MatCardModule,
     MatDividerModule,
     MatIconModule,
