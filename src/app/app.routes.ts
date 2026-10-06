@@ -36,29 +36,31 @@ export const routes: Routes = [
     { path: "signup", component: SignupPage },
     { path: "restore-account", component: RestoreAccount },
     { path: "pending-validation", component: PendingValidation },
-    // Secondary screens reached from within a tab: full-screen, back arrow, no bottom bar.
-    { path: "addcontact", component: AddContact },
-    { path: "cashpapers", component: CashPapers },
-    { path: "printpapers", component: PrintPapers },
-    { path: "pay-offline", component: PayOffline },
-    { path: "receive-offline", component: ReceiveOffline },
-    { path: "transactions", component: TransactionList },
-    { path: "validations", component: ValidationQueue },
-    { path: "validations/:pk", component: ValidationDetail },
-    { path: "scan-candidate", component: ScanCandidate },
-    { path: "ecosystems", component: EcosystemDirectory },
-    { path: "ecosystems/new", component: EcosystemCreate },
-    { path: "ecosystems/:pk", component: EcosystemDetail },
-    { path: "ecosystems/:pk/invest", component: EcosystemInvest },
-    { path: "ecosystems/:pk/roles", component: EcosystemRoles },
-    { path: "ecosystems/:pk/order", component: EcosystemOrder },
-    // The four permanent tabs (Phase-1.md §7) share the bottom-nav shell.
+    // Every other screen shares the bottom-nav shell (Phase-1.md §7) — none of
+    // these read route params or render their own back button, and all
+    // in-app navigation to them uses absolute paths, so nesting them here
+    // doesn't break anything reaching them.
     {
         path: "", component: MainLayout, children: [
             { path: "home", component: Home },
             { path: "pay", component: Pay },
             { path: "contacts", component: Contacts },
             { path: "account", component: AccountDetails },
+            { path: "addcontact", component: AddContact },
+            { path: "cashpapers", component: CashPapers },
+            { path: "printpapers", component: PrintPapers },
+            { path: "pay-offline", component: PayOffline },
+            { path: "receive-offline", component: ReceiveOffline },
+            { path: "transactions", component: TransactionList },
+            { path: "validations", component: ValidationQueue },
+            { path: "validations/:pk", component: ValidationDetail },
+            { path: "scan-candidate", component: ScanCandidate },
+            { path: "ecosystems", component: EcosystemDirectory },
+            { path: "ecosystems/new", component: EcosystemCreate },
+            { path: "ecosystems/:pk", component: EcosystemDetail },
+            { path: "ecosystems/:pk/invest", component: EcosystemInvest },
+            { path: "ecosystems/:pk/roles", component: EcosystemRoles },
+            { path: "ecosystems/:pk/order", component: EcosystemOrder },
         ]
     },
 ];
