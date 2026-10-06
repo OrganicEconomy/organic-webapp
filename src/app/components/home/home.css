@@ -69,7 +69,8 @@ mat-progress-bar {
 
 .identity-card mat-card-title,
 .identity-card .level-line,
-.identity-card .solde-value {
+.identity-card .solde-value,
+.identity-card .solde-row mat-icon {
     color: #faf7f3;
 }
 
