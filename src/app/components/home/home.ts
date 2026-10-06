@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
+import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { toDisplayRow } from '../../utils/transaction-display.util';
@@ -12,7 +13,7 @@ import { requestedAgo } from '../../utils/requested-ago.util';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
 import { BackupService } from '../../services/backup.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
-import type { ValidationListEntry } from 'organic-protocol';
+import type { ValidationListEntry, MyEcosystemEntry } from 'organic-protocol';
 
 @Component({
   selector: 'app-home',
@@ -22,6 +23,7 @@ import type { ValidationListEntry } from 'organic-protocol';
     MatProgressBarModule,
     MatCardModule,
     MatDividerModule,
+    MatListModule,
     MatIconModule,
   ],
   templateUrl: './home.html',
@@ -44,6 +46,7 @@ export class Home {
   remainingBeforeNextLevel = 0
   recentTransactions: any[] = []
   pendingValidations: ValidationListEntry[] = []
+  myEcosystems: MyEcosystemEntry[] = []
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
@@ -51,6 +54,8 @@ export class Home {
       this.router.navigate(['/user-selection']);
       return
     }
+    this.myEcosystems = this.user.myEcosystems ?? []
+
     if (!this.userService.isReadOnlySession()) {
       this.createDailyMoney()
     }

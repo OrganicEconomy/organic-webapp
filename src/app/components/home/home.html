@@ -76,6 +76,32 @@
     </mat-card-content>
 </mat-card>
 
+<mat-card appearance="outlined" class="ecosystems-card">
+    <mat-card-header>
+        <mat-card-title>Écosystèmes</mat-card-title>
+    </mat-card-header>
+
+    <mat-divider [inset]="true"></mat-divider>
+
+    <mat-card-content>
+        @if (myEcosystems.length === 0) {
+        <p class="empty">Vous n'avez de rôle dans aucun écosystème pour l'instant.</p>
+        } @else {
+        <mat-list>
+            @for (eco of myEcosystems; track eco.publickey) {
+            <mat-list-item role="listitem">
+                <a [routerLink]="['/ecosystems', eco.publickey]">{{ eco.name }} — {{ eco.role }}</a>
+            </mat-list-item>
+            }
+        </mat-list>
+        }
+    </mat-card-content>
+
+    <mat-card-actions>
+        <a mat-button routerLink="/ecosystems"><i class="bi bi-compass"></i> Annuaire</a>
+    </mat-card-actions>
+</mat-card>
+
 <mat-card appearance="outlined" class="recent-card">
     <mat-card-header>
         <mat-card-title>Dernières transactions</mat-card-title>
