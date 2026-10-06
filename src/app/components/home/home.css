@@ -88,6 +88,11 @@ mat-progress-bar {
     padding: 8px 16px !important;
 }
 
+.ecosystems-card mat-card-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .candidate-list {
     display: flex;
     flex-direction: column;
