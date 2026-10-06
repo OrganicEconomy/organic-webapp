@@ -205,4 +205,35 @@ describe('Home', () => {
 
     expect(fixture.nativeElement.querySelector('.validations-card')).toBeFalsy();
   });
+
+  it('should default to an empty myEcosystems list when the account has none cached yet', () => {
+    createComponent();
+    expect(component.myEcosystems).toEqual([]);
+  });
+
+  it('should expose the cached myEcosystems list from the connected user', () => {
+    fakeAccount.myEcosystems = [{ publickey: 'eco-pk', name: 'Boulangerie associative', role: 'actor' }];
+
+    createComponent();
+
+    expect(component.myEcosystems).toEqual([{ publickey: 'eco-pk', name: 'Boulangerie associative', role: 'actor' }]);
+  });
+
+  it('should list the account\'s ecosystems and link to the directory', () => {
+    fakeAccount.myEcosystems = [{ publickey: 'eco-pk', name: 'Boulangerie associative', role: 'actor' }];
+
+    createComponent();
+
+    const card = fixture.nativeElement.querySelector('.ecosystems-card');
+    expect(card.textContent).toContain('Boulangerie associative');
+    expect(card.querySelector('a[routerLink="/ecosystems"]')).toBeTruthy();
+  });
+
+  it('should hide the Écosystèmes card entirely when the account has no ecosystems, to avoid overwhelming beginners', () => {
+    fakeAccount.myEcosystems = [];
+
+    createComponent();
+
+    expect(fixture.nativeElement.querySelector('.ecosystems-card')).toBeFalsy();
+  });
 });

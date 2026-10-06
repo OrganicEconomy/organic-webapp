@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { provideRouter } from '@angular/router';
+import { Location } from '@angular/common';
 import { of, throwError, Subject } from 'rxjs';
 
 import { EcosystemInvest } from './ecosystem-invest';
@@ -23,6 +24,7 @@ describe('EcosystemInvest', () => {
   let component: EcosystemInvest;
   let fixture: ComponentFixture<EcosystemInvest>;
   let router: Router;
+  let location: Location;
 
   beforeEach(() => {
     fakeTx = { export: () => ({ exported: true }) };
@@ -53,7 +55,9 @@ describe('EcosystemInvest', () => {
     });
 
     router = TestBed.inject(Router);
+    location = TestBed.inject(Location);
     spyOn(router, 'navigate');
+    spyOn(location, 'back');
 
     fixture = TestBed.createComponent(EcosystemInvest);
     component = fixture.componentInstance;
@@ -200,6 +204,15 @@ describe('EcosystemInvest', () => {
       component.engage();
 
       expect(component.displayMessage).toHaveBeenCalledWith('Engagement enregistré mais non transmis — réessayez plus tard.');
+    });
+  });
+
+  describe('template', () => {
+    it('should go back in history when "Retour" is clicked, not to a fixed route', () => {
+      const backBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.back-btn');
+      backBtn.click();
+
+      expect(location.back).toHaveBeenCalled();
     });
   });
 });

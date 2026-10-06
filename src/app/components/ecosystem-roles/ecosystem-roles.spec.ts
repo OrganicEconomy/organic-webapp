@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
+import { Location } from '@angular/common';
 import { of, throwError, Subject } from 'rxjs';
 import { InvalidTransactionError } from 'organic-money/src/errors.js';
 
@@ -26,6 +27,7 @@ describe('EcosystemRoles', () => {
   let component: EcosystemRoles;
   let fixture: ComponentFixture<EcosystemRoles>;
   let router: Router;
+  let location: Location;
 
   beforeEach(() => {
     fakeTx = { export: jasmine.createSpy('export').and.returnValue({ exported: true }) };
@@ -78,7 +80,9 @@ describe('EcosystemRoles', () => {
     });
 
     router = TestBed.inject(Router);
+    location = TestBed.inject(Location);
     spyOn(router, 'navigate');
+    spyOn(location, 'back');
   });
 
   function createComponent(): void {
@@ -347,6 +351,17 @@ describe('EcosystemRoles', () => {
       component.addRole();
 
       expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
+    });
+  });
+
+  describe('template', () => {
+    it('should go back in history when "Retour" is clicked, not to a fixed route', () => {
+      createComponent();
+
+      const backBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.back-btn');
+      backBtn.click();
+
+      expect(location.back).toHaveBeenCalled();
     });
   });
 });

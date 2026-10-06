@@ -12,7 +12,7 @@ import { requestedAgo } from '../../utils/requested-ago.util';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
 import { BackupService } from '../../services/backup.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
-import type { ValidationListEntry } from 'organic-protocol';
+import type { ValidationListEntry, MyEcosystemEntry } from 'organic-protocol';
 
 @Component({
   selector: 'app-home',
@@ -44,6 +44,7 @@ export class Home {
   remainingBeforeNextLevel = 0
   recentTransactions: any[] = []
   pendingValidations: ValidationListEntry[] = []
+  myEcosystems: MyEcosystemEntry[] = []
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
@@ -51,6 +52,8 @@ export class Home {
       this.router.navigate(['/user-selection']);
       return
     }
+    this.myEcosystems = this.user.myEcosystems ?? []
+
     if (!this.userService.isReadOnlySession()) {
       this.createDailyMoney()
     }

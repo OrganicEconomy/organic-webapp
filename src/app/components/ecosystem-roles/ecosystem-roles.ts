@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -27,7 +28,6 @@ interface RoleHolder {
   selector: 'app-ecosystem-roles',
   imports: [
     FormsModule,
-    RouterLink,
     MatCardModule,
     MatButtonModule,
     MatFormFieldModule,
@@ -61,7 +61,7 @@ export class EcosystemRoles {
   cap = 0;
   capUnlimited = false;
 
-  constructor(private route: ActivatedRoute, private router: Router) {
+  constructor(private route: ActivatedRoute, private router: Router, private location: Location) {
     this.user = this.userService.getConnectedUser();
     if (!this.user) {
       this.router.navigate(['/user-selection']);
@@ -70,6 +70,10 @@ export class EcosystemRoles {
 
     this.ecosystemPk = this.route.snapshot.paramMap.get('pk') ?? '';
     this.fetchAndPopulate();
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   private fetchAndPopulate(): void {
