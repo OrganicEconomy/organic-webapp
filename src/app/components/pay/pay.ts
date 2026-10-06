@@ -8,11 +8,13 @@ import { MatSliderModule } from '@angular/material/slider';
 import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
 import { BackupService } from '../../services/backup.service';
+import { toDisplayRow } from '../../utils/transaction-display.util';
 
 @Component({
   selector: 'app-pay',
@@ -25,6 +27,7 @@ import { BackupService } from '../../services/backup.service';
     MatButtonModule,
     MatInputModule,
     MatCardModule,
+    MatIconModule,
     FormsModule
   ],
   templateUrl: './pay.html',
@@ -41,6 +44,7 @@ export class Pay {
   max = 0;
   target: string = "";
   validated: boolean = false;
+  recentTransactions: any[] = []
 
   private _snackBar = inject(MatSnackBar);
 
@@ -52,6 +56,10 @@ export class Pay {
       return
     }
     this.max = this.user.blockchain.getAvailableMoneyAmount()
+
+    const bc = this.user.blockchain
+    this.recentTransactions = bc.getHistory().slice(0, 5)
+      .map((tx: any) => toDisplayRow(tx, bc.getMyPublicKey(), this.user.contacts))
   }
 
   ngOnInit(): void {

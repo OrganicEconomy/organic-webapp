@@ -133,6 +133,49 @@ section:last-of-type button {
     text-align: center;
 }
 
+.history-card h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 4px 0;
+}
+
+.tx-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+    font-size: 0.9rem;
+}
+
+.tx-row:last-child {
+    border-bottom: none;
+}
+
+.tx-date {
+    color: var(--mat-sys-on-surface-variant);
+    flex-shrink: 0;
+}
+
+.tx-type {
+    flex: 1;
+    text-align: center;
+}
+
+.tx-amount {
+    font-weight: 600;
+    color: var(--mat-sys-primary);
+    flex-shrink: 0;
+}
+
+.empty {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 0.9rem;
+    text-align: center;
+    padding: 8px 0;
+}
+
 @media (max-width: 599px) {
     :host {
         padding: 12px 8px;
