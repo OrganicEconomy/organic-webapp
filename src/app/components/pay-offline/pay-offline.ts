@@ -9,12 +9,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { encodeOfflineTxQr } from 'organic-protocol';
 import { TransactionMaker } from 'organic-money/src/index.js';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
+import { getContactName } from '../../utils/transaction-display.util';
+import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 
 @Component({
   selector: 'app-pay-offline',
@@ -44,9 +47,10 @@ export class PayOffline {
   amount = 0
   max = 0
   target = ''
-  validated = false
 
   currentQr: string | null = null
+
+  private dialog = inject(MatDialog)
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
@@ -78,14 +82,22 @@ export class PayOffline {
       this.displayMessage("Le montant à payer doit être supérieur à zéro.")
       return
     }
-    if (!this.validated) {
-      this.displayMessage("Veuillez cocher la case de confirmation.")
-      return
-    }
     if (this.userService.isReadOnlySession()) {
       this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.")
       return
     }
+
+    const recipient = getContactName(this.target, this.user.blockchain.getMyPublicKey(), this.contacts)
+    const dialogRef = this.dialog.open(ConfirmDialog, {
+      data: { title: 'Payer par QR', message: `Payer ${this.amount} à ${recipient} par QR ? Les unités seront immédiatement retirées de votre solde.` },
+    });
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed) return;
+      this.executePayOffline();
+    });
+  }
+
+  private executePayOffline(): void {
     try {
       const sk = this.userService.getSecretKey()
       const tx = this.user.blockchain.pay(sk, this.target, this.amount)
@@ -109,7 +121,6 @@ export class PayOffline {
     this.currentQr = null
     this.amount = 0
     this.target = ''
-    this.validated = false
   }
 
   displayMessage(message: string) {

@@ -1,10 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { of } from 'rxjs';
 import { decodeQr } from 'organic-protocol';
 
 import { PayOffline } from './pay-offline';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
+import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 
 const MY_PK = '02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3';
 const CONTACT_PK = '0306ffd8f4fe843f5f7183179dcf36f550326813f56ec824911abca9c9d1cd7834';
@@ -14,6 +17,7 @@ let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
+let dialogSpy: jasmine.SpyObj<MatDialog>;
 
 describe('PayOffline', () => {
   let component: PayOffline;
@@ -43,6 +47,8 @@ describe('PayOffline', () => {
       isReadOnlySession: () => false,
     };
     backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
+    dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
 
     TestBed.configureTestingModule({
       imports: [PayOffline],
@@ -50,6 +56,7 @@ describe('PayOffline', () => {
         provideRouter([]),
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: BackupService, useValue: backupSpy },
+        { provide: MatDialog, useValue: dialogSpy },
       ],
     });
 
@@ -65,17 +72,15 @@ describe('PayOffline', () => {
   it('should call blockchain.pay with the target and amount from the form', () => {
     component.target = CONTACT_PK;
     component.amount = 5;
-    component.validated = true;
 
     component.payOffline();
 
     expect(fakeBlockchain.pay).toHaveBeenCalledWith('the-real-sk', CONTACT_PK, 5);
   });
 
-  it('should not pay when the target is missing, the amount is zero, or unconfirmed', () => {
+  it('should not pay when the target is missing or the amount is zero', () => {
     component.target = '';
     component.amount = 5;
-    component.validated = true;
     component.payOffline();
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
 
@@ -83,17 +88,32 @@ describe('PayOffline', () => {
     component.amount = 0;
     component.payOffline();
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
 
+  it('should open a confirmation dialog when Payer par QR is tapped', () => {
+    component.target = CONTACT_PK;
     component.amount = 5;
-    component.validated = false;
+
     component.payOffline();
+
+    expect(dialogSpy.open).toHaveBeenCalledWith(ConfirmDialog, {
+      data: { title: 'Payer par QR', message: jasmine.stringMatching(/5/) },
+    });
+  });
+
+  it('should not call blockchain.pay when the confirmation dialog is dismissed', () => {
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(false) } as any);
+    component.target = CONTACT_PK;
+    component.amount = 5;
+
+    component.payOffline();
+
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
   });
 
   it('should record the mutation (via backup.service) and add the tx to sentOfflineTx after paying', () => {
     component.target = CONTACT_PK;
     component.amount = 5;
-    component.validated = true;
 
     component.payOffline();
 
@@ -105,7 +125,6 @@ describe('PayOffline', () => {
   it('should display a QR that decodes back to the paid transaction', () => {
     component.target = CONTACT_PK;
     component.amount = 5;
-    component.validated = true;
 
     component.payOffline();
 
@@ -122,7 +141,6 @@ describe('PayOffline', () => {
     stubConnectedUserService.isReadOnlySession = () => true;
     component.target = CONTACT_PK;
     component.amount = 5;
-    component.validated = true;
 
     component.payOffline();
 
