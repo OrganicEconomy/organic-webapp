@@ -26,6 +26,21 @@ mat-card-content {
     text-align: center;
 }
 
+mat-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 0 16px 16px !important;
+}
+
+mat-card-actions button,
+mat-card-actions a {
+    width: 100%;
+    height: 44px;
+    font-size: 1rem;
+    border-radius: 8px !important;
+}
+
 .scan-error {
     color: var(--mat-sys-error);
     font-size: 0.85rem;
@@ -122,5 +137,10 @@ mat-card-content {
 
     mat-card {
         border-radius: 12px !important;
+    }
+
+    mat-card-actions button,
+    mat-card-actions a {
+        height: 48px;
     }
 }
