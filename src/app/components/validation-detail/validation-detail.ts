@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { CitizenBlockchain } from 'organic-money/src/index.js';
@@ -9,7 +10,6 @@ import { ServerConnexionService } from '../../services/server-connection.service
 @Component({
   selector: 'app-validation-detail',
   imports: [
-    RouterLink,
     MatCardModule,
     MatButtonModule,
   ],
@@ -28,7 +28,7 @@ export class ValidationDetail {
 
   private blocks: unknown[] = [];
 
-  constructor(private route: ActivatedRoute, private router: Router) {
+  constructor(private route: ActivatedRoute, private router: Router, private location: Location) {
     this.user = this.userService.getConnectedUser();
     if (!this.user) {
       this.router.navigate(['/user-selection']);
@@ -54,7 +54,7 @@ export class ValidationDetail {
     const initBlock = candidateChain.validateAccount(sk);
 
     this.server.approveValidation(this.user.serverUrl, this.candidatePk, this.user.publickey, sk, initBlock).subscribe({
-      next: () => { this.router.navigate(['/validations']); },
+      next: () => { this.location.back(); },
       error: () => { this.actionError = "Échec de la validation."; },
     });
   }
@@ -63,8 +63,12 @@ export class ValidationDetail {
     const sk = this.userService.getSecretKey();
 
     this.server.rejectValidation(this.user.serverUrl, this.candidatePk, this.user.publickey, sk).subscribe({
-      next: () => { this.router.navigate(['/validations']); },
+      next: () => { this.location.back(); },
       error: () => { this.actionError = "Échec du refus."; },
     });
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 }
