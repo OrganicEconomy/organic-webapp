@@ -27,12 +27,6 @@
         </section>
 
         <section>
-            <input id="validation" type="checkbox" name="validation" [(ngModel)]="validated">
-            <label for="validation">J'ai compris qu'en cliquant sur "Payer" je ne
-                reviendrai pas en arrière.</label>
-        </section>
-
-        <section>
             <button mat-flat-button class="pay-btn" (click)="pay()" [disabled]="userService.isReadOnlySession()">Payer</button>
             @if (userService.isReadOnlySession()) {
             <p class="read-only-notice">Ce compte est actif sur un autre appareil — lecture seule.</p>
