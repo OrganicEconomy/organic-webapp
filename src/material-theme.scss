@@ -10,12 +10,33 @@ html {
   height: 100%;
   @include mat.theme((
     color: (
-      primary: mat.$cyan-palette,
-      tertiary: mat.$orange-palette,
+      primary: mat.$cyan-palette,    // kept only as scaffolding input, overridden below
+      tertiary: mat.$orange-palette, // leave as-is: consumed by level-up-dialog.css for confetti
     ),
-    typography: Roboto,
+    typography: ('Century Gothic', Poppins, 'Trebuchet MS', sans-serif),
     density: 0,
   ));
+
+  // --- Brand palette (terracotta / kaki olive / sand), overriding Material's
+  // generated system variables in place rather than regenerating full M3
+  // tonal palettes — this app has a single fixed light theme, so there's no
+  // light/dark tonal ramp to gain from the heavier approach.
+  --mat-sys-primary: #a44a3f;
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: #ddc2a5;
+  --mat-sys-on-primary-container: #3f1600;
+  --mat-sys-secondary: #666843;
+  --mat-sys-on-secondary: #ffffff;
+  --mat-sys-surface: #f3ece3;
+  --mat-sys-on-surface: #090302;
+  --mat-sys-background: #f3ece3;
+  --mat-sys-on-background: #090302;
+  --mat-sys-on-surface-variant: #7a6e65;
+  --mat-sys-outline-variant: #ddc2a5;
+
+  // No Material equivalent (hover is modeled as an opacity overlay on
+  // --mat-sys-primary there) — for any hand-rolled hover rule outside mat-button.
+  --brand-primary-hover: #8c3f35;
 }
 
 body {
