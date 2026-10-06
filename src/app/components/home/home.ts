@@ -5,7 +5,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
-import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { toDisplayRow } from '../../utils/transaction-display.util';
@@ -23,7 +22,6 @@ import type { ValidationListEntry, MyEcosystemEntry } from 'organic-protocol';
     MatProgressBarModule,
     MatCardModule,
     MatDividerModule,
-    MatListModule,
     MatIconModule,
   ],
   templateUrl: './home.html',

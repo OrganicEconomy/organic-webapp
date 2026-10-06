@@ -228,4 +228,12 @@ describe('Home', () => {
     expect(card.textContent).toContain('Boulangerie associative');
     expect(card.querySelector('a[routerLink="/ecosystems"]')).toBeTruthy();
   });
+
+  it('should hide the Écosystèmes card entirely when the account has no ecosystems, to avoid overwhelming beginners', () => {
+    fakeAccount.myEcosystems = [];
+
+    createComponent();
+
+    expect(fixture.nativeElement.querySelector('.ecosystems-card')).toBeFalsy();
+  });
 });
