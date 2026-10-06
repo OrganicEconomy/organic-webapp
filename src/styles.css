@@ -10,5 +10,5 @@ mat-icon[svgIcon="currency-mark"] {
   width: 1em;
   height: 1em;
   font-size: inherit;
-  vertical-align: text-bottom;
+  vertical-align: middle;
 }
