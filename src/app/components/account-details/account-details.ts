@@ -10,7 +10,6 @@ import type { InfoResponse } from 'organic-protocol';
 import type { BackupPolicy } from '../../models/account';
 import { encryptSecretKey, decryptSecretKey } from '../../services/secret-key-crypto.util';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
 import { MatRadioModule } from '@angular/material/radio';
@@ -26,7 +25,6 @@ import { QRCodeComponent } from 'angularx-qrcode';
     RouterLink,
     MatButtonModule,
     MatCardModule,
-    MatDividerModule,
     MatListModule,
     MatRadioModule,
     MatFormFieldModule,

@@ -4,7 +4,6 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -41,7 +40,6 @@ const COL_PER_PAGE: number = 2;
     MatButtonModule,
     MatProgressBarModule,
     MatCardModule,
-    MatDividerModule,
     MatIconModule,
     MatListModule,
     MatSelectModule,
