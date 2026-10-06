@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { toDisplayRow } from '../../utils/transaction-display.util';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
@@ -18,6 +19,7 @@ import { BackupService } from '../../services/backup.service';
     MatProgressBarModule,
     MatCardModule,
     MatDividerModule,
+    MatIconModule,
   ],
   templateUrl: './home.html',
   styleUrl: './home.css',

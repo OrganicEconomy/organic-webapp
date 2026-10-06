@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { toDisplayRow } from '../../utils/transaction-display.util';
 
@@ -10,6 +11,7 @@ import { toDisplayRow } from '../../utils/transaction-display.util';
   imports: [
     MatTableModule,
     MatCardModule,
+    MatIconModule,
   ],
   templateUrl: './transaction-list.html',
   styleUrl: './transaction-list.css',

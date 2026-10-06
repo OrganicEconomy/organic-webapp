@@ -26,7 +26,7 @@
 
             <ng-container matColumnDef="amount">
                 <th mat-header-cell *matHeaderCellDef>Montant</th>
-                <td mat-cell *matCellDef="let paper">{{ paper.money.length }} <i class="bi bi-cookie"></i></td>
+                <td mat-cell *matCellDef="let paper">{{ paper.money.length }} <mat-icon svgIcon="currency-mark"></mat-icon></td>
             </ng-container>
 
             <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
@@ -42,7 +42,7 @@
                     <span class="paper-meta">{{ paper.date.toLocaleDateString('fr-FR') }} · <span class="mono">{{ paper.signature.slice(0, 10)
                             }}</span></span>
                 </div>
-                <span class="paper-amount">{{ paper.money.length }} <i class="bi bi-cookie"></i></span>
+                <span class="paper-amount">{{ paper.money.length }} <mat-icon svgIcon="currency-mark"></mat-icon></span>
             </div>
             }
             @if (paper_list.length === 0) {

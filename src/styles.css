@@ -2,3 +2,13 @@
 
 html, body { height: 100%; }
 body { margin: 0; font-family: 'Century Gothic', Poppins, 'Trebuchet MS', sans-serif; }
+
+/* The currency mark is set inline next to amounts, same spot the bi-cookie
+   icon font used to occupy — scale it with the surrounding text like that
+   icon font did, instead of Material's fixed 24px default. */
+mat-icon[svgIcon="currency-mark"] {
+  width: 1em;
+  height: 1em;
+  font-size: inherit;
+  vertical-align: text-bottom;
+}

@@ -6,6 +6,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import {
@@ -41,6 +42,7 @@ const COL_PER_PAGE: number = 2;
     MatProgressBarModule,
     MatCardModule,
     MatDividerModule,
+    MatIconModule,
     MatListModule,
     MatSelectModule,
     MatInputModule,
