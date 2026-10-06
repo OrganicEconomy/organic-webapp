@@ -171,13 +171,6 @@ describe('Home', () => {
     expect(component.percent).toBe(40);
   });
 
-  it('should show at most the 5 most recent transactions', () => {
-    const tx = (n: number) => ({ date: new Date(2026, 0, n), type: 3, signer: 'pk', target: 'pk', money: [1] });
-    fakeBlockchain.getHistory = () => [tx(6), tx(5), tx(4), tx(3), tx(2), tx(1)];
-    createComponent();
-    expect(component.recentTransactions.length).toBe(5);
-  });
-
   it('should title the pending-payments card "Paiements à encaisser"', () => {
     createComponent();
     expect(fixture.nativeElement.querySelector('.pending-card mat-card-title').textContent).toContain('Paiements à encaisser');

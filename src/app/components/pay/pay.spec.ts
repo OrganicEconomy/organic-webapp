@@ -30,6 +30,7 @@ describe('Pay', () => {
       getMyPublicKey: () => MY_PK,
       getAvailableMoneyAmount: () => 100,
       getLevel: () => 2,
+      getHistory: () => [],
       pay: jasmine.createSpy('pay').and.callFake((sk: string, target: string) => {
         fakeTx.target = target
         return fakeTx
@@ -208,5 +209,27 @@ describe('Pay', () => {
 
     const payBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.pay-btn');
     expect(payBtn.disabled).toBeTrue();
+  });
+
+  describe('Historique card', () => {
+    it('should show at most the 5 most recent transactions', () => {
+      const tx = (n: number) => ({ date: new Date(2026, 0, n), type: 3, signer: MY_PK, target: MY_PK, money: [1] });
+      fakeBlockchain.getHistory = () => [tx(6), tx(5), tx(4), tx(3), tx(2), tx(1)];
+
+      fixture = TestBed.createComponent(Pay);
+      component = fixture.componentInstance;
+      fixture.detectChanges();
+
+      expect(component.recentTransactions.length).toBe(5);
+    });
+
+    it('should show an empty message when there is no transaction yet', () => {
+      expect(fixture.nativeElement.querySelector('.history-card').textContent).toContain('Aucune transaction pour l\'instant.');
+    });
+
+    it('should link "Voir tout l\'historique" to /transactions', () => {
+      const link: HTMLAnchorElement = fixture.nativeElement.querySelector('.history-card a[routerLink="/transactions"]');
+      expect(link).toBeTruthy();
+    });
   });
 });

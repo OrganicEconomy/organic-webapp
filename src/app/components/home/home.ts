@@ -7,7 +7,6 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { toDisplayRow } from '../../utils/transaction-display.util';
 import { requestedAgo } from '../../utils/requested-ago.util';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
 import { BackupService } from '../../services/backup.service';
@@ -42,7 +41,6 @@ export class Home {
   percent = 0
   xp = 0
   remainingBeforeNextLevel = 0
-  recentTransactions: any[] = []
   pendingValidations: ValidationListEntry[] = []
   myEcosystems: MyEcosystemEntry[] = []
 
@@ -79,8 +77,6 @@ export class Home {
     this.percent = bc.getMoneyBeforeNextLevel(true)
     this.xp = bc.experience
     this.remainingBeforeNextLevel = bc.getMoneyBeforeNextLevel()
-    this.recentTransactions = bc.getHistory().slice(0, 5)
-      .map((tx: any) => toDisplayRow(tx, bc.getMyPublicKey(), this.user.contacts))
   }
 
   private createDailyMoney() {

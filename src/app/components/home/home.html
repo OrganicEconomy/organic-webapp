@@ -100,29 +100,3 @@
     </mat-card-actions>
 </mat-card>
 }
-
-<mat-card appearance="outlined" class="recent-card">
-    <mat-card-header>
-        <mat-card-title>Dernières transactions</mat-card-title>
-    </mat-card-header>
-
-    <mat-divider [inset]="true"></mat-divider>
-
-    <mat-card-content>
-        @if (recentTransactions.length === 0) {
-        <p class="empty">Aucune transaction pour l'instant.</p>
-        } @else {
-        @for (tx of recentTransactions; track $index) {
-        <div class="tx-row">
-            <span class="tx-date">{{ tx.date }}</span>
-            <span class="tx-type">{{ tx.type }}</span>
-            <span class="tx-amount">{{ tx.amount }} <mat-icon svgIcon="currency-mark"></mat-icon></span>
-        </div>
-        }
-        }
-    </mat-card-content>
-
-    <mat-card-actions>
-        <a mat-button routerLink="/transactions">Voir tout l'historique →</a>
-    </mat-card-actions>
-</mat-card>

@@ -83,7 +83,6 @@ mat-progress-bar {
 }
 
 .pending-card mat-card-content,
-.recent-card mat-card-content,
 .validations-card mat-card-content,
 .ecosystems-card mat-card-content {
     padding: 8px 16px !important;
@@ -209,36 +208,6 @@ mat-progress-bar {
     height: 36px;
     font-size: 0.85rem;
     border-radius: 6px !important;
-}
-
-.tx-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--mat-sys-outline-variant);
-    font-size: 0.9rem;
-}
-
-.tx-row:last-child {
-    border-bottom: none;
-}
-
-.tx-date {
-    color: var(--mat-sys-on-surface-variant);
-    flex-shrink: 0;
-}
-
-.tx-type {
-    flex: 1;
-    text-align: center;
-}
-
-.tx-amount {
-    font-weight: 600;
-    color: var(--mat-sys-primary);
-    flex-shrink: 0;
 }
 
 .empty {
