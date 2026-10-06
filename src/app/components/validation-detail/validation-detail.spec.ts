@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
@@ -30,7 +29,6 @@ describe('ValidationDetail', () => {
   let component: ValidationDetail;
   let fixture: ComponentFixture<ValidationDetail>;
   let router: Router;
-  let location: Location;
   let httpMock: HttpTestingController;
 
   beforeEach(async () => {
@@ -56,10 +54,8 @@ describe('ValidationDetail', () => {
     }).compileComponents();
 
     router = TestBed.inject(Router);
-    location = TestBed.inject(Location);
     httpMock = TestBed.inject(HttpTestingController);
     spyOn(router, 'navigate');
-    spyOn(location, 'back');
   });
 
   afterEach(() => {
@@ -129,12 +125,12 @@ describe('ValidationDetail', () => {
       req.flush({ message: 'Account validated.' });
     });
 
-    it('should go back to wherever the user came from once approved', () => {
+    it('should navigate back to /home once approved', () => {
       component.approve();
 
       httpMock.expectOne(APPROVE_URL).flush({ message: 'Account validated.' });
 
-      expect(location.back).toHaveBeenCalled();
+      expect(router.navigate).toHaveBeenCalledWith(['/home']);
     });
 
     it('should record an error and stay put if the server refuses the approval', () => {
@@ -143,7 +139,7 @@ describe('ValidationDetail', () => {
       httpMock.expectOne(APPROVE_URL).flush('already validated', { status: 409, statusText: 'Conflict' });
 
       expect(component.actionError).toBeTruthy();
-      expect(location.back).not.toHaveBeenCalled();
+      expect(router.navigate).not.toHaveBeenCalledWith(['/home']);
     });
   });
 
@@ -162,12 +158,12 @@ describe('ValidationDetail', () => {
       req.flush({ message: 'Account rejected.' });
     });
 
-    it('should go back to wherever the user came from once rejected', () => {
+    it('should navigate back to /home once rejected', () => {
       component.reject();
 
       httpMock.expectOne(REJECT_URL).flush({ message: 'Account rejected.' });
 
-      expect(location.back).toHaveBeenCalled();
+      expect(router.navigate).toHaveBeenCalledWith(['/home']);
     });
 
     it('should record an error and stay put if the server refuses the rejection', () => {
@@ -176,19 +172,7 @@ describe('ValidationDetail', () => {
       httpMock.expectOne(REJECT_URL).error(new ProgressEvent('network error'));
 
       expect(component.actionError).toBeTruthy();
-      expect(location.back).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('template', () => {
-    it('should go back to wherever the user came from when "Retour" is clicked, not a fixed route', () => {
-      createComponent();
-      httpMock.expectOne((r) => r.url === DETAIL_URL).flush({ name: 'Camille', blocks: makePendingCandidateBlocks() });
-
-      const backBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.back-btn');
-      backBtn.click();
-
-      expect(location.back).toHaveBeenCalled();
+      expect(router.navigate).not.toHaveBeenCalledWith(['/home']);
     });
   });
 });
