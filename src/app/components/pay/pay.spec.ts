@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { of, throwError, Subject } from 'rxjs';
 
 import { Pay } from './pay';
@@ -7,6 +8,7 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
 import { BackupService } from '../../services/backup.service';
+import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 
 const MY_PK = 'my-pk';
 
@@ -18,6 +20,7 @@ let stubConnectedUserService: any;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'sendTransaction' | 'sendEcosystemTx'>>;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic' | 'recordPayment'>>;
+let dialogSpy: jasmine.SpyObj<MatDialog>;
 
 describe('Pay', () => {
   let component: Pay;
@@ -52,6 +55,8 @@ describe('Pay', () => {
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
     backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic', 'recordPayment']);
     backupSpy.recordPayment.and.returnValue(of({}));
+    dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
 
     TestBed.configureTestingModule({
       imports: [Pay],
@@ -61,6 +66,7 @@ describe('Pay', () => {
         { provide: ServerConnexionService, useValue: serverDBSpy },
         { provide: LevelUpService, useValue: levelUpSpy },
         { provide: BackupService, useValue: backupSpy },
+        { provide: MatDialog, useValue: dialogSpy },
       ],
     });
 
@@ -79,7 +85,6 @@ describe('Pay', () => {
   it('should use recordAutomatic (policy-respecting), not recordPayment, on a self-pay', () => {
     component.target = MY_PK;
     component.amount = 5;
-    component.validated = true;
 
     component.pay();
 
@@ -91,7 +96,6 @@ describe('Pay', () => {
   it('should use recordPayment (mandatory push) when paying someone else', () => {
     component.target = 'someone-elses-pk';
     component.amount = 5;
-    component.validated = true;
 
     component.pay();
 
@@ -103,7 +107,6 @@ describe('Pay', () => {
     backupSpy.recordPayment.and.returnValue(subject.asObservable());
     component.target = 'someone-elses-pk';
     component.amount = 5;
-    component.validated = true;
 
     component.pay();
     expect(serverDBSpy.sendTransaction).not.toHaveBeenCalled();
@@ -116,7 +119,6 @@ describe('Pay', () => {
     fakeAccount.contacts.push({ pk: 'eco-pk', name: 'Boulangerie', url: '', type: 'ecosystem' });
     component.target = 'eco-pk';
     component.amount = 5;
-    component.validated = true;
 
     component.pay();
 
@@ -128,7 +130,6 @@ describe('Pay', () => {
     fakeAccount.contacts.push({ pk: 'citizen-pk', name: 'Farid', url: '', type: 'citizen' });
     component.target = 'citizen-pk';
     component.amount = 5;
-    component.validated = true;
 
     component.pay();
 
@@ -140,7 +141,6 @@ describe('Pay', () => {
     backupSpy.recordPayment.and.returnValue(throwError(() => ({ status: 0 })));
     component.target = 'someone-elses-pk';
     component.amount = 5;
-    component.validated = true;
 
     component.pay();
 
@@ -150,7 +150,6 @@ describe('Pay', () => {
   it('should navigate back to home after a successful self-pay', () => {
     component.target = MY_PK;
     component.amount = 5;
-    component.validated = true;
 
     component.pay();
 
@@ -160,23 +159,37 @@ describe('Pay', () => {
   it('should navigate back to home after a successful payment to someone else', () => {
     component.target = 'someone-elses-pk';
     component.amount = 5;
-    component.validated = true;
 
     component.pay();
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
 
-  it('should not pay when the amount is zero or the confirmation checkbox is unticked', () => {
+  it('should not pay when the amount is zero', () => {
     component.target = MY_PK;
     component.amount = 0;
-    component.validated = true;
     component.pay();
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
 
+  it('should open a confirmation dialog when Payer is tapped', () => {
+    component.target = MY_PK;
     component.amount = 5;
-    component.validated = false;
+
     component.pay();
+
+    expect(dialogSpy.open).toHaveBeenCalledWith(ConfirmDialog, {
+      data: { title: 'Payer', message: jasmine.stringMatching(/5/) },
+    });
+  });
+
+  it('should not call blockchain.pay when the confirmation dialog is dismissed', () => {
+    dialogSpy.open.and.returnValue({ afterClosed: () => of(false) } as any);
+    component.target = MY_PK;
+    component.amount = 5;
+
+    component.pay();
+
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
   });
 
@@ -184,7 +197,6 @@ describe('Pay', () => {
     fakeBlockchain.getLevel = jasmine.createSpy('getLevel').and.returnValues(2, 3);
     component.target = MY_PK;
     component.amount = 5;
-    component.validated = true;
 
     component.pay();
 
@@ -195,7 +207,6 @@ describe('Pay', () => {
     stubConnectedUserService.isReadOnlySession = () => true;
     component.target = MY_PK;
     component.amount = 5;
-    component.validated = true;
 
     component.pay();
 

@@ -9,12 +9,14 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
 import { BackupService } from '../../services/backup.service';
-import { toDisplayRow } from '../../utils/transaction-display.util';
+import { toDisplayRow, getContactName } from '../../utils/transaction-display.util';
+import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 
 @Component({
   selector: 'app-pay',
@@ -43,10 +45,10 @@ export class Pay {
   amount = 0;
   max = 0;
   target: string = "";
-  validated: boolean = false;
   recentTransactions: any[] = []
 
   private _snackBar = inject(MatSnackBar);
+  private dialog = inject(MatDialog);
 
   public payForm !: FormGroup
 
@@ -83,14 +85,22 @@ export class Pay {
       this.displayMessage("Le montant à payer doit être supérieur à zéro.")
       return;
     }
-    if (!this.validated) {
-      this.displayMessage("Veuillez cocher la case 'J'ai compris qu'en cliquant sur 'Payer' je ne reviendrai pas en arrière.'")
-      return;
-    }
     if (this.userService.isReadOnlySession()) {
       this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.")
       return;
     }
+
+    const recipient = getContactName(this.target, this.user.blockchain.getMyPublicKey(), this.contacts)
+    const dialogRef = this.dialog.open(ConfirmDialog, {
+      data: { title: 'Payer', message: `Payer ${this.amount} à ${recipient} ? Cette action est irréversible.` },
+    });
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed) return;
+      this.executePayment();
+    });
+  }
+
+  private executePayment(): void {
     try {
       const sk = this.userService.getSecretKey()
       const oldLevel = this.user.blockchain.getLevel()

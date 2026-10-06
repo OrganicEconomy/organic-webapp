@@ -67,29 +67,6 @@ mat-slider {
     width: 100%;
 }
 
-/* Checkbox + label */
-section:has(input[type="checkbox"]) {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 10px;
-}
-
-section:has(input[type="checkbox"]) input {
-    margin-top: 3px;
-    flex-shrink: 0;
-    width: 16px;
-    height: 16px;
-    cursor: pointer;
-    accent-color: var(--mat-sys-primary);
-}
-
-section:has(input[type="checkbox"]) label {
-    font-size: 0.875rem;
-    line-height: 1.4;
-    color: var(--mat-sys-on-surface-variant);
-    cursor: pointer;
-}
-
 /* Bouton Payer */
 section:last-of-type {
     margin-top: 4px;
