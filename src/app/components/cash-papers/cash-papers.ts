@@ -2,6 +2,7 @@ import { Component, inject, ViewChild } from '@angular/core';
 import { MatTable, MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { QrScanner } from '../qr-scanner/qr-scanner';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { Router, RouterLink } from '@angular/router';
@@ -19,6 +20,7 @@ import { TransactionMaker } from 'organic-money/src/index.js';
     MatTableModule,
     MatButtonModule,
     MatCardModule,
+    MatIconModule,
     QrScanner,
   ],
   templateUrl: './cash-papers.html',

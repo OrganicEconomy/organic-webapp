@@ -14,7 +14,7 @@
                     (selectionChange)="selectedValue($event, denomination)">
                     @for (opt of selectOptions; track opt) {
                     <mat-option [value]="opt">
-                        {{ opt === 0 ? '0' : opt + ' x ' + denomination }} <i class="bi bi-cookie"></i>
+                        {{ opt === 0 ? '0' : opt + ' x ' + denomination }} <mat-icon svgIcon="currency-mark"></mat-icon>
                     </mat-option>
                     }
                 </mat-select>
@@ -23,7 +23,7 @@
 
             <mat-list-item>
                 <p class="total">
-                    Total : <strong>{{ total }} / {{ max }}</strong> <i class="bi bi-cookie"></i>
+                    Total : <strong>{{ total }} / {{ max }}</strong> <mat-icon svgIcon="currency-mark"></mat-icon>
                     @if (isTooMuch()) {
                     <span class="warning"> — C'est trop, tu n'as pas les moyens !</span>
                     }

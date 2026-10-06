@@ -12,7 +12,7 @@
 
     <mat-card-content>
         <div class="solde-row">
-            <span class="solde-value">{{ solde }}</span> <i class="bi bi-cookie"></i>
+            <span class="solde-value">{{ solde }}</span> <mat-icon svgIcon="currency-mark"></mat-icon>
         </div>
 
         <mat-progress-bar mode="determinate" [value]="percent"></mat-progress-bar>
@@ -43,7 +43,7 @@
                 <span class="pending-date">{{ row.date }}</span>
             </div>
             <div class="pending-right">
-                <span class="pending-amount">{{ row.amount }} <i class="bi bi-cookie"></i></span>
+                <span class="pending-amount">{{ row.amount }} <mat-icon svgIcon="currency-mark"></mat-icon></span>
                 <button mat-stroked-button (click)="cash(row.hash)" [disabled]="userService.isReadOnlySession()">Encaisser</button>
             </div>
         </div>
@@ -67,7 +67,7 @@
         <div class="tx-row">
             <span class="tx-date">{{ tx.date }}</span>
             <span class="tx-type">{{ tx.type }}</span>
-            <span class="tx-amount">{{ tx.amount }} <i class="bi bi-cookie"></i></span>
+            <span class="tx-amount">{{ tx.amount }} <mat-icon svgIcon="currency-mark"></mat-icon></span>
         </div>
         }
         }

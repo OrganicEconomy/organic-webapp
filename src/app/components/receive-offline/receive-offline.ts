@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { QrScanner } from '../qr-scanner/qr-scanner';
 import { decodeQr } from 'organic-protocol';
@@ -18,6 +19,7 @@ import { getContactName } from '../../utils/transaction-display.util';
     RouterLink,
     MatButtonModule,
     MatCardModule,
+    MatIconModule,
     QrScanner,
   ],
   templateUrl: './receive-offline.html',

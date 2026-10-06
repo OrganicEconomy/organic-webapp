@@ -8,6 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatInputModule } from '@angular/material/input';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { encodeOfflineTxQr } from 'organic-protocol';
@@ -27,6 +28,7 @@ import { BackupService } from '../../services/backup.service';
     MatInputModule,
     MatCardModule,
     MatDividerModule,
+    MatIconModule,
     QRCodeComponent,
   ],
   templateUrl: './pay-offline.html',

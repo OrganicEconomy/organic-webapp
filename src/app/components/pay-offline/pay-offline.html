@@ -44,7 +44,7 @@
         <h2>QR émis récemment</h2>
         @for (row of recentlySent; track row.wireTx.h) {
         <div class="sent-row">
-            <span>{{ row.date }} · {{ row.amount }} <i class="bi bi-cookie"></i></span>
+            <span>{{ row.date }} · {{ row.amount }} <mat-icon svgIcon="currency-mark"></mat-icon></span>
             <button mat-stroked-button (click)="review(row.wireTx)">Revoir</button>
         </div>
         }
