@@ -36,20 +36,6 @@ mat-select {
    font-weight: 500;
 }
 
-mat-checkbox {
-   font-size: 0.875rem;
-   line-height: 1.4;
-}
-
-mat-checkbox ::ng-deep .mdc-form-field {
-   align-items: flex-start;
-   white-space: normal;
-}
-
-mat-checkbox ::ng-deep .mdc-label {
-   white-space: normal;
-}
-
 mat-card-actions {
    display: flex;
    flex-direction: column;

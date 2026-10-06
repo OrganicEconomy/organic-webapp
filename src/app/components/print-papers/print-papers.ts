@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSelectChange, MatSelectModule } from '@angular/material/select';
 import {
+  MatDialog,
   MatDialogActions,
   MatDialogContent,
   MatDialogTitle,
@@ -16,13 +17,13 @@ import {
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Dialog, DialogRef } from '@angular/cdk/dialog';
 import { MatInputModule } from '@angular/material/input';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
 
 import { jsPDF } from "jspdf";
 import { QRCodeComponent } from 'angularx-qrcode';
 import { encodePaperQr } from 'organic-protocol';
+import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 
 export interface DialogData {
   waitFunction: any
@@ -45,7 +46,6 @@ const COL_PER_PAGE: number = 2;
     MatSelectModule,
     MatInputModule,
     FormsModule,
-    MatCheckboxModule,
   ],
   templateUrl: './print-papers.html',
   styleUrl: './print-papers.css',
@@ -55,6 +55,7 @@ export class PrintPapers {
   backupService = inject(BackupService)
   user = this.userService.getConnectedUser()
   dialog = inject(Dialog);
+  confirmDialog = inject(MatDialog);
 
   denominations: number[] = [1, 3, 10, 20, 34]
   selectOptions: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
@@ -64,7 +65,6 @@ export class PrintPapers {
   max: number = 0
   papers: any = []
   canGenerate: boolean = false
-  validated: boolean = false
 
   constructor(private router: Router, private cdRef: ChangeDetectorRef) {
     if (!this.user) {
@@ -83,7 +83,7 @@ export class PrintPapers {
   }
 
   validationCheck() {
-    this.canGenerate = this.validated && this.total > 0 && !this.isTooMuch() && !this.isMissingCore()
+    this.canGenerate = this.total > 0 && !this.isTooMuch() && !this.isMissingCore()
   }
 
   isTooMuch() {
@@ -179,6 +179,16 @@ export class PrintPapers {
   generatePapers() {
     if (this.userService.isReadOnlySession() || this.isMissingCore()) return
 
+    const dialogRef = this.confirmDialog.open(ConfirmDialog, {
+      data: { title: 'Générer les billets', message: `Générer ${this.total} unité(s) en billets ? Cette action est irréversible.` },
+    });
+    dialogRef.afterClosed().subscribe((confirmed: boolean) => {
+      if (!confirmed) return;
+      this.executeGeneratePapers();
+    });
+  }
+
+  private executeGeneratePapers() {
     const sk = this.userService.getSecretKey()
     for (let i = 0; i < this.papercounts.length; i++) {
       if (this.papercounts[i] > 0) {

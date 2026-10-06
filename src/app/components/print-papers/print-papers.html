@@ -13,7 +13,7 @@
                     (selectionChange)="selectedValue($event, denomination)">
                     @for (opt of selectOptions; track opt) {
                     <mat-option [value]="opt">
-                        {{ opt === 0 ? '0' : opt + ' x ' + denomination }} <mat-icon svgIcon="currency-mark"></mat-icon>
+                        <span>{{ opt === 0 ? '0' : opt + ' x ' + denomination }} <mat-icon svgIcon="currency-mark"></mat-icon></span>
                     </mat-option>
                     }
                 </mat-select>
@@ -22,7 +22,7 @@
 
             <mat-list-item>
                 <p class="total">
-                    Total : <strong>{{ total }} / {{ max }}</strong> <mat-icon svgIcon="currency-mark"></mat-icon>
+                    Total : <span class="total-value"><strong>{{ total }} / {{ max }}</strong> <mat-icon svgIcon="currency-mark"></mat-icon></span>
                     @if (isTooMuch()) {
                     <span class="warning"> — C'est trop, tu n'as pas les moyens !</span>
                     }
@@ -34,12 +34,6 @@
                 <span class="warning">Ce serveur n'a pas encore d'écosystème cœur — impossible de générer des billets pour l'instant.</span>
             </mat-list-item>
             }
-
-            <mat-list-item>
-                <mat-checkbox [(ngModel)]="validated" (change)="validationCheck()">
-                    J'ai compris qu'en cliquant sur "Générer" je ne reviendrai pas en arrière.
-                </mat-checkbox>
-            </mat-list-item>
         </mat-list>
     </mat-card-content>
 

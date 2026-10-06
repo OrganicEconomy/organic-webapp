@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Dialog } from '@angular/cdk/dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { decodeQr } from 'organic-protocol';
 import { TransactionMaker } from 'organic-money/src/index.js';
@@ -8,6 +9,7 @@ import { TransactionMaker } from 'organic-money/src/index.js';
 import { PrintPapers } from './print-papers';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
+import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 
 const MY_PK = '02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3';
 const REFERENT_PK = '0306ffd8f4fe843f5f7183179dcf36f550326813f56ec824911abca9c9d1cd7834';
@@ -26,6 +28,7 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
 let dialogSpy: jasmine.SpyObj<Pick<Dialog, 'open'>>;
+let confirmDialogSpy: jasmine.SpyObj<MatDialog>;
 
 describe('PrintPapers', () => {
   let component: PrintPapers;
@@ -50,6 +53,8 @@ describe('PrintPapers', () => {
     backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
     dialogSpy = jasmine.createSpyObj('Dialog', ['open']);
     dialogSpy.open.and.returnValue({ closed: of(undefined) } as any);
+    confirmDialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    confirmDialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
 
     await TestBed.configureTestingModule({
       imports: [PrintPapers, RouterTestingModule],
@@ -57,6 +62,7 @@ describe('PrintPapers', () => {
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: BackupService, useValue: backupSpy },
         { provide: Dialog, useValue: dialogSpy },
+        { provide: MatDialog, useValue: confirmDialogSpy },
       ],
     })
     .compileComponents();
@@ -119,6 +125,27 @@ describe('PrintPapers', () => {
       expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
       expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
     });
+
+    it('should open a confirmation dialog before generating', () => {
+      component.papercounts[5] = 1;
+      component.total = 5;
+
+      component.generatePapers();
+
+      expect(confirmDialogSpy.open).toHaveBeenCalledWith(ConfirmDialog, {
+        data: { title: 'Générer les billets', message: jasmine.stringMatching(/5/) },
+      });
+    });
+
+    it('should not generate any paper when the confirmation dialog is dismissed', () => {
+      confirmDialogSpy.open.and.returnValue({ afterClosed: () => of(false) } as any);
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
+      expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+    });
   });
 
   describe('isMissingCore', () => {
@@ -138,7 +165,6 @@ describe('PrintPapers', () => {
       fakeAccount.corePk = null;
       component.total = 10;
       component.max = 100;
-      component.validated = true;
 
       component.validationCheck();
 
