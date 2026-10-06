@@ -13,14 +13,12 @@
             </mat-form-field>
         </section>
 
-        <section>
-            <mat-form-field>
-                <mat-label>Combien ?</mat-label>
-                <input matInput type="number" [(ngModel)]="amount" [max]="max" min="0" required>
-            </mat-form-field>
-        </section>
-
-        <section>
+        <section class="amount-section">
+            <span class="amount-label">Combien ?</span>
+            <div class="amount-row">
+                <input type="number" class="amount-input" [(ngModel)]="amount" [max]="max" min="0" required>
+                <mat-icon svgIcon="currency-mark"></mat-icon>
+            </div>
             <mat-slider [max]="max" [min]="0" [step]="1" [showTickMarks]="true">
                 <input matSliderThumb [(ngModel)]="amount">
             </mat-slider>
@@ -37,18 +35,24 @@
 
 <mat-card appearance="outlined" class="hub-actions">
     <mat-card-content>
-        <a mat-stroked-button routerLink="/pay-offline">
-            <i class="bi bi-qr-code"></i> Payer par QR (hors-ligne)
-        </a>
-        <a mat-stroked-button routerLink="/receive-offline">
-            <i class="bi bi-upc-scan"></i> Recevoir par QR (hors-ligne)
-        </a>
-        <a mat-stroked-button routerLink="/cashpapers">
-            <i class="bi bi-qr-code-scan"></i> Encaisser des billets
-        </a>
-        <a mat-stroked-button routerLink="/printpapers">
-            <i class="bi bi-printer"></i> Imprimer des billets
-        </a>
+        <div class="hub-grid">
+            <a class="hub-tile" routerLink="/pay-offline">
+                <i class="bi bi-qr-code"></i>
+                <span>Payer par QR (hors-ligne)</span>
+            </a>
+            <a class="hub-tile" routerLink="/receive-offline">
+                <i class="bi bi-upc-scan"></i>
+                <span>Recevoir par QR (hors-ligne)</span>
+            </a>
+            <a class="hub-tile" routerLink="/cashpapers">
+                <i class="bi bi-qr-code-scan"></i>
+                <span>Encaisser des billets</span>
+            </a>
+            <a class="hub-tile" routerLink="/printpapers">
+                <i class="bi bi-printer"></i>
+                <span>Imprimer des billets</span>
+            </a>
+        </div>
     </mat-card-content>
 </mat-card>
 
