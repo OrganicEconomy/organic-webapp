@@ -54,7 +54,7 @@ export class ValidationDetail {
     const initBlock = candidateChain.validateAccount(sk);
 
     this.server.approveValidation(this.user.serverUrl, this.candidatePk, this.user.publickey, sk, initBlock).subscribe({
-      next: () => { this.router.navigate(['/validations']); },
+      next: () => { this.router.navigate(['/home']); },
       error: () => { this.actionError = "Échec de la validation."; },
     });
   }
@@ -63,7 +63,7 @@ export class ValidationDetail {
     const sk = this.userService.getSecretKey();
 
     this.server.rejectValidation(this.user.serverUrl, this.candidatePk, this.user.publickey, sk).subscribe({
-      next: () => { this.router.navigate(['/validations']); },
+      next: () => { this.router.navigate(['/home']); },
       error: () => { this.actionError = "Échec du refus."; },
     });
   }

@@ -1,10 +1,13 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
+import { of } from 'rxjs';
+
 import { Home } from './home';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
 import { BackupService } from '../../services/backup.service';
+import { ServerConnexionService } from '../../services/server-connection.service';
 
 // A minimal stand-in for a logged-in account — this component (like Pay,
 // Contacts) has always assumed getConnectedUser() is non-null; it's not this
@@ -14,6 +17,7 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let pendingSpy: jasmine.SpyObj<Pick<PendingPaymentsService, 'refresh' | 'cash'>> & { dataSource: any[] };
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
+let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getValidationList'>>;
 
 describe('Home', () => {
   let component: Home;
@@ -45,6 +49,8 @@ describe('Home', () => {
     pendingSpy = jasmine.createSpyObj('PendingPaymentsService', ['refresh', 'cash']);
     pendingSpy.dataSource = [];
     backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
+    serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getValidationList']);
+    serverSpy.getValidationList.and.returnValue(of([]));
 
     TestBed.configureTestingModule({
       imports: [Home],
@@ -53,6 +59,7 @@ describe('Home', () => {
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: PendingPaymentsService, useValue: pendingSpy },
         { provide: BackupService, useValue: backupSpy },
+        { provide: ServerConnexionService, useValue: serverSpy },
       ],
     });
   });
@@ -169,5 +176,33 @@ describe('Home', () => {
     fakeBlockchain.getHistory = () => [tx(6), tx(5), tx(4), tx(3), tx(2), tx(1)];
     createComponent();
     expect(component.recentTransactions.length).toBe(5);
+  });
+
+  it('should title the pending-payments card "Paiements à encaisser"', () => {
+    createComponent();
+    expect(fixture.nativeElement.querySelector('.pending-card mat-card-title').textContent).toContain('Paiements à encaisser');
+  });
+
+  it('should fetch pending validations from the server on load', () => {
+    createComponent();
+    expect(serverSpy.getValidationList).toHaveBeenCalledWith('https://trifouillis.fr', 'pk', 'the-real-decrypted-sk');
+  });
+
+  it('should show the Validations en attente card when there are pending candidates', () => {
+    serverSpy.getValidationList.and.returnValue(of([{ pk: 'candidate-pk', name: 'Amara Koné', requestedAt: new Date().toISOString() }]));
+
+    createComponent();
+
+    const card = fixture.nativeElement.querySelector('.validations-card');
+    expect(card).toBeTruthy();
+    expect(card.textContent).toContain('Amara Koné');
+  });
+
+  it('should hide the Validations en attente card entirely when there are no pending candidates', () => {
+    serverSpy.getValidationList.and.returnValue(of([]));
+
+    createComponent();
+
+    expect(fixture.nativeElement.querySelector('.validations-card')).toBeFalsy();
   });
 });

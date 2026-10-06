@@ -125,12 +125,12 @@ describe('ValidationDetail', () => {
       req.flush({ message: 'Account validated.' });
     });
 
-    it('should navigate back to /validations once approved', () => {
+    it('should navigate back to /home once approved', () => {
       component.approve();
 
       httpMock.expectOne(APPROVE_URL).flush({ message: 'Account validated.' });
 
-      expect(router.navigate).toHaveBeenCalledWith(['/validations']);
+      expect(router.navigate).toHaveBeenCalledWith(['/home']);
     });
 
     it('should record an error and stay put if the server refuses the approval', () => {
@@ -139,7 +139,7 @@ describe('ValidationDetail', () => {
       httpMock.expectOne(APPROVE_URL).flush('already validated', { status: 409, statusText: 'Conflict' });
 
       expect(component.actionError).toBeTruthy();
-      expect(router.navigate).not.toHaveBeenCalledWith(['/validations']);
+      expect(router.navigate).not.toHaveBeenCalledWith(['/home']);
     });
   });
 
@@ -158,12 +158,12 @@ describe('ValidationDetail', () => {
       req.flush({ message: 'Account rejected.' });
     });
 
-    it('should navigate back to /validations once rejected', () => {
+    it('should navigate back to /home once rejected', () => {
       component.reject();
 
       httpMock.expectOne(REJECT_URL).flush({ message: 'Account rejected.' });
 
-      expect(router.navigate).toHaveBeenCalledWith(['/validations']);
+      expect(router.navigate).toHaveBeenCalledWith(['/home']);
     });
 
     it('should record an error and stay put if the server refuses the rejection', () => {
@@ -172,7 +172,7 @@ describe('ValidationDetail', () => {
       httpMock.expectOne(REJECT_URL).error(new ProgressEvent('network error'));
 
       expect(component.actionError).toBeTruthy();
-      expect(router.navigate).not.toHaveBeenCalledWith(['/validations']);
+      expect(router.navigate).not.toHaveBeenCalledWith(['/home']);
     });
   });
 });

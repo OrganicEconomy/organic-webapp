@@ -8,8 +8,11 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { toDisplayRow } from '../../utils/transaction-display.util';
+import { requestedAgo } from '../../utils/requested-ago.util';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
 import { BackupService } from '../../services/backup.service';
+import { ServerConnexionService } from '../../services/server-connection.service';
+import type { ValidationListEntry } from 'organic-protocol';
 
 @Component({
   selector: 'app-home',
@@ -28,7 +31,10 @@ export class Home {
   userService = inject(ConnectedUserService)
   pending = inject(PendingPaymentsService)
   backupService = inject(BackupService)
+  private server = inject(ServerConnexionService)
   private snackBar = inject(MatSnackBar)
+
+  requestedAgo = requestedAgo;
 
   user: any
   solde = 0
@@ -37,6 +43,7 @@ export class Home {
   xp = 0
   remainingBeforeNextLevel = 0
   recentTransactions: any[] = []
+  pendingValidations: ValidationListEntry[] = []
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
@@ -49,6 +56,12 @@ export class Home {
     }
     this.update()
     this.pending.refresh()
+
+    const sk = this.userService.getSecretKey()
+    this.server.getValidationList(this.user.serverUrl, this.user.publickey, sk).subscribe({
+      next: (list) => { this.pendingValidations = list },
+      error: () => { this.pendingValidations = [] },
+    })
   }
 
   cash(hash: string): void {
