@@ -60,3 +60,10 @@ mat-card-actions.full-width {
   gap: 8px;
   padding: 8px 16px 16px;
 }
+
+.footer-text {
+  padding: 12px 16px;
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.6);
+  margin: 0;
+}
