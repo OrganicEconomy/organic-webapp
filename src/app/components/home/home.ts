@@ -3,7 +3,6 @@ import { Router, RouterLink } from '@angular/router';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -20,7 +19,6 @@ import type { ValidationListEntry, MyEcosystemEntry } from 'organic-protocol';
     MatButtonModule,
     MatProgressBarModule,
     MatCardModule,
-    MatDividerModule,
     MatIconModule,
   ],
   templateUrl: './home.html',

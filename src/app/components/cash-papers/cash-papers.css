@@ -25,10 +25,14 @@ mat-card-content {
 }
 
 mat-card-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
     padding: 0 16px 16px !important;
 }
 
-mat-card-actions button {
+mat-card-actions button,
+mat-card-actions a {
     width: 100%;
     height: 44px;
     font-size: 1rem;
@@ -119,7 +123,8 @@ zxing-scanner {
         display: flex;
     }
 
-    mat-card-actions button {
+    mat-card-actions button,
+    mat-card-actions a {
         height: 48px;
     }
 }

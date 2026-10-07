@@ -15,29 +15,34 @@ mat-card {
 }
 
 .hub-actions mat-card-content {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
     padding: 16px !important;
 }
 
-.hub-actions a {
-    width: 100%;
-    display: flex !important;
-    align-items: center;
+.hub-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
-    justify-content: flex-start;
-    padding: 10px 16px !important;
-    font-size: 0.95rem;
-    border-radius: 8px !important;
-    height: 44px;
-    box-sizing: border-box;
 }
 
-.hub-actions i {
-    font-size: 1.1rem;
-    width: 20px;
+.hub-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px 10px;
+    border-radius: 14px;
+    background: #efe2d0;
+    text-decoration: none;
+    color: var(--mat-sys-on-surface);
     text-align: center;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.hub-tile i {
+    font-size: 1.4rem;
+    color: var(--mat-sys-secondary);
 }
 
 mat-card-content {
@@ -67,6 +72,47 @@ mat-slider {
     width: 100%;
 }
 
+.amount-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--mat-sys-on-surface-variant);
+}
+
+.amount-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0 4px;
+}
+
+.amount-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--mat-sys-primary);
+    width: 5ch;
+    flex: 0 0 auto;
+    padding: 0;
+}
+
+.amount-input::-webkit-outer-spin-button,
+.amount-input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.amount-row mat-icon {
+    width: 28px;
+    height: 28px;
+    color: var(--mat-sys-primary);
+    flex-shrink: 0;
+}
+
 /* Bouton Payer */
 section:last-of-type {
     margin-top: 4px;
@@ -90,6 +136,11 @@ section:last-of-type button {
     font-size: 1.1rem;
     font-weight: 600;
     margin: 0 0 4px 0;
+}
+
+.history-card mat-card-actions {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .tx-row {

@@ -6,8 +6,7 @@
 
 <mat-card appearance="outlined" class="identity-card">
     <mat-card-header>
-        <mat-card-title>{{ user.name }}</mat-card-title>
-        <mat-card-subtitle class="level-line">Niveau {{ level }}</mat-card-subtitle>
+        <mat-card-title>{{ user.name }} (Niveau {{ level }})</mat-card-title>
     </mat-card-header>
 
     <mat-card-content>
@@ -17,7 +16,7 @@
 
         <mat-progress-bar mode="determinate" [value]="percent"></mat-progress-bar>
         <p class="xp-line">
-            {{ xp }} XP — {{ remainingBeforeNextLevel }} unité(s) avant le niveau {{ level + 1 }}
+            {{ xp }} XP — {{ remainingBeforeNextLevel }} avant le niveau {{ level + 1 }}
         </p>
     </mat-card-content>
 </mat-card>
@@ -28,7 +27,6 @@
         <mat-card-title>Validations en attente</mat-card-title>
     </mat-card-header>
 
-    <mat-divider [inset]="true"></mat-divider>
 
     <mat-card-content>
         <div class="candidate-list">
@@ -54,7 +52,6 @@
         </button>
     </mat-card-header>
 
-    <mat-divider [inset]="true"></mat-divider>
 
     <mat-card-content>
         @if (pending.dataSource.length === 0) {
@@ -79,10 +76,9 @@
 @if (myEcosystems.length > 0) {
 <mat-card appearance="outlined" class="ecosystems-card">
     <mat-card-header>
-        <mat-card-title>Écosystèmes</mat-card-title>
+        <mat-card-title>Mes écosystèmes</mat-card-title>
     </mat-card-header>
 
-    <mat-divider [inset]="true"></mat-divider>
 
     <mat-card-content>
         <div class="ecosystem-list">

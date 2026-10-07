@@ -38,9 +38,9 @@ mat-card-title {
 
 .solde-row {
     display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin-bottom: 8px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
 }
 
 .solde-value {
@@ -51,12 +51,12 @@ mat-card-title {
 
 mat-progress-bar {
     width: 100%;
-    margin: 4px 0;
+    margin: 12px 0;
     border-radius: 4px;
 }
 
 .xp-line {
-    margin: 4px 0 0 0;
+    margin: 10px 0 0 0;
     font-size: 0.85rem;
     color: var(--mat-sys-on-surface-variant);
 }
@@ -69,8 +69,14 @@ mat-progress-bar {
 
 .identity-card mat-card-title,
 .identity-card .level-line,
-.identity-card .solde-value {
+.identity-card .solde-value,
+.identity-card .solde-row mat-icon {
     color: #faf7f3;
+}
+
+.identity-card .solde-row mat-icon {
+    width: 30px;
+    height: 30px;
 }
 
 .identity-card .xp-line {
@@ -86,6 +92,11 @@ mat-progress-bar {
 .validations-card mat-card-content,
 .ecosystems-card mat-card-content {
     padding: 8px 16px !important;
+}
+
+.ecosystems-card mat-card-actions {
+    display: flex;
+    justify-content: flex-end;
 }
 
 .candidate-list {
