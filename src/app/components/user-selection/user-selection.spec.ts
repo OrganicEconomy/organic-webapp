@@ -5,7 +5,6 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatListModule } from '@angular/material/list';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
@@ -38,7 +37,6 @@ describe('UserSelection', () => {
         MatDialogModule,
         MatButtonModule,
         MatCardModule,
-        MatDividerModule,
         MatListModule,
       ],
       providers: [

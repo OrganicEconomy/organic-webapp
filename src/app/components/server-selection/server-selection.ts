@@ -14,6 +14,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-server-selection',
@@ -26,6 +27,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    MatDividerModule,
   ],
   templateUrl: './server-selection.html',
   styleUrl: './server-selection.css',
