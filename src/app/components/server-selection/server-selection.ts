@@ -15,6 +15,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
+import { Subscription } from "rxjs";
+
+const VISIBLE_ROWS = 6
+
+type ServerSelectionStep = 'choose' | 'verify'
 
 @Component({
   selector: 'app-server-selection',
@@ -36,25 +41,32 @@ export class ServerSelection {
   private server = inject(ServerConnexionService)
   private router = inject(Router)
 
+  readonly visibleRows = VISIBLE_ROWS
+
   knownServers: ServerListEntry[] = []
-  selectedUrl = ''
+  selectedServerUrl = ''
+  selectedServerName = ''
   customUrl = ''
   useCustom = false
 
+  step: ServerSelectionStep = 'choose'
   verifying = false
   verifiedInfo: InfoResponse | null = null
   error = ''
+
+  private verifySub?: Subscription
 
   constructor() {
     this.server.getKnownServers(environment.serverUrl).subscribe({
       next: (servers) => {
         this.knownServers = servers
         if (servers.length > 0) {
-          this.selectedUrl = servers[0].url
+          this.selectedServerUrl = servers[0].url
+          this.selectedServerName = servers[0].name
         } else {
           // No directory to show — go straight to the URL field, same as the
           // unreachable-root-server case below.
-          this.useCustom = true
+          this.showCustom()
         }
       },
       // The root server is just a convenience directory — being unreachable
@@ -63,24 +75,53 @@ export class ServerSelection {
     })
   }
 
-  get chosenUrl(): string {
-    return this.useCustom ? this.customUrl : this.selectedUrl
+  get hasKnownServer() {
+    return this.knownServers.length > 0
   }
 
-  verify(): void {
-    this.verifiedInfo = null
-    this.error = ''
-
+  selectServer(server: ServerListEntry): void {
+    const rawUrl = server.url
     let url: string
     try {
-      url = normalizeServerUrl(this.chosenUrl)
+      url = normalizeServerUrl(rawUrl)
     } catch {
       this.error = "Cette adresse n'a pas l'air valide."
       return
     }
 
+    this.selectedServerUrl = url
+    this.selectedServerName = server.name
+    this.step = 'verify'
+    this.verify()
+  }
+
+  showCustom(): void {
+    this.error = ''
+    this.useCustom = true
+  }
+
+  submitCustom(): void {
+    this.selectServer({
+      url: this.customUrl,
+      name: '',
+    })
+  }
+
+  backToServerChoice(forceUseCustom?: boolean): void {
+    this.verifySub?.unsubscribe()
+    this.verifying = false
+    this.verifiedInfo = null
+    this.error = ''
+    this.step = 'choose'
+    this.useCustom = forceUseCustom || !this.hasKnownServer
+  }
+
+  verify(): void {
+    this.verifySub?.unsubscribe()
+    this.verifiedInfo = null
+    this.error = ''
     this.verifying = true
-    this.server.getServerInfo(url).subscribe({
+    this.verifySub = this.server.getServerInfo(this.selectedServerUrl).subscribe({
       next: (info) => {
         this.verifiedInfo = info
         this.verifying = false
@@ -93,10 +134,10 @@ export class ServerSelection {
   }
 
   createAccount(): void {
-    this.router.navigate(['/signup'], { queryParams: { server: this.chosenUrl } })
+    this.router.navigate(['/signup'], { queryParams: { server: this.selectedServerUrl } })
   }
 
   restoreAccount(): void {
-    this.router.navigate(['/restore-account'], { queryParams: { server: this.chosenUrl } })
+    this.router.navigate(['/restore-account'], { queryParams: { server: this.selectedServerUrl } })
   }
 }
