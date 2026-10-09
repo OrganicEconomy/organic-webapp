@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import type { InfoResponse, ServerListEntry } from 'organic-protocol';
@@ -8,7 +8,6 @@ import { environment } from '../../../environments/environment';
 
 // Angular Material
 import { MatCardModule } from '@angular/material/card';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
@@ -21,12 +20,16 @@ const VISIBLE_ROWS = 6
 
 type ServerSelectionStep = 'choose' | 'verify'
 
+/** Lowercase and accent-free, so "perigord" finds "Communauté du Périgord". */
+function fold(text: string): string {
+  return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+}
+
 @Component({
   selector: 'app-server-selection',
   imports: [
     FormsModule,
     MatCardModule,
-    MatRadioModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
@@ -37,7 +40,7 @@ type ServerSelectionStep = 'choose' | 'verify'
   templateUrl: './server-selection.html',
   styleUrl: './server-selection.css',
 })
-export class ServerSelection {
+export class ServerSelection implements OnDestroy {
   private server = inject(ServerConnexionService)
   private router = inject(Router)
 
@@ -48,6 +51,9 @@ export class ServerSelection {
   selectedServerName = ''
   customUrl = ''
   useCustom = false
+
+  filteredServers: ServerListEntry[] = []
+  searchQuery = ''
 
   step: ServerSelectionStep = 'choose'
   verifying = false
@@ -60,10 +66,10 @@ export class ServerSelection {
     this.server.getKnownServers(environment.serverUrl).subscribe({
       next: (servers) => {
         this.knownServers = servers
-        if (servers.length > 0) {
-          this.selectedServerUrl = servers[0].url
-          this.selectedServerName = servers[0].name
-        } else {
+        this.filteredServers = servers
+        if (servers.length === 1) {
+          this.selectServer(servers[0])
+        } else if (servers.length === 0) {
           // No directory to show — go straight to the URL field, same as the
           // unreachable-root-server case below.
           this.showCustom()
@@ -71,12 +77,33 @@ export class ServerSelection {
       },
       // The root server is just a convenience directory — being unreachable
       // shouldn't block someone who wants to type a server URL directly.
-      error: () => { this.useCustom = true },
+      error: () => { this.showCustom() },
     })
+  }
+
+  ngOnDestroy(): void {
+    this.verifySub?.unsubscribe();
   }
 
   get hasKnownServer() {
     return this.knownServers.length > 0
+  }
+
+  get showSearch(): boolean {
+    return this.knownServers.length > VISIBLE_ROWS
+  }
+
+  onSearchChange(query: string): void {
+    this.searchQuery = query
+    const words = fold(query).split(/\s+/).filter(Boolean)
+    this.filteredServers = this.knownServers.filter(server => {
+      const haystack = fold(`${server.name} ${server.url}`)
+      return words.every(word => haystack.includes(word))
+    })
+  }
+
+  clearSearch(): void {
+    this.onSearchChange('')
   }
 
   selectServer(server: ServerListEntry): void {
@@ -112,6 +139,8 @@ export class ServerSelection {
     this.verifying = false
     this.verifiedInfo = null
     this.error = ''
+    this.selectedServerUrl = ''
+    this.selectedServerName = ''
     this.step = 'choose'
     this.useCustom = forceUseCustom || !this.hasKnownServer
   }

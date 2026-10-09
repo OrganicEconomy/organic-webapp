@@ -11,14 +11,29 @@
       @case ('choose') {
 
         @if (!useCustom) {
+          @if (showSearch) {
+            <mat-form-field appearance="outline" class="full-width server-search" subscriptSizing="dynamic">
+              <mat-label>Rechercher un serveur</mat-label>
+              <mat-icon matPrefix>search</mat-icon>
+              <input matInput type="search" autocomplete="off" [ngModel]="searchQuery" (ngModelChange)="onSearchChange($event)">
+              @if (searchQuery) {
+                <button mat-icon-button matSuffix type="button" aria-label="Effacer la recherche" (click)="clearSearch()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-form-field>
+          }
+
           <ul class="server-list" [style.--visible-rows-count]="visibleRows">
-            @for (server of knownServers; track server.url) {
+            @for (server of filteredServers; track server.url) {
               <li>
                 <button type="button" class="server-row" (click)="selectServer(server)">
                   <span class="server-name">{{ server.name }}</span>
                   <mat-icon aria-hidden="true">chevron_right</mat-icon>
                 </button>
               </li>
+            } @empty {
+              <li class="hint no-match">Aucun serveur ne correspond à « {{ searchQuery }} ».</li>
             }
           </ul>
           <p class="hint">(liste fournie par le serveur racine)</p>
@@ -30,7 +45,7 @@
         @if (useCustom) {
           @if (!hasKnownServer) {
             <p class="admin-hint">
-                Aucun serveur n'a été trouvé automatiquement. Demandez l'adresse à la personne qui gère votre monnaie locale.
+              Aucun serveur n'a été trouvé automatiquement. Demandez l'adresse à la personne qui gère votre monnaie locale.
             </p>
           } @else {
             <button mat-button class="use-list-link" (click)="backToServerChoice()">
@@ -41,6 +56,9 @@
             <mat-label>Adresse du serveur</mat-label>
             <input matInput type="text" [(ngModel)]="customUrl" (keyup.enter)="submitCustom()" placeholder="https://…">
           </mat-form-field>
+          @if (error) {
+            <p class="error">{{ error }}</p>
+          }
           <button mat-flat-button color="primary" class="full-width" (click)="submitCustom()" [disabled]="!customUrl.trim()">
             Vérifier
           </button>
@@ -101,17 +119,6 @@
     }
 
   </mat-card-content>
-
-  <!--
-  <mat-card-actions class="full-width">
-    <button mat-flat-button color="primary" class="full-width" [disabled]="!verifiedInfo" (click)="createAccount()">
-      Créer mon compte
-    </button>
-    <button mat-stroked-button class="full-width" [disabled]="!verifiedInfo" (click)="restoreAccount()">
-      Restaurer mon compte
-    </button>
-  </mat-card-actions>
-  -->
 
   <mat-divider></mat-divider>
 

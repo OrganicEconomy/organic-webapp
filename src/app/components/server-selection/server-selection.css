@@ -7,6 +7,7 @@ mat-card-content {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-top: 0.75rem;
   padding-bottom: 1rem;
 }
 
@@ -45,6 +46,10 @@ mat-card-content {
 .server-name {
   flex: 1;
   min-width: 0;
+}
+
+.no-match {
+  padding: 0.5rem 12px;
 }
 
 .hint {
@@ -106,11 +111,7 @@ mat-card-content {
 }
 
 .verified {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
   color: var(--mat-sys-secondary);
-  font-size: 0.9rem;
 }
 
 .error {
