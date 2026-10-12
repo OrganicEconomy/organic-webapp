@@ -7,12 +7,49 @@ mat-card-content {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding-bottom: 1rem;
 }
 
 .server-list {
+  --row-height: 48px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: calc(var(--visible-rows-count) * var(--row-height));
+  overflow-y: auto;
+}
+
+.server-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  height: var(--row-height, 48px);
+  padding: 0 8px 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.server-row:hover {
+  background: var(--mat-sys-surface-variant);
+}
+
+.server-row:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: -2px;
+}
+
+.server-name {
+  flex: 1;
+  min-width: 0;
+}
+
+.no-match {
+  padding: 0.5rem 12px;
 }
 
 .hint {
@@ -41,12 +78,33 @@ mat-card-content {
   width: 100%;
 }
 
-.verified {
+.chosen-server {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 14px;
+  border: 2px solid var(--mat-sys-secondary);
+  border-radius: 12px;
+  background: var(--mat-sys-surface-variant);
+}
+
+.chosen-name {
+  font-size: 1.1rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.status {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  color: var(--mat-sys-secondary);
+  margin: 0;
   font-size: 0.9rem;
+}
+
+.verified {
+  color: var(--mat-sys-secondary);
 }
 
 .error {
@@ -54,11 +112,14 @@ mat-card-content {
   font-size: 0.9rem;
 }
 
-mat-card-actions.full-width {
+mat-icon {
+  overflow: visible;
+}
+
+.chosen-actions {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 8px 16px 16px;
 }
 
 .footer-text {

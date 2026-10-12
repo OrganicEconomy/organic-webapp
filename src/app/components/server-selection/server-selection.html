@@ -5,62 +5,121 @@
   </mat-card-header>
 
   <mat-card-content>
-    @if (knownServers.length > 0 && !useCustom) {
-      <mat-radio-group [(ngModel)]="selectedUrl" (ngModelChange)="verifiedInfo = null; error = ''" class="server-list">
-        @for (server of knownServers; track server.url) {
-          <mat-radio-button [value]="server.url">{{ server.name }}</mat-radio-button>
+
+    @switch (step) {
+
+      @case ('choose') {
+
+        @if (!useCustom) {
+          @if (showSearch) {
+            <mat-form-field appearance="outline" class="full-width server-search" subscriptSizing="dynamic">
+              <mat-label>Rechercher un serveur</mat-label>
+              <mat-icon matPrefix>search</mat-icon>
+              <input matInput type="search" autocomplete="off" [ngModel]="searchQuery" (ngModelChange)="onSearchChange($event)">
+              @if (searchQuery) {
+                <button mat-icon-button matSuffix type="button" aria-label="Effacer la recherche" (click)="clearSearch()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              }
+            </mat-form-field>
+          }
+
+          <ul class="server-list" [style.--visible-rows-count]="visibleRows">
+            @for (server of filteredServers; track server.url) {
+              <li>
+                <button type="button" class="server-row" (click)="selectServer(server)">
+                  <span class="server-name">{{ server.name }}</span>
+                  <mat-icon aria-hidden="true">chevron_right</mat-icon>
+                </button>
+              </li>
+            } @empty {
+              <li class="hint no-match">Aucun serveur ne correspond à « {{ searchQuery }} ».</li>
+            }
+          </ul>
+          @if (error) {
+            <p class="error">{{ error }}</p>
+          }
+          <p class="hint">(liste fournie par le serveur racine)</p>
+          <button mat-button class="use-custom-link" (click)="showCustom()">
+            Utiliser une autre adresse
+          </button>
         }
-      </mat-radio-group>
-      <p class="hint">(liste fournie par le serveur racine)</p>
-      <button mat-button class="use-custom-link" (click)="useCustom = true; verifiedInfo = null; error = ''">
-        Utiliser une autre adresse
-      </button>
+
+        @if (useCustom) {
+          @if (!hasKnownServer) {
+            <p class="admin-hint">
+              Aucun serveur n'a été trouvé automatiquement. Demandez l'adresse à la personne qui gère votre monnaie locale.
+            </p>
+          } @else {
+            <button mat-button class="use-list-link" (click)="backToServerChoice()">
+              ← Revenir à la liste
+            </button>
+          }
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Adresse du serveur</mat-label>
+            <input matInput type="text" [(ngModel)]="customUrl" (keyup.enter)="submitCustom()" placeholder="https://…">
+          </mat-form-field>
+          @if (error) {
+            <p class="error">{{ error }}</p>
+          }
+          <button mat-flat-button color="primary" class="full-width" (click)="submitCustom()" [disabled]="!customUrl.trim()">
+            Vérifier
+          </button>
+        }
+
+      }
+
+      @case ('verify') {
+
+        @if (useCustom) {
+          <button mat-button class="use-list-link" (click)="backToServerChoice(true)">
+            ← Retour
+          </button>
+        } @else {
+          <button mat-button class="use-list-link" (click)="backToServerChoice()">
+            ← Revenir à la liste
+          </button>
+        }
+
+        <section class="chosen-server" aria-live="polite">
+          <span class="chosen-name">{{ selectedServerName || selectedServerUrl }}</span>
+          @if (verifying) {
+            <p class="status checking">
+              <mat-spinner diameter="20"></mat-spinner>
+              Connexion…
+            </p>
+          }
+          @if (error) {
+            <p class="status error">
+              <mat-icon>error</mat-icon>
+              {{ error }}
+            </p>
+            <button mat-stroked-button type="button" class="full-width" (click)="verify()">Réessayer</button>
+          }
+          @if (verifiedInfo) {
+            <p class="status verified">
+              <mat-icon>check_circle</mat-icon>
+              @if (verifiedInfo.name !== selectedServerName) {
+                « {{ verifiedInfo.name }} » —
+              }
+              {{ verifiedInfo.stats.users }} citoyens · protocole v{{ verifiedInfo.protocolVersion }}
+            </p>
+            <mat-card-actions class="chosen-actions">
+              <button mat-flat-button color="primary" class="full-width" (click)="createAccount()">
+                Créer mon compte
+              </button>
+              <button mat-stroked-button class="full-width" (click)="restoreAccount()">
+                Restaurer mon compte
+              </button>
+            </mat-card-actions>
+          }
+        </section>
+
+      }
+
     }
 
-    @if (useCustom) {
-      @if (knownServers.length === 0) {
-        <p class="admin-hint">
-          Aucun serveur n'a été trouvé automatiquement. Demandez l'adresse à la personne qui gère votre monnaie locale.
-        </p>
-      }
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Adresse du serveur</mat-label>
-        <input matInput type="text" [(ngModel)]="customUrl" placeholder="https://…">
-      </mat-form-field>
-      @if (knownServers.length > 0) {
-        <button mat-button class="use-list-link" (click)="useCustom = false; verifiedInfo = null; error = ''">
-          ← Revenir à la liste
-        </button>
-      }
-    }
-
-    <button mat-flat-button color="primary" class="full-width" (click)="verify()" [disabled]="!chosenUrl || verifying">
-      @if (verifying) {
-        <mat-spinner diameter="20"></mat-spinner>
-      } @else {
-        Vérifier
-      }
-    </button>
-
-    @if (verifiedInfo) {
-      <p class="verified">
-        <mat-icon>check_circle</mat-icon>
-        « {{ verifiedInfo.name }} » — {{ verifiedInfo.stats.users }} citoyens · protocole {{ verifiedInfo.protocolVersion }}
-      </p>
-    }
-    @if (error) {
-      <p class="error">{{ error }}</p>
-    }
   </mat-card-content>
-
-  <mat-card-actions class="full-width">
-    <button mat-flat-button color="primary" class="full-width" [disabled]="!verifiedInfo" (click)="createAccount()">
-      Créer mon compte
-    </button>
-    <button mat-stroked-button class="full-width" [disabled]="!verifiedInfo" (click)="restoreAccount()">
-      Restaurer mon compte
-    </button>
-  </mat-card-actions>
 
   <mat-divider></mat-divider>
 
