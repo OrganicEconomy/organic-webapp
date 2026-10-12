@@ -49,7 +49,6 @@ describe('ServerSelection', () => {
     fixture.detectChanges();
   }
 
-  // Ces fonctions pourraient être dans un helper 'TestHelper' ou 'TestUtil', a condition de passer la fixture en paramètre
   function getElement(selector: string): HTMLElement | null {
     return fixture.nativeElement.querySelector(selector);
   }
@@ -98,7 +97,7 @@ describe('ServerSelection', () => {
       expect(component.selectedServerUrl).toBe('');
       expect(rowNames()).toEqual(['Serveur de Trifouillis', 'Orga Bretagne']);
       expect(getElement('.chosen-server')).toBeFalsy();
-      // httpMock.verify() in afterEach fails if a request went out.
+      httpMock.expectNone(() => true);
     });
 
     it('should not offer account actions before a server is picked', () => {
@@ -308,8 +307,8 @@ describe('ServerSelection', () => {
     it('should not check anything while the user is typing', () => {
       type('orga-bzh');
 
-      // httpMock.verify() in afterEach fails if a request went out.
       expect(component.step).toBe('choose');
+      httpMock.expectNone(() => true);
     });
 
     it('should normalize the address (adds https://, strips trailing slash) and check it', () => {
