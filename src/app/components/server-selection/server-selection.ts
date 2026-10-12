@@ -14,7 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
-import { Subscription } from "rxjs";
+import { Subscription } from 'rxjs';
 
 const VISIBLE_ROWS = 6
 
@@ -82,7 +82,7 @@ export class ServerSelection implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.verifySub?.unsubscribe();
+    this.verifySub?.unsubscribe()
   }
 
   get hasKnownServer() {

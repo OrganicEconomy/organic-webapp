@@ -187,7 +187,7 @@ describe('ServerSelection', () => {
       clickRow('Orga Bretagne');
       failInfo('https://orga-bzh.fr');
 
-      const retry = Array.from<HTMLElement>(fixture.nativeElement.querySelectorAll('.chosen-server button'))
+      const retry = getAllElements('.chosen-server button')
         .find(button => button.textContent!.includes('Réessayer'))!;
       retry.click();
       fixture.detectChanges();
@@ -250,7 +250,7 @@ describe('ServerSelection', () => {
       expect(pending.cancelled).toBeTrue();
     });
 
-    it('createAccount navigates to /signup with the chosen server as a query param', () => {
+    it('should navigate to /signup on createAccount, with the chosen server as a query param', () => {
       const navigateSpy = spyOn(router, 'navigate');
       clickRow('Serveur de Trifouillis');
       flushInfo('https://trifouillis.fr');
@@ -260,7 +260,7 @@ describe('ServerSelection', () => {
       expect(navigateSpy).toHaveBeenCalledWith(['/signup'], { queryParams: { server: 'https://trifouillis.fr' } });
     });
 
-    it('restoreAccount navigates to /restore-account with the chosen server as a query param', () => {
+    it('should navigate to /restore-account on restoreAccount, with the chosen server as a query param', () => {
       const navigateSpy = spyOn(router, 'navigate');
       clickRow('Serveur de Trifouillis');
       flushInfo('https://trifouillis.fr');
