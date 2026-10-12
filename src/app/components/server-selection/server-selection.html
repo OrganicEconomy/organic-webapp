@@ -82,9 +82,7 @@
         }
 
         <section class="chosen-server" aria-live="polite">
-          <div class="chosen-header">
-            <span class="chosen-name">{{ selectedServerName || selectedServerUrl }}</span>
-          </div>
+          <span class="chosen-name">{{ selectedServerName || selectedServerUrl }}</span>
           @if (verifying) {
             <p class="status checking">
               <mat-spinner diameter="20"></mat-spinner>
@@ -107,10 +105,10 @@
               {{ verifiedInfo.stats.users }} citoyens · protocole v{{ verifiedInfo.protocolVersion }}
             </p>
             <mat-card-actions class="chosen-actions">
-              <button mat-flat-button color="primary" class="full-width" [disabled]="!verifiedInfo" (click)="createAccount()">
+              <button mat-flat-button color="primary" class="full-width" (click)="createAccount()">
                 Créer mon compte
               </button>
-              <button mat-stroked-button class="full-width" [disabled]="!verifiedInfo" (click)="restoreAccount()">
+              <button mat-stroked-button class="full-width" (click)="restoreAccount()">
                 Restaurer mon compte
               </button>
             </mat-card-actions>
