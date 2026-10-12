@@ -77,7 +77,7 @@ describe('ServerSelection', () => {
   }
 
   function actionLabels(): string[] {
-    return getAllElements(fixture.nativeElement.querySelectorAll('.chosen-actions button'))
+    return getAllElements('.chosen-actions button')
       .map(button => button.textContent!.trim());
   }
 
