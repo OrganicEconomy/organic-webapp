@@ -107,7 +107,19 @@ export class ServerSelection implements OnDestroy {
   }
 
   selectServer(server: ServerListEntry): void {
-    const rawUrl = server.url
+    this.checkServer(server.url, server.name)
+  }
+
+  showCustom(): void {
+    this.error = ''
+    this.useCustom = true
+  }
+
+  submitCustom(): void {
+    this.checkServer(this.customUrl)
+  }
+
+  private checkServer(rawUrl: string, name = ''): void {
     let url: string
     try {
       url = normalizeServerUrl(rawUrl)
@@ -117,21 +129,9 @@ export class ServerSelection implements OnDestroy {
     }
 
     this.selectedServerUrl = url
-    this.selectedServerName = server.name
+    this.selectedServerName = name
     this.step = 'verify'
     this.verify()
-  }
-
-  showCustom(): void {
-    this.error = ''
-    this.useCustom = true
-  }
-
-  submitCustom(): void {
-    this.selectServer({
-      url: this.customUrl,
-      name: '',
-    })
   }
 
   backToServerChoice(forceUseCustom?: boolean): void {
