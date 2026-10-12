@@ -36,6 +36,9 @@
               <li class="hint no-match">Aucun serveur ne correspond à « {{ searchQuery }} ».</li>
             }
           </ul>
+          @if (error) {
+            <p class="error">{{ error }}</p>
+          }
           <p class="hint">(liste fournie par le serveur racine)</p>
           <button mat-button class="use-custom-link" (click)="showCustom()">
             Utiliser une autre adresse

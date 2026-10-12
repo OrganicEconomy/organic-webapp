@@ -131,6 +131,25 @@ describe('ServerSelection', () => {
       flushInfo('https://orga-bzh.fr');
     });
 
+    it('should show an error under the list when the picked server URL is invalid', () => {
+      component.selectServer({ name: 'Cassé', url: '' });
+      fixture.detectChanges();
+
+      expect(component.step).toBe('choose');
+      expect(rowNames().length).toBe(2);
+      expect(getElement('.error')).toBeTruthy();
+    });
+
+    it('should drop the invalid URL error once another server is picked', () => {
+      component.selectServer({ name: 'Cassé', url: '' });
+      fixture.detectChanges();
+
+      clickRow('Orga Bretagne');
+      flushInfo('https://orga-bzh.fr');
+
+      expect(getElement('.error')).toBeFalsy();
+    });
+
     it('should show the account actions on the card once the check succeeded', () => {
       clickRow('Orga Bretagne');
       expect(actionLabels()).toEqual([]);
