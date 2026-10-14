@@ -1,0 +1,13 @@
+<div class="celebration-content" mat-dialog-content>
+    <i class="bi bi-sun-fill celebration-icon"></i>
+    <h2>Votre argent du jour</h2>
+    <p class="highlight">+{{ data.created }} <mat-icon svgIcon="currency-mark"></mat-icon></p>
+    <p class="detail">unité(s) créée(s) aujourd'hui</p>
+    @if (data.cashed > 0) {
+        <p class="detail">{{ data.cashed }} unité(s) périmée(s) encaissée(s)</p>
+    }
+</div>
+
+<div mat-dialog-actions class="actions">
+    <button mat-flat-button mat-dialog-close>Continuer</button>
+</div>

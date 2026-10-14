@@ -44,4 +44,10 @@ describe('toDisplayRow', () => {
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.type).toBe('Gain');
   });
+
+  it('should label a payment to oneself as a cashing', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'my-pk', target: 'my-pk', money: [1, 2] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.type).toBe('Encaissement');
+  });
 });
