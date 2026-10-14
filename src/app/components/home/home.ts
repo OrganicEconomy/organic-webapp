@@ -5,12 +5,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { requestedAgo } from '../../utils/requested-ago.util';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
 import { BackupService } from '../../services/backup.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
+import { DailyMoneyDialog, DailyMoneyDialogData } from '../daily-money-dialog/daily-money-dialog';
 import type { ValidationListEntry, MyEcosystemEntry } from 'organic-protocol';
 import { TXTYPE } from 'organic-money/src/Transaction.js';
 
@@ -31,7 +32,7 @@ export class Home {
   pending = inject(PendingPaymentsService)
   backupService = inject(BackupService)
   private server = inject(ServerConnexionService)
-  private snackBar = inject(MatSnackBar)
+  private dialog = inject(MatDialog)
   private levelUp = inject(LevelUpService)
 
   requestedAgo = requestedAgo;
@@ -88,17 +89,17 @@ export class Home {
       return
     }
     this.backupService.recordAutomatic(this.user, sk)
-    this.snackBar.open(this.dailyMoneyMessage(transactions), 'OK', { duration: 3000 })
-    this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
+    this.dialog.open(DailyMoneyDialog, { data: this.dailyMoneyData(transactions) })
+      .afterClosed()
+      .subscribe(() => this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel()))
   }
 
-  private dailyMoneyMessage(transactions: any[]): string {
-    const created = transactions[transactions.length - 1].money.length
+  private dailyMoneyData(transactions: any[]): DailyMoneyDialogData {
     const cashing = transactions.find(tx => tx.type === TXTYPE.PAY)
-    if (!cashing) {
-      return `${created} unité(s) créée(s) aujourd'hui !`
+    return {
+      created: transactions[transactions.length - 1].money.length,
+      cashed: cashing ? cashing.money.length : 0,
     }
-    return `${created} unité(s) créée(s) aujourd'hui, ${cashing.money.length} unité(s) périmée(s) encaissée(s) !`
   }
 
 }

@@ -11,7 +11,7 @@ export interface LevelUpDialogData {
   selector: 'app-level-up-dialog',
   imports: [MatDialogModule, MatButtonModule],
   templateUrl: './level-up-dialog.html',
-  styleUrl: './level-up-dialog.css',
+  styleUrl: '../celebration-dialog.css',
 })
 export class LevelUpDialog {
   dialogRef = inject<MatDialogRef<LevelUpDialog>>(MatDialogRef<LevelUpDialog>);

@@ -1,8 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
-import { of } from 'rxjs';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { of, Subject } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
 
 import { Home } from './home';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -10,6 +10,7 @@ import { PendingPaymentsService } from '../../services/pending-payments.service'
 import { BackupService } from '../../services/backup.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
+import { DailyMoneyDialog } from '../daily-money-dialog/daily-money-dialog';
 
 // A minimal stand-in for a logged-in account — this component (like Pay,
 // Contacts) has always assumed getConnectedUser() is non-null; it's not this
@@ -20,7 +21,8 @@ let stubConnectedUserService: any;
 let pendingSpy: jasmine.SpyObj<Pick<PendingPaymentsService, 'refresh' | 'cash'>> & { dataSource: any[] };
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
 let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getValidationList'>>;
-let snackBarSpy: jasmine.SpyObj<Pick<MatSnackBar, 'open'>>;
+let dialogSpy: jasmine.SpyObj<Pick<MatDialog, 'open'>>;
+let dailyDialogClosed: Subject<void>;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
 
 describe('Home', () => {
@@ -55,7 +57,9 @@ describe('Home', () => {
     backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getValidationList']);
     serverSpy.getValidationList.and.returnValue(of([]));
-    snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+    dailyDialogClosed = new Subject<void>();
+    dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
+    dialogSpy.open.and.returnValue({ afterClosed: () => dailyDialogClosed } as any);
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
 
     TestBed.configureTestingModule({
@@ -66,7 +70,7 @@ describe('Home', () => {
         { provide: PendingPaymentsService, useValue: pendingSpy },
         { provide: BackupService, useValue: backupSpy },
         { provide: ServerConnexionService, useValue: serverSpy },
-        { provide: MatSnackBar, useValue: snackBarSpy },
+        { provide: MatDialog, useValue: dialogSpy },
         { provide: LevelUpService, useValue: levelUpSpy },
       ],
     });
@@ -96,7 +100,7 @@ describe('Home', () => {
     expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-decrypted-sk');
   });
 
-  it('should announce the expired units it cashed along with the units created today', () => {
+  it('should open the daily money dialog with the units created today and the expired units cashed', () => {
     fakeBlockchain.createMoneyAndInvests.and.returnValue([
       { type: 2, target: '', money: [20260801000] },
       { type: 3, target: 'pk', money: [20260731000, 20260801000] },
@@ -105,12 +109,10 @@ describe('Home', () => {
 
     createComponent();
 
-    expect(snackBarSpy.open).toHaveBeenCalledWith(
-      "3 unité(s) créée(s) aujourd'hui, 2 unité(s) périmée(s) encaissée(s) !", 'OK', { duration: 3000 }
-    );
+    expect(dialogSpy.open).toHaveBeenCalledWith(DailyMoneyDialog, { data: { created: 3, cashed: 2 } });
   });
 
-  it('should celebrate the level reached by cashing expired money', () => {
+  it('should celebrate the level reached by cashing expired money once the daily money dialog is closed', () => {
     let level = 1
     fakeBlockchain.getLevel = () => level
     fakeBlockchain.createMoneyAndInvests.and.callFake(() => {
@@ -122,6 +124,9 @@ describe('Home', () => {
     });
 
     createComponent();
+    expect(levelUpSpy.celebrateIfLevelUp).not.toHaveBeenCalled();
+
+    dailyDialogClosed.next();
 
     expect(levelUpSpy.celebrateIfLevelUp).toHaveBeenCalledWith(1, 3);
   });
