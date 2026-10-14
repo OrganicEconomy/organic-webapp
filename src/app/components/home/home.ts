@@ -10,7 +10,9 @@ import { requestedAgo } from '../../utils/requested-ago.util';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
 import { BackupService } from '../../services/backup.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
+import { LevelUpService } from '../../services/level-up.service';
 import type { ValidationListEntry, MyEcosystemEntry } from 'organic-protocol';
+import { TXTYPE } from 'organic-money/src/Transaction.js';
 
 @Component({
   selector: 'app-home',
@@ -30,6 +32,7 @@ export class Home {
   backupService = inject(BackupService)
   private server = inject(ServerConnexionService)
   private snackBar = inject(MatSnackBar)
+  private levelUp = inject(LevelUpService)
 
   requestedAgo = requestedAgo;
 
@@ -79,11 +82,23 @@ export class Home {
 
   private createDailyMoney() {
     const sk = this.userService.getSecretKey()
-    const result = this.user.blockchain.createMoneyAndInvests(sk)
-    if (result) {
-      this.backupService.recordAutomatic(this.user, sk)
-      this.snackBar.open(`${result.money.length} unité(s) créée(s) aujourd'hui !`, 'OK', { duration: 3000 })
+    const oldLevel = this.user.blockchain.getLevel()
+    const transactions = this.user.blockchain.createMoneyAndInvests(sk)
+    if (transactions.length === 0) {
+      return
     }
+    this.backupService.recordAutomatic(this.user, sk)
+    this.snackBar.open(this.dailyMoneyMessage(transactions), 'OK', { duration: 3000 })
+    this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
+  }
+
+  private dailyMoneyMessage(transactions: any[]): string {
+    const created = transactions[transactions.length - 1].money.length
+    const cashing = transactions.find(tx => tx.type === TXTYPE.PAY)
+    if (!cashing) {
+      return `${created} unité(s) créée(s) aujourd'hui !`
+    }
+    return `${created} unité(s) créée(s) aujourd'hui, ${cashing.money.length} unité(s) périmée(s) encaissée(s) !`
   }
 
 }

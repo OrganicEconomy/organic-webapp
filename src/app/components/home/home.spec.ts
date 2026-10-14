@@ -2,12 +2,14 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 
 import { of } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { Home } from './home';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
 import { BackupService } from '../../services/backup.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
+import { LevelUpService } from '../../services/level-up.service';
 
 // A minimal stand-in for a logged-in account — this component (like Pay,
 // Contacts) has always assumed getConnectedUser() is non-null; it's not this
@@ -18,6 +20,8 @@ let stubConnectedUserService: any;
 let pendingSpy: jasmine.SpyObj<Pick<PendingPaymentsService, 'refresh' | 'cash'>> & { dataSource: any[] };
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
 let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getValidationList'>>;
+let snackBarSpy: jasmine.SpyObj<Pick<MatSnackBar, 'open'>>;
+let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
 
 describe('Home', () => {
   let component: Home;
@@ -31,7 +35,7 @@ describe('Home', () => {
       getMoneyBeforeNextLevel: () => 0,
       getHistory: () => [],
       experience: 42,
-      createMoneyAndInvests: jasmine.createSpy('createMoneyAndInvests').and.returnValue(null),
+      createMoneyAndInvests: jasmine.createSpy('createMoneyAndInvests').and.returnValue([]),
     };
     fakeAccount = {
       name: 'Test',
@@ -51,6 +55,8 @@ describe('Home', () => {
     backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getValidationList']);
     serverSpy.getValidationList.and.returnValue(of([]));
+    snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+    levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
 
     TestBed.configureTestingModule({
       imports: [Home],
@@ -60,6 +66,8 @@ describe('Home', () => {
         { provide: PendingPaymentsService, useValue: pendingSpy },
         { provide: BackupService, useValue: backupSpy },
         { provide: ServerConnexionService, useValue: serverSpy },
+        { provide: MatSnackBar, useValue: snackBarSpy },
+        { provide: LevelUpService, useValue: levelUpSpy },
       ],
     });
   });
@@ -81,15 +89,45 @@ describe('Home', () => {
   });
 
   it('should record the mutation (via backup.service) when money was actually created', () => {
-    fakeBlockchain.createMoneyAndInvests.and.returnValue({ money: [20260722000] });
+    fakeBlockchain.createMoneyAndInvests.and.returnValue([{ type: 2, money: [20260722000] }]);
 
     createComponent();
 
     expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-decrypted-sk');
   });
 
-  it('should not record anything when money was already created today (null result)', () => {
-    fakeBlockchain.createMoneyAndInvests.and.returnValue(null);
+  it('should announce the expired units it cashed along with the units created today', () => {
+    fakeBlockchain.createMoneyAndInvests.and.returnValue([
+      { type: 2, target: '', money: [20260801000] },
+      { type: 3, target: 'pk', money: [20260731000, 20260801000] },
+      { type: 2, target: '', money: [20260901000, 20260901001, 20260901002] },
+    ]);
+
+    createComponent();
+
+    expect(snackBarSpy.open).toHaveBeenCalledWith(
+      "3 unité(s) créée(s) aujourd'hui, 2 unité(s) périmée(s) encaissée(s) !", 'OK', { duration: 3000 }
+    );
+  });
+
+  it('should celebrate the level reached by cashing expired money', () => {
+    let level = 1
+    fakeBlockchain.getLevel = () => level
+    fakeBlockchain.createMoneyAndInvests.and.callFake(() => {
+      level = 3
+      return [
+        { type: 3, target: 'pk', money: [20260731000] },
+        { type: 2, target: '', money: [20260901000] },
+      ]
+    });
+
+    createComponent();
+
+    expect(levelUpSpy.celebrateIfLevelUp).toHaveBeenCalledWith(1, 3);
+  });
+
+  it('should not record anything when money was already created today (empty list)', () => {
+    fakeBlockchain.createMoneyAndInvests.and.returnValue([]);
 
     createComponent();
 
