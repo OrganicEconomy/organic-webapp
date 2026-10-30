@@ -10,7 +10,7 @@ import type {
   PasswordChangeBody,
   TxSendBody, TxListResponse,
   TxVerifyBody, TxVerifyResponse,
-  PapersCashBody, IsCashedResponse,
+  IsCashedResponse,
   TxWire,
   EcosystemInfoResponse, ValidationStatusResponse, MyEcosystemsResponse, EcosystemListResponse,
   EcosystemTxBody, EcosystemDistributeBody,
@@ -91,12 +91,6 @@ export class ServerConnexionService {
       headers,
       params: { publickey, timestamp },
     })
-  }
-
-  /** tx is the full PAPER transaction (wire format) — the server requires proof, not a bare hash. */
-  public cashPaper(serverUrl: string, tx: TxWire): Observable<unknown> {
-    const body: PapersCashBody = { tx }
-    return this.http.post(`${serverUrl}${API_PATH}/papers/cash`, body)
   }
 
   public isPaperAlreadyCashed(serverUrl: string, hash: string): Observable<IsCashedResponse> {
