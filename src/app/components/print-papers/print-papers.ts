@@ -200,9 +200,22 @@ export class PrintPapers {
       }
     }
     this.backupService.recordPayment(this.user, sk).subscribe({
-      error: () => this.warnPapersNotCashableYet(),
+      next: () => this.openDialog(),
+      error: (err: any) => err.status === 409 ? this.warnPapersNeverCashable() : this.offerPapersNotCashableYet(),
     })
+  }
+
+  private offerPapersNotCashableYet() {
+    this.warnPapersNotCashableYet()
     this.openDialog()
+  }
+
+  private warnPapersNeverCashable() {
+    this.snackBar.open(
+      "Cet appareil n'est plus synchronisé avec ton compte : ces billets ne pourront jamais être encaissés, ils n'ont donc pas été imprimés.",
+      'Fermer',
+      { duration: 12000 },
+    )
   }
 
   private warnPapersNotCashableYet() {

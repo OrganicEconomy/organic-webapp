@@ -121,6 +121,24 @@ describe('PrintPapers', () => {
       expect(dialogSpy.open).toHaveBeenCalled();
     });
 
+    it('should not offer the PDF when the server refuses the save, since the papers could never be cashed', () => {
+      backupSpy.recordPayment.and.returnValue(throwError(() => ({ status: 409 })));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(dialogSpy.open).not.toHaveBeenCalled();
+    });
+
+    it('should explain that the papers could never be cashed when the server refuses the save', () => {
+      backupSpy.recordPayment.and.returnValue(throwError(() => ({ status: 409 })));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(jasmine.stringMatching(/jamais/), 'Fermer', jasmine.anything());
+    });
+
     it('should not generate any paper when the session is read-only', () => {
       stubConnectedUserService.isReadOnlySession = () => true;
       component.papercounts[5] = 1;
