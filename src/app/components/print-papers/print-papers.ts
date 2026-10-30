@@ -19,6 +19,7 @@ import { Dialog, DialogRef } from '@angular/cdk/dialog';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { FormsModule } from '@angular/forms';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { jsPDF } from "jspdf";
 import { QRCodeComponent } from 'angularx-qrcode';
@@ -56,6 +57,7 @@ export class PrintPapers {
   user = this.userService.getConnectedUser()
   dialog = inject(Dialog);
   confirmDialog = inject(MatDialog);
+  snackBar = inject(MatSnackBar);
 
   denominations: number[] = [1, 3, 10, 20, 34]
   selectOptions: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20]
@@ -197,8 +199,18 @@ export class PrintPapers {
         }
       }
     }
-    this.backupService.recordAutomatic(this.user, sk)
+    this.backupService.recordPayment(this.user, sk).subscribe({
+      error: () => this.warnPapersNotCashableYet(),
+    })
     this.openDialog()
+  }
+
+  private warnPapersNotCashableYet() {
+    this.snackBar.open(
+      "Billets générés mais pas encore enregistrés sur le serveur : ils ne pourront être encaissés qu'après une sauvegarde réussie.",
+      'Fermer',
+      { duration: 12000 },
+    )
   }
 
   generatePDF() {
