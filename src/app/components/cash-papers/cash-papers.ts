@@ -11,7 +11,7 @@ import { LevelUpService } from '../../services/level-up.service';
 import { BackupService } from '../../services/backup.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { decodeQr } from 'organic-protocol';
-import { TransactionMaker } from 'organic-money/src/index.js';
+import { CitizenBlockchain, TransactionMaker } from 'organic-money/src/index.js';
 
 @Component({
   selector: 'app-cash-papers',
@@ -103,6 +103,7 @@ export class CashPapers {
     if (this.userService.isReadOnlySession()) return
 
     const sk = this.userService.getSecretKey()
+    const chainBeforeCashing = this.user.blockchain.export()
     const oldLevel = this.user.blockchain.getLevel()
     const failedPapers = []
     const okPapers: any[] = []
@@ -116,29 +117,37 @@ export class CashPapers {
       }
     }
 
-    this.backupService.recordAutomatic(this.user, sk)
-
-    for (let paper of okPapers) {
-      this.serverDB.cashPaper(this.user.serverUrl, paper.export()).subscribe({
-        next: () => { this.displayMessage("Paf, j'encaisse " + paper.money.length) },
-        error: (err: any) => {
-          console.log(err)
-          this.displayMessage("Billet encaissé localement mais pas confirmé au serveur.")
-        },
-      })
-    }
-    if (okPapers.length > 0) {
-      // A block containing a paper can only be sealed by the paper's referent
-      // (the server here) — required by the lib, see Phase-1.md §6.5.
-      this.serverDB.signLastBlock(this.user, sk).subscribe({
-        next: () => { },
-        error: (err: any) => { console.log(err) },
-      })
-    }
-
-    this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
-
     this.paper_list = failedPapers
+    if (okPapers.length > 0) {
+      this.serverDB.signLastBlock(this.user, sk).subscribe({
+        next: () => this.confirmCashing(okPapers, sk, oldLevel),
+        error: (err: any) => this.cancelCashing(okPapers, chainBeforeCashing, err),
+      })
+    }
+  }
+
+  private confirmCashing(papers: any[], sk: string, oldLevel: number) {
+    this.backupService.recordAutomatic(this.user, sk)
+    for (const paper of papers) {
+      this.displayMessage("Paf, j'encaisse " + paper.money.length)
+    }
+    this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
+  }
+
+  private cancelCashing(papers: any[], chainBeforeCashing: any, err: any) {
+    this.user.blockchain = new CitizenBlockchain(chainBeforeCashing)
+    this.paper_list = this.paper_list.concat(papers)
+    this.displayMessage(this.refusalMessage(err))
+  }
+
+  private refusalMessage(err: any): string {
+    if (err.error?.code === 'ALREADY_CASHED') {
+      return "Un de ces billets a déjà été encaissé par quelqu'un d'autre : rien n'a été encaissé."
+    }
+    if (err.status === 0) {
+      return "Pas de connexion au serveur : les billets ne sont pas encaissés, réessaie une fois en ligne."
+    }
+    return "Le serveur a refusé ces billets (émetteur inconnu ou billet invalide) : rien n'a été encaissé."
   }
 
   displayMessage(message: string) {
