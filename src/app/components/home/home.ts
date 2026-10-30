@@ -5,12 +5,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
 import { requestedAgo } from '../../utils/requested-ago.util';
 import { PendingPaymentsService } from '../../services/pending-payments.service';
 import { BackupService } from '../../services/backup.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
+import { LevelUpService } from '../../services/level-up.service';
+import { DailyMoneyDialog, DailyMoneyDialogData } from '../daily-money-dialog/daily-money-dialog';
 import type { ValidationListEntry, MyEcosystemEntry } from 'organic-protocol';
+import { TXTYPE } from 'organic-money/src/Transaction.js';
 
 @Component({
   selector: 'app-home',
@@ -29,7 +32,8 @@ export class Home {
   pending = inject(PendingPaymentsService)
   backupService = inject(BackupService)
   private server = inject(ServerConnexionService)
-  private snackBar = inject(MatSnackBar)
+  private dialog = inject(MatDialog)
+  private levelUp = inject(LevelUpService)
 
   requestedAgo = requestedAgo;
 
@@ -79,10 +83,22 @@ export class Home {
 
   private createDailyMoney() {
     const sk = this.userService.getSecretKey()
-    const result = this.user.blockchain.createMoneyAndInvests(sk)
-    if (result) {
-      this.backupService.recordAutomatic(this.user, sk)
-      this.snackBar.open(`${result.money.length} unité(s) créée(s) aujourd'hui !`, 'OK', { duration: 3000 })
+    const oldLevel = this.user.blockchain.getLevel()
+    const transactions = this.user.blockchain.createMoneyAndInvests(sk)
+    if (transactions.length === 0) {
+      return
+    }
+    this.backupService.recordAutomatic(this.user, sk)
+    this.dialog.open(DailyMoneyDialog, { data: this.dailyMoneyData(transactions) })
+      .afterClosed()
+      .subscribe(() => this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel()))
+  }
+
+  private dailyMoneyData(transactions: any[]): DailyMoneyDialogData {
+    const cashing = transactions.find(tx => tx.type === TXTYPE.PAY)
+    return {
+      created: transactions[transactions.length - 1].money.length,
+      cashed: cashing ? cashing.money.length : 0,
     }
   }
 

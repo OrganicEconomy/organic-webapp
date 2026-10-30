@@ -21,10 +21,18 @@ export const TX_TYPE_LABELS: Record<string, string> = {
   "13": "Gain",
 }
 
+function isCashing(tx: any): boolean {
+  return String(tx.type) === "3" && tx.signer === tx.target
+}
+
+function typeLabel(tx: any): string {
+  return isCashing(tx) ? "Encaissement" : TX_TYPE_LABELS[tx.type] ?? tx.type
+}
+
 export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]) {
   return {
     date: tx.date.toLocaleDateString("fr-FR"),
-    type: TX_TYPE_LABELS[tx.type] ?? tx.type,
+    type: typeLabel(tx),
     source: getContactName(tx.signer, myPublicKey, contacts),
     target: getContactName(tx.target, myPublicKey, contacts),
     amount: tx.money.length,
