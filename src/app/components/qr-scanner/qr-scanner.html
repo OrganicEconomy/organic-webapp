@@ -1,9 +1,5 @@
 <div class="qr-scanner-wrap">
-  @if (scannerVisible) {
-  <zxing-scanner (scanSuccess)="onScanSuccess($event)" (autostarting)="onAutostarting($event)"
-    (camerasNotFound)="onCamerasNotFound()" (permissionResponse)="onPermissionResponse($event)"
-    (scanError)="onScanError($event)"></zxing-scanner>
-  }
+  <video #preview class="qr-scanner-preview" muted playsinline></video>
 
   @if (errorMessage) {
   <div class="qr-scanner-overlay qr-scanner-error">

@@ -36,7 +36,6 @@
     "@angular/router": "^21.2.15",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.0",
-    "@zxing/ngx-scanner": "^21.0.0",
     "angularx-qrcode": "^21.0.5",
     "bootstrap-icons": "^1.13.1",
     "buffer": "^6.0.3",
