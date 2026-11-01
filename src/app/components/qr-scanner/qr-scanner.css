@@ -1,9 +1,13 @@
 .qr-scanner-wrap {
   position: relative;
-  /* Keeps its footprint even when the scanner element is torn down (manual
-     retry) — otherwise this collapses to 0 height and the error overlay
-     (position: absolute; inset: 0) vanishes with it. */
   min-height: 300px;
+}
+
+.qr-scanner-preview {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
 }
 
 .qr-scanner-overlay {
