@@ -90,6 +90,16 @@ describe('PayOffline', () => {
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
   });
 
+  it('should not pay a contact whose public key is malformed, so nothing is debited', () => {
+    component.target = 'abcdef123456';
+    component.amount = 5;
+
+    component.payOffline();
+
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+    expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
   it('should open a confirmation dialog when Payer par QR is tapped', () => {
     component.target = CONTACT_PK;
     component.amount = 5;

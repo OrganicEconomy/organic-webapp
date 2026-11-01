@@ -17,6 +17,7 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
 import { getContactName } from '../../utils/transaction-display.util';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
+import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
 
 @Component({
   selector: 'app-pay-offline',
@@ -74,6 +75,10 @@ export class PayOffline {
   payOffline(): void {
     if (!this.target) {
       this.displayMessage("Le champs 'À qui ?' est obligatoire.")
+      return
+    }
+    if (!isWellFormedPublicKey(this.target)) {
+      this.displayMessage(MALFORMED_PUBLIC_KEY_MESSAGE)
       return
     }
     if (this.amount <= 0) {

@@ -6,6 +6,8 @@ import { AddContact } from './add-contact';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
 
+const basilePk = '02' + 'b5'.repeat(32);
+
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
@@ -64,13 +66,25 @@ describe('AddContact', () => {
   });
 
   it('should add a well-formed Contact (4 fields) from manual entry', async () => {
-    component.addcontactForm.setValue({ name: 'Basile', pk: 'basile-pk', url: 'https://trifouillis.fr' });
+    component.addcontactForm.setValue({ name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr' });
 
     await component.addContact();
 
     expect(fakeAccount.contacts).toEqual([
-      { name: 'Basile', pk: 'basile-pk', url: 'https://trifouillis.fr', type: 'citizen' },
+      { name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr', type: 'citizen' },
     ]);
     expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
+  });
+
+  it('should refuse to add a contact whose public key is malformed', async () => {
+    component.addcontactForm.setValue({ name: 'Basile', pk: 'abcdef123456', url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([]);
+    expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+    expect(component.formError).toBe(
+      "Cette clé publique n'est pas valide : elle doit faire 66 caractères (0-9, a-f) et commencer par 02 ou 03.",
+    );
   });
 });

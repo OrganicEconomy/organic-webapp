@@ -29,6 +29,10 @@
                 </mat-form-field>
             </section>
 
+            @if (formError) {
+                <p class="form-error">{{ formError }}</p>
+            }
+
             <section>
                 <button mat-flat-button type="submit">Enregistrer</button>
             </section>

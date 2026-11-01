@@ -10,6 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { QrScanner } from '../qr-scanner/qr-scanner';
+import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
 
 @Component({
   selector: 'app-add-contact',
@@ -27,6 +28,7 @@ import { QrScanner } from '../qr-scanner/qr-scanner';
 export class AddContact {
   public addcontactForm !: FormGroup
   public scanError = ''
+  public formError = ''
   userService = inject(ConnectedUserService)
   localDB = inject(LocalDatabaseService)
 
@@ -70,6 +72,10 @@ export class AddContact {
   }
 
   async addContact() {
+    if (!isWellFormedPublicKey(this.addcontactForm.value.pk)) {
+      this.formError = MALFORMED_PUBLIC_KEY_MESSAGE
+      return
+    }
     const contact: Contact = {
       name: this.addcontactForm.value.name,
       pk: this.addcontactForm.value.pk,

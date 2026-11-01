@@ -26,7 +26,8 @@ h1 {
     margin: 0 0 8px 0;
 }
 
-.scan-error {
+.scan-error,
+.form-error {
     color: var(--mat-sys-error);
     font-size: 0.85rem;
     margin: 4px 0;
