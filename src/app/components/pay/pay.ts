@@ -16,7 +16,11 @@ import { LevelUpService } from '../../services/level-up.service';
 import { BackupService } from '../../services/backup.service';
 import { toDisplayRow, getContactName } from '../../utils/transaction-display.util';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
+import { Observable, catchError, map, of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
 import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
+
+const withoutTrailingSlash = (url: string) => url.replace(/\/+$/, '')
 
 @Component({
   selector: 'app-pay',
@@ -84,6 +88,10 @@ export class Pay {
       this.displayMessage(MALFORMED_PUBLIC_KEY_MESSAGE)
       return;
     }
+    if (this.isOnAnotherServer(this.targetContact())) {
+      this.displayMessage("Ce contact est inscrit sur un autre serveur : les paiements entre serveurs ne sont pas encore possibles.")
+      return;
+    }
     if (this.amount <= 0) {
       this.displayMessage("Le montant à payer doit être supérieur à zéro.")
       return;
@@ -93,6 +101,42 @@ export class Pay {
       return;
     }
 
+    if (this.itIsMe(this.target)) {
+      this.confirmPayment()
+      return
+    }
+    this.recipientRefusal().subscribe((refusal) =>
+      refusal ? this.displayMessage(refusal) : this.confirmPayment()
+    )
+  }
+
+  private recipientRefusal(): Observable<string | null> {
+    return this.targetContact()?.type === 'ecosystem'
+      ? this.ecosystemRefusal()
+      : this.citizenRefusal()
+  }
+
+  private ecosystemRefusal(): Observable<string | null> {
+    return this.serverDB.getEcosystemInfo(this.user.serverUrl, this.target).pipe(
+      map(() => null),
+      catchError((error) => of(this.lookupRefusal(error, "Cet écosystème n'existe pas sur ton serveur."))),
+    )
+  }
+
+  private citizenRefusal(): Observable<string | null> {
+    return this.serverDB.getValidationStatus(this.user.serverUrl, this.target).pipe(
+      map(({ status }) => status === 'active' ? null : "Ce destinataire n'est pas encore un citoyen actif."),
+      catchError((error) => of(this.lookupRefusal(error, "Ce destinataire n'est pas inscrit sur ton serveur."))),
+    )
+  }
+
+  private lookupRefusal(error: HttpErrorResponse, unknownRecipientMessage: string): string {
+    return error.status === 0
+      ? 'Impossible de vérifier le destinataire : pas de connexion au serveur.'
+      : unknownRecipientMessage
+  }
+
+  private confirmPayment(): void {
     const recipient = getContactName(this.target, this.user.blockchain.getMyPublicKey(), this.contacts)
     const dialogRef = this.dialog.open(ConfirmDialog, {
       data: { title: 'Payer', message: `Payer ${this.amount} à ${recipient} ? Cette action est irréversible.` },
@@ -101,6 +145,14 @@ export class Pay {
       if (!confirmed) return;
       this.executePayment();
     });
+  }
+
+  private targetContact(): any {
+    return this.contacts.find((contact: any) => contact.pk === this.target)
+  }
+
+  private isOnAnotherServer(contact: any): boolean {
+    return !!contact?.url && withoutTrailingSlash(contact.url) !== withoutTrailingSlash(this.user.serverUrl)
   }
 
   private executePayment(): void {
@@ -126,7 +178,7 @@ export class Pay {
         // (strict pay → save → send order). An ecosystem contact has no phone
         // polling /tx/send's waiting queue, so it must go through its own
         // dedicated endpoint instead — the only thing that actually credits it.
-        const targetContact = this.contacts.find((contact: any) => contact.pk === this.target)
+        const targetContact = this.targetContact()
         const send = () => targetContact?.type === 'ecosystem'
           ? this.serverDB.sendEcosystemTx(this.user.serverUrl, this.target, tx.export())
           : this.serverDB.sendTransaction(this.user.serverUrl, tx.export())
