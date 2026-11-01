@@ -99,6 +99,24 @@ zxing-scanner {
     flex-shrink: 0;
 }
 
+.refused {
+    background: var(--mat-sys-error-container);
+}
+
+.paper-card.refused {
+    border-color: var(--mat-sys-error);
+}
+
+.paper-refusal {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--mat-sys-error);
+}
+
+.paper-refusal::first-letter {
+    text-transform: uppercase;
+}
+
 .empty {
     text-align: center;
     color: var(--mat-sys-on-surface-variant);

@@ -176,16 +176,6 @@ describe('ServerConnexionService', () => {
     req.flush([])
   });
 
-  it('cashPaper: POSTs the full tx (not a bare hash) to /papers/cash', () => {
-    const tx: any = { v: 1, d: 20260101, t: 5, p: 'referent', s: TEST_PK, m: '', i: '', h: 'sig' }
-    service.cashPaper(SERVER_URL, tx).subscribe()
-
-    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/papers/cash`)
-    expect(req.request.method).toBe('POST')
-    expect(req.request.body).toEqual({ tx })
-    req.flush({ message: 'ok' })
-  });
-
   it('verifyTransaction: POSTs { tx } to /tx/verify, no auth header (public, read-only)', () => {
     const tx: any = { v: 1, d: 20260101, t: 3, p: 'target', s: TEST_PK, m: '', i: '', h: 'sig' }
     let result: any

@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 import { encodePaperQr, encodeContactQr } from 'organic-protocol';
 
 import { CashPapers } from './cash-papers';
@@ -26,7 +26,7 @@ function makePaperTxWire(overrides: Partial<any> = {}): any {
 let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'cashPaper' | 'isPaperAlreadyCashed' | 'signLastBlock'>>;
+let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'isPaperAlreadyCashed' | 'signLastBlock'>>;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
 
@@ -39,6 +39,7 @@ describe('CashPapers', () => {
       getMyPublicKey: () => MY_PK,
       cashPaper: jasmine.createSpy('cashPaper'),
       getLevel: () => 2,
+      export: () => [],
     };
     fakeAccount = {
       serverUrl: 'https://trifouillis.fr',
@@ -50,9 +51,8 @@ describe('CashPapers', () => {
       getSecretKey: () => 'the-real-sk',
       isReadOnlySession: () => false,
     };
-    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['cashPaper', 'isPaperAlreadyCashed', 'signLastBlock']);
+    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['isPaperAlreadyCashed', 'signLastBlock']);
     serverDBSpy.isPaperAlreadyCashed.and.returnValue(throwError(() => ({ status: 404 })));
-    serverDBSpy.cashPaper.and.returnValue(of({}));
     serverDBSpy.signLastBlock.and.returnValue(of({}));
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
     backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
@@ -132,13 +132,12 @@ describe('CashPapers', () => {
     expect(receivedArg.signer).toBe(ISSUER_PK); // decoded property, not the wire's "s" letter
   });
 
-  it('cashPapers() should register the paper server-side and ask for the referent signature after a successful cash-in', () => {
+  it('cashPapers() should have the server cash the papers through the block signature', () => {
     const qr = encodePaperQr({ tx: makePaperTxWire() });
     component.scanSuccessHandler(qr);
 
     component.cashPapers();
 
-    expect(serverDBSpy.cashPaper).toHaveBeenCalledTimes(1);
     expect(serverDBSpy.signLastBlock).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
   });
 
@@ -149,6 +148,171 @@ describe('CashPapers', () => {
     component.cashPapers();
 
     expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+  });
+
+  it('cashPapers() should not save the cashed papers before the server accepted them', () => {
+    serverDBSpy.signLastBlock.and.returnValue(NEVER);
+    const qr = encodePaperQr({ tx: makePaperTxWire() });
+    component.scanSuccessHandler(qr);
+
+    component.cashPapers();
+
+    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+  });
+
+  it('cashPapers() should restore the chain as it was before cashing when the server refuses the papers', () => {
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 403 })));
+    const qr = encodePaperQr({ tx: makePaperTxWire() });
+    component.scanSuccessHandler(qr);
+
+    component.cashPapers();
+
+    expect(fakeAccount.blockchain).not.toBe(fakeBlockchain);
+    expect(fakeAccount.blockchain.export()).toEqual([]);
+    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+  });
+
+  it('cashPapers() should keep the refused papers in the list to try again later', () => {
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 0 })));
+    const qr = encodePaperQr({ tx: makePaperTxWire() });
+    component.scanSuccessHandler(qr);
+
+    component.cashPapers();
+
+    expect(component.paper_list.length).toBe(1);
+  });
+
+  it('cashPapers() should not celebrate a level-up when the server refuses the papers', () => {
+    fakeBlockchain.getLevel = jasmine.createSpy('getLevel').and.returnValues(2, 3);
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 403 })));
+    const qr = encodePaperQr({ tx: makePaperTxWire() });
+    component.scanSuccessHandler(qr);
+
+    component.cashPapers();
+
+    expect(levelUpSpy.celebrateIfLevelUp).not.toHaveBeenCalled();
+  });
+
+  it('cashPapers() should announce each paper once the server cashed it', () => {
+    spyOn(component, 'displayMessage');
+    const qr = encodePaperQr({ tx: makePaperTxWire() });
+    component.scanSuccessHandler(qr);
+
+    component.cashPapers();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/Paf, j'encaisse/));
+  });
+
+  it('cashPapers() should explain that a paper was already cashed by someone else', () => {
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'ALREADY_CASHED' } })));
+    spyOn(component, 'displayMessage');
+    const qr = encodePaperQr({ tx: makePaperTxWire() });
+    component.scanSuccessHandler(qr);
+
+    component.cashPapers();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/déjà été encaissé/));
+  });
+
+  it('cashPapers() should explain that cashing needs the server when it cannot be reached', () => {
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 0 })));
+    spyOn(component, 'displayMessage');
+    const qr = encodePaperQr({ tx: makePaperTxWire() });
+    component.scanSuccessHandler(qr);
+
+    component.cashPapers();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/connexion/));
+  });
+
+  it('cashPapers() should explain that the server refused a paper it does not trust', () => {
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 403, error: { code: 'UNKNOWN_SENDER' } })));
+    spyOn(component, 'displayMessage');
+    const qr = encodePaperQr({ tx: makePaperTxWire() });
+    component.scanSuccessHandler(qr);
+
+    component.cashPapers();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/refusé/));
+  });
+
+  it('cashPapers() should mark the paper the server refused, and only that one', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'baadf00d' }) }));
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'c0ffee00' }) }));
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 403, error: { code: 'UNKNOWN_SENDER', tx: 'baadf00d' } })));
+
+    component.cashPapers();
+
+    const [refused, accepted] = ['baadf00d', 'c0ffee00'].map(h => component.paper_list.find((paper: any) => paper.signature === h));
+    expect(component.isRefused(refused)).toBeTrue();
+    expect(component.isRefused(accepted)).toBeFalse();
+  });
+
+  it('cashPapers() should point at the refused paper so it can be removed', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'baadf00d' }) }));
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'ALREADY_CASHED', tx: 'baadf00d' } })));
+    spyOn(component, 'displayMessage');
+
+    component.cashPapers();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/'baadf00d'.*déjà encaissé.*retire-le/));
+  });
+
+  it('cashPapers() should clear the mark of a previously refused paper when cashing again', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'baadf00d' }) }));
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'ALREADY_CASHED', tx: 'baadf00d' } })));
+    component.cashPapers();
+    const refused = component.paper_list[0];
+    serverDBSpy.signLastBlock.and.returnValue(NEVER);
+
+    component.cashPapers();
+
+    expect(component.isRefused(refused)).toBeFalse();
+  });
+
+  it('cashPapers() should mark no paper when the refusal names none', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire() }));
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 0 })));
+
+    component.cashPapers();
+
+    expect(component.isRefused(component.paper_list[0])).toBeFalse();
+  });
+
+  it('should show why the refused paper was refused, next to it', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'baadf00d' }) }));
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'c0ffee00' }) }));
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'ALREADY_CASHED', tx: 'baadf00d' } })));
+
+    component.cashPapers();
+    fixture.detectChanges();
+
+    const cards: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.paper-card'));
+    const [refusedCard, acceptedCard] = cards;
+    expect(refusedCard.classList).toContain('refused');
+    expect(refusedCard.textContent).toContain("déjà encaissé par quelqu'un d'autre");
+    expect(acceptedCard.classList).not.toContain('refused');
+  });
+
+  it('should remove a paper from its remove button', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire() }));
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('.paper-card .remove-paper').click();
+    fixture.detectChanges();
+
+    expect(component.paper_list.length).toBe(0);
+  });
+
+  describe('removePaper', () => {
+    it('should take the paper out of the list and keep the others', () => {
+      component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'baadf00d' }) }));
+      component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'c0ffee00' }) }));
+
+      component.removePaper(component.paper_list[0]);
+
+      expect(component.paper_list.map((paper: any) => paper.signature)).toEqual(['c0ffee00']);
+    });
   });
 
   it('cashPapers() should not call anything when the session is read-only', () => {
