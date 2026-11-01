@@ -236,6 +236,85 @@ describe('CashPapers', () => {
     expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/refusé/));
   });
 
+  it('cashPapers() should mark the paper the server refused, and only that one', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'baadf00d' }) }));
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'c0ffee00' }) }));
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 403, error: { code: 'UNKNOWN_SENDER', tx: 'baadf00d' } })));
+
+    component.cashPapers();
+
+    const [refused, accepted] = ['baadf00d', 'c0ffee00'].map(h => component.paper_list.find((paper: any) => paper.signature === h));
+    expect(component.isRefused(refused)).toBeTrue();
+    expect(component.isRefused(accepted)).toBeFalse();
+  });
+
+  it('cashPapers() should point at the refused paper so it can be removed', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'baadf00d' }) }));
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'ALREADY_CASHED', tx: 'baadf00d' } })));
+    spyOn(component, 'displayMessage');
+
+    component.cashPapers();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/'baadf00d'.*déjà encaissé.*retire-le/));
+  });
+
+  it('cashPapers() should clear the mark of a previously refused paper when cashing again', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'baadf00d' }) }));
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'ALREADY_CASHED', tx: 'baadf00d' } })));
+    component.cashPapers();
+    const refused = component.paper_list[0];
+    serverDBSpy.signLastBlock.and.returnValue(NEVER);
+
+    component.cashPapers();
+
+    expect(component.isRefused(refused)).toBeFalse();
+  });
+
+  it('cashPapers() should mark no paper when the refusal names none', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire() }));
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 0 })));
+
+    component.cashPapers();
+
+    expect(component.isRefused(component.paper_list[0])).toBeFalse();
+  });
+
+  it('should show why the refused paper was refused, next to it', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'baadf00d' }) }));
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'c0ffee00' }) }));
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'ALREADY_CASHED', tx: 'baadf00d' } })));
+
+    component.cashPapers();
+    fixture.detectChanges();
+
+    const cards: HTMLElement[] = Array.from(fixture.nativeElement.querySelectorAll('.paper-card'));
+    const [refusedCard, acceptedCard] = cards;
+    expect(refusedCard.classList).toContain('refused');
+    expect(refusedCard.textContent).toContain("déjà encaissé par quelqu'un d'autre");
+    expect(acceptedCard.classList).not.toContain('refused');
+  });
+
+  it('should remove a paper from its remove button', () => {
+    component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire() }));
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('.paper-card .remove-paper').click();
+    fixture.detectChanges();
+
+    expect(component.paper_list.length).toBe(0);
+  });
+
+  describe('removePaper', () => {
+    it('should take the paper out of the list and keep the others', () => {
+      component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'baadf00d' }) }));
+      component.scanSuccessHandler(encodePaperQr({ tx: makePaperTxWire({ h: 'c0ffee00' }) }));
+
+      component.removePaper(component.paper_list[0]);
+
+      expect(component.paper_list.map((paper: any) => paper.signature)).toEqual(['c0ffee00']);
+    });
+  });
+
   it('cashPapers() should not call anything when the session is read-only', () => {
     stubConnectedUserService.isReadOnlySession = () => true;
     const qr = encodePaperQr({ tx: makePaperTxWire() });
