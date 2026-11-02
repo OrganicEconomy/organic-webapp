@@ -276,6 +276,50 @@ describe('Pay', () => {
     expect(fixture.nativeElement.querySelector('.pay-btn').disabled).toBeTrue();
   });
 
+  it('should not start a second payment while the first one is being saved', () => {
+    backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+    component.pay();
+
+    expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(1);
+  });
+
+  it('should allow paying again once the save has failed', () => {
+    backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+    component.pay();
+
+    expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+  });
+
+  it('should allow paying again once the send has failed', () => {
+    serverDBSpy.sendTransaction.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+    component.pay();
+
+    expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+  });
+
+  it('should disable the Payer button while the payment is being saved', () => {
+    backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.pay-btn').disabled).toBeTrue();
+  });
+
   it('should not ask for confirmation once the page has been left during the check', () => {
     const lookup = new Subject<any>();
     serverDBSpy.getValidationStatus.and.returnValue(lookup);

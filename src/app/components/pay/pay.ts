@@ -57,6 +57,7 @@ export class Pay {
   target: string = "";
   recentTransactions: any[] = []
   checkingRecipient = false
+  paying = false
 
   private _snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
@@ -89,7 +90,7 @@ export class Pay {
   }
 
   pay(): void {
-    if (this.checkingRecipient) {
+    if (this.checkingRecipient || this.paying) {
       return;
     }
     if (!this.target) {
@@ -198,10 +199,12 @@ export class Pay {
   }
 
   private paySomeoneElse(sk: string, oldLevel: number): void {
+    this.paying = true
     this.backupService.applyAndSave(this.user, sk, () => this.user.blockchain.pay(sk, this.target, this.amount))
       .subscribe({
         next: (tx) => this.send(tx, oldLevel),
         error: (err) => {
+          this.paying = false
           console.log(err)
           this.displayMessage(this.cancelledPaymentMessage(err))
         },
@@ -228,6 +231,7 @@ export class Pay {
         this.finishPayment(oldLevel)
       },
       error: (err) => {
+        this.paying = false
         console.log(err)
         this.displayMessage("Paiement enregistré mais non transmis au destinataire — réessayez plus tard.")
       },
