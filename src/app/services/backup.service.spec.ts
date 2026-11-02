@@ -206,5 +206,17 @@ describe('BackupService', () => {
       expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
       expect(localDBSpy.saveUser).not.toHaveBeenCalled();
     });
+
+    it('should undo what the change already did when it fails halfway', () => {
+      const { account, sk } = makeAccountWithMoney();
+      const moneyBefore = account.blockchain.getAvailableMoneyAmount();
+
+      service.applyAndSave(account, sk, () => {
+        account.blockchain.pay(sk, RECIPIENT_PK, 1);
+        throw new Error('boom');
+      }).subscribe({ error: () => {} });
+
+      expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
+    });
   });
 });

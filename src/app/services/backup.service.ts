@@ -38,7 +38,7 @@ export class BackupService {
   applyAndSave<T>(user: LoadedAccount, sk: string, change: () => T): Observable<T> {
     return defer(() => {
       const chainBeforeChange = user.blockchain.export()
-      const result = change()
+      const result = this.applyOrUndo(user, chainBeforeChange, change)
       this.localDB.saveUser(user)
       return this.pushToServer(user, sk).pipe(
         map(() => result),
@@ -47,9 +47,22 @@ export class BackupService {
     })
   }
 
+  private applyOrUndo<T>(user: LoadedAccount, chainBeforeChange: unknown, change: () => T): T {
+    try {
+      return change()
+    } catch (err) {
+      this.undoChange(user, chainBeforeChange)
+      throw err
+    }
+  }
+
   private restoreChain(user: LoadedAccount, chain: unknown): void {
-    user.blockchain = new CitizenBlockchain(chain)
+    this.undoChange(user, chain)
     this.localDB.saveUser(user)
+  }
+
+  private undoChange(user: LoadedAccount, chain: unknown): void {
+    user.blockchain = new CitizenBlockchain(chain)
   }
 
   /** "Sauvegarder maintenant" button (manual policy). */
