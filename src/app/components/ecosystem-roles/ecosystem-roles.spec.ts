@@ -244,6 +244,51 @@ describe('EcosystemRoles', () => {
       expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
     });
 
+    it('should not start a second action while the first one is being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+
+      component.removeRole('admin', 'admin-pk');
+      component.removeRole('payer', 'payer-pk');
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(1);
+    });
+
+    it('should allow another action once the previous one has been sent', () => {
+      component.removeRole('admin', 'admin-pk');
+      component.removeRole('payer', 'payer-pk');
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should allow another action once the save has failed', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+
+      component.removeRole('admin', 'admin-pk');
+      component.removeRole('payer', 'payer-pk');
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should allow another action once the send has failed', () => {
+      serverSpy.sendEcosystemTx.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+
+      component.removeRole('admin', 'admin-pk');
+      component.removeRole('payer', 'payer-pk');
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should disable every Retirer button while an action is being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+
+      component.removeRole('admin', 'admin-pk');
+      fixture.detectChanges();
+
+      const removeButtons: HTMLButtonElement[] = Array.from(fixture.nativeElement.querySelectorAll('.role-row button'));
+      expect(removeButtons.length).toBeGreaterThan(0);
+      expect(removeButtons.every((button) => button.disabled)).toBeTrue();
+    });
+
     it('should not send when building the wire payload throws', () => {
       fakeTx.export.and.callFake(() => { throw new Error('boom'); });
 
@@ -348,6 +393,17 @@ describe('EcosystemRoles', () => {
       component.addRole();
 
       expect(fakeBlockchain.setPayer).toHaveBeenCalledWith(SK, ECO_PK, 'admin-pk', 0);
+    });
+
+    it('should disable the Ajouter button while an action is being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+      component.targetPk = 'actor-pk';
+      component.roleType = 'admin';
+
+      component.addRole();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('button[mat-flat-button]').disabled).toBeTrue();
     });
 
     it('should save via applyAndSave then send via sendEcosystemTx only after it succeeds', () => {

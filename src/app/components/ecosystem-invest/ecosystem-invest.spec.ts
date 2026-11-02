@@ -216,6 +216,50 @@ describe('EcosystemInvest', () => {
       expect(component.displayMessage).toHaveBeenCalledWith('Une erreur est survenue oO');
     });
 
+    it('should not start a second engagement while the first one is being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+      component.engage();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(1);
+    });
+
+    it('should allow engaging again once the save has failed', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+      component.engage();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should allow engaging again once the send has failed', () => {
+      serverSpy.sendEcosystemTx.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+      component.engage();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should disable the Engager button while the engagement is being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('button[mat-flat-button]').disabled).toBeTrue();
+    });
+
     it('should navigate back to the ecosystem detail page after a successful save and send', () => {
       component.dailyAmount = 3;
       component.days = 5;

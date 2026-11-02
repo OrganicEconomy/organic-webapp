@@ -37,6 +37,7 @@ export class EcosystemInvest {
   ecosystemPk = '';
   dailyAmount = 0;
   days = 1;
+  submitting = false;
 
   constructor(private route: ActivatedRoute, private router: Router, private location: Location) {
     this.user = this.userService.getConnectedUser();
@@ -56,6 +57,7 @@ export class EcosystemInvest {
   }
 
   engage(): void {
+    if (this.submitting) return;
     if (this.dailyAmount <= 0) {
       this.displayMessage("Le montant par jour doit être supérieur à zéro.");
       return;
@@ -68,11 +70,13 @@ export class EcosystemInvest {
       this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.");
       return;
     }
+    this.submitting = true;
     const sk = this.userService.getSecretKey();
     this.backupService.applyAndSave(this.user, sk, () => this.user.blockchain.engageInvests(sk, this.ecosystemPk, this.dailyAmount, this.days))
       .subscribe({
         next: (tx) => this.send(tx),
         error: (err) => {
+          this.submitting = false;
           console.log(err);
           this.displayMessage(this.cancelledEngagementMessage(err));
         },
@@ -96,6 +100,7 @@ export class EcosystemInvest {
         this.router.navigate(['/ecosystems', this.ecosystemPk]);
       },
       error: (err) => {
+        this.submitting = false;
         console.log(err);
         this.displayMessage(extractServerErrorMessage(err) ?? "Engagement enregistré mais non transmis — réessayez plus tard.");
       },

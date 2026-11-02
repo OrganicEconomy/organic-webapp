@@ -61,6 +61,7 @@ export class EcosystemRoles {
   ratio = 1;
   cap = 0;
   capUnlimited = false;
+  submitting = false;
 
   constructor(private route: ActivatedRoute, private router: Router, private location: Location) {
     this.user = this.userService.getConnectedUser();
@@ -139,15 +140,18 @@ export class EcosystemRoles {
   }
 
   private sendRoleTx(buildTx: () => any): void {
+    if (this.submitting) return;
     if (this.userService.isReadOnlySession()) {
       this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.");
       return;
     }
+    this.submitting = true;
     const sk = this.userService.getSecretKey();
     this.backupService.applyAndSave(this.user, sk, () => buildTx().export())
       .subscribe({
         next: (wire) => this.send(wire),
         error: (err) => {
+          this.submitting = false;
           console.log(err);
           this.displayMessage(this.cancelledActionMessage(err));
         },
@@ -157,10 +161,12 @@ export class EcosystemRoles {
   private send(wire: any): void {
     this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, wire).subscribe({
       next: () => {
+        this.submitting = false;
         this.displayMessage("Action enregistrée et envoyée avec succès.");
         this.fetchAndPopulate();
       },
       error: (err) => {
+        this.submitting = false;
         console.log(err);
         this.displayMessage(extractServerErrorMessage(err) ?? "Action enregistrée mais non transmise — réessayez plus tard.");
       },

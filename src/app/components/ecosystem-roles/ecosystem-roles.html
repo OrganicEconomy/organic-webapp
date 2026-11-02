@@ -15,7 +15,7 @@
       @for (holder of admins; track holder.pk) {
       <div class="role-row">
         <span>{{ holder.name }}</span>
-        <button mat-stroked-button (click)="removeRole('admin', holder.pk)">Retirer</button>
+        <button mat-stroked-button (click)="removeRole('admin', holder.pk)" [disabled]="submitting">Retirer</button>
       </div>
       }
     </div>
@@ -25,7 +25,7 @@
       @for (holder of actors; track holder.pk) {
       <div class="role-row">
         <span>{{ holder.name }}</span>
-        <button mat-stroked-button (click)="removeRole('actor', holder.pk)">Retirer</button>
+        <button mat-stroked-button (click)="removeRole('actor', holder.pk)" [disabled]="submitting">Retirer</button>
       </div>
       }
     </div>
@@ -35,7 +35,7 @@
       @for (holder of payers; track holder.pk) {
       <div class="role-row">
         <span>{{ holder.name }}</span>
-        <button mat-stroked-button (click)="removeRole('payer', holder.pk)">Retirer</button>
+        <button mat-stroked-button (click)="removeRole('payer', holder.pk)" [disabled]="submitting">Retirer</button>
       </div>
       }
     </div>
@@ -73,7 +73,7 @@
     }
     }
 
-    <button mat-flat-button (click)="addRole()" [disabled]="userService.isReadOnlySession()">Ajouter</button>
+    <button mat-flat-button (click)="addRole()" [disabled]="submitting || userService.isReadOnlySession()">Ajouter</button>
     }
   </mat-card-content>
 
