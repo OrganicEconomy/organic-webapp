@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
 import { MatButtonModule } from '@angular/material/button';
@@ -192,38 +193,37 @@ export class PrintPapers {
 
   private executeGeneratePapers() {
     const sk = this.userService.getSecretKey()
-    for (let i = 0; i < this.papercounts.length; i++) {
-      if (this.papercounts[i] > 0) {
-        for (let j = 0; j < this.papercounts[i]; j++) {
-          this.papers.push(this.user.blockchain.generatePaper(sk, i, this.user.corePk))
-        }
-      }
-    }
-    this.backupService.recordPayment(this.user, sk).subscribe({
-      next: () => this.openDialog(),
-      error: (err: any) => err.status === 409 ? this.warnPapersNeverCashable() : this.offerPapersNotCashableYet(),
+    this.backupService.applyAndSave(this.user, sk, () => this.generateEveryPaper(sk)).subscribe({
+      next: (papers) => {
+        this.papers.push(...papers)
+        this.openDialog()
+      },
+      error: (err) => this.explainCancelledPapers(err),
     })
   }
 
-  private offerPapersNotCashableYet() {
-    this.warnPapersNotCashableYet()
-    this.openDialog()
+  private generateEveryPaper(sk: string): any[] {
+    const papers = []
+    for (let i = 0; i < this.papercounts.length; i++) {
+      for (let j = 0; j < this.papercounts[i]; j++) {
+        papers.push(this.user.blockchain.generatePaper(sk, i, this.user.corePk))
+      }
+    }
+    return papers
   }
 
-  private warnPapersNeverCashable() {
-    this.snackBar.open(
-      "Cet appareil n'est plus synchronisé avec ton compte : ces billets ne pourront jamais être encaissés, ils n'ont donc pas été imprimés.",
-      'Fermer',
-      { duration: 12000 },
-    )
+  private explainCancelledPapers(err: unknown) {
+    this.snackBar.open(this.cancelledPapersMessage(err), 'Fermer', { duration: 12000 })
   }
 
-  private warnPapersNotCashableYet() {
-    this.snackBar.open(
-      "Billets générés mais pas encore enregistrés sur le serveur : ils ne pourront être encaissés qu'après une sauvegarde réussie.",
-      'Fermer',
-      { duration: 12000 },
-    )
+  private cancelledPapersMessage(err: unknown): string {
+    if (!(err instanceof HttpErrorResponse)) {
+      return "Une erreur est survenue oO"
+    }
+    if (err.status === 409) {
+      return "Cet appareil n'est plus synchronisé avec ton compte : ces billets ne pourront jamais être encaissés, ils n'ont donc pas été imprimés."
+    }
+    return "Billets annulés : ils n'ont pas pu être enregistrés sur le serveur. Rien n'a été débité."
   }
 
   generatePDF() {

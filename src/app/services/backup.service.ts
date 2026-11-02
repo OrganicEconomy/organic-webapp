@@ -24,17 +24,6 @@ export class BackupService {
     }
   }
 
-  /**
-   * Functional save before sending an online payment — happens regardless of
-   * policy (Phase-1.md §4.2/§9.2), otherwise tx/send would reject it. Returns
-   * the Observable so the caller only sends after this succeeds (strict
-   * pay → save → send order).
-   */
-  recordPayment(user: LoadedAccount, sk: string): Observable<unknown> {
-    this.localDB.saveUser(user)
-    return this.pushToServer(user, sk)
-  }
-
   applyAndSave<T>(user: LoadedAccount, sk: string, change: () => T): Observable<T> {
     return defer(() => {
       const chainBeforeChange = user.blockchain.export()
