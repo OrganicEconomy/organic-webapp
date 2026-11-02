@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { Location } from '@angular/common';
-import { of, throwError, Subject } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { defer, of, throwError, Subject } from 'rxjs';
 import { InvalidTransactionError } from 'organic-money/src/errors.js';
 
 import { EcosystemRoles } from './ecosystem-roles';
@@ -21,7 +22,7 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let stubViewedEcosystemService: any;
 let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getEcosystemInfo' | 'sendEcosystemTx'>>;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordPayment'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'applyAndSave'>>;
 
 describe('EcosystemRoles', () => {
   let component: EcosystemRoles;
@@ -64,8 +65,8 @@ describe('EcosystemRoles', () => {
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getEcosystemInfo', 'sendEcosystemTx']);
     serverSpy.getEcosystemInfo.and.returnValue(of(ECO_INFO));
     serverSpy.sendEcosystemTx.and.returnValue(of({}));
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordPayment']);
-    backupSpy.recordPayment.and.returnValue(of({}));
+    backupSpy = jasmine.createSpyObj('BackupService', ['applyAndSave']);
+    backupSpy.applyAndSave.and.callFake((user: any, sk: string, change: () => any) => defer(() => of(change())));
 
     TestBed.configureTestingModule({
       imports: [EcosystemRoles],
@@ -142,7 +143,7 @@ describe('EcosystemRoles', () => {
       component.removeRole('admin', 'admin-pk');
 
       expect(fakeBlockchain.unsetAdmin).toHaveBeenCalledWith(SK, ECO_PK, 'admin-pk');
-      expect(backupSpy.recordPayment).toHaveBeenCalledWith(fakeAccount, SK);
+      expect(backupSpy.applyAndSave).toHaveBeenCalledWith(fakeAccount, SK, jasmine.any(Function));
       expect(serverSpy.getEcosystemInfo).toHaveBeenCalledTimes(2);
     });
 
@@ -158,12 +159,30 @@ describe('EcosystemRoles', () => {
       expect(fakeBlockchain.unsetPayer).toHaveBeenCalledWith(SK, ECO_PK, 'payer-pk');
     });
 
-    it('should not send when recordPayment fails', () => {
-      backupSpy.recordPayment.and.returnValue(throwError(() => ({ status: 0 })));
+    it('should not send when the save fails', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => ({ status: 0 })));
 
       component.removeRole('admin', 'admin-pk');
 
       expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
+    });
+
+    it('should cancel the action when the server could not save it', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+
+      component.removeRole('admin', 'admin-pk');
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Action annulée : rien n'a été enregistré.");
+    });
+
+    it('should not blame the server when the action itself is impossible', () => {
+      spyOn(component, 'displayMessage');
+      fakeBlockchain.unsetAdmin.and.throwError(new Error('Not an admin.'));
+
+      component.removeRole('admin', 'admin-pk');
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Une erreur est survenue oO');
     });
 
     it("should show the server's own error message when the removal is rejected (e.g. still payer)", () => {
@@ -201,14 +220,11 @@ describe('EcosystemRoles', () => {
       expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
     });
 
-    it('should not throw uncaught if building the wire payload throws asynchronously', () => {
-      const subject = new Subject<unknown>();
-      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+    it('should not send when building the wire payload throws', () => {
       fakeTx.export.and.callFake(() => { throw new Error('boom'); });
 
-      component.removeRole('admin', 'admin-pk');
-
-      expect(() => subject.next({})).not.toThrow();
+      expect(() => component.removeRole('admin', 'admin-pk')).not.toThrow();
+      expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
     });
   });
 
@@ -310,16 +326,16 @@ describe('EcosystemRoles', () => {
       expect(fakeBlockchain.setPayer).toHaveBeenCalledWith(SK, ECO_PK, 'admin-pk', 0);
     });
 
-    it('should save via recordPayment then send via sendEcosystemTx only after it succeeds', () => {
+    it('should save via applyAndSave then send via sendEcosystemTx only after it succeeds', () => {
       const subject = new Subject<unknown>();
-      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      backupSpy.applyAndSave.and.returnValue(subject.asObservable());
       component.targetPk = 'actor-pk';
       component.roleType = 'admin';
 
       component.addRole();
       expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
 
-      subject.next({});
+      subject.next({ exported: true });
       expect(serverSpy.sendEcosystemTx).toHaveBeenCalledWith(SERVER_URL, ECO_PK, { exported: true } as any);
     });
 

@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -142,38 +143,35 @@ export class EcosystemRoles {
       this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.");
       return;
     }
-    try {
-      const sk = this.userService.getSecretKey();
-      const tx = buildTx();
-      const wire = tx.export();
-
-      this.backupService.recordPayment(this.user, sk).subscribe({
-        next: () => {
-          this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, wire).subscribe({
-            next: () => {
-              this.displayMessage("Action enregistrée et envoyée avec succès.");
-              this.fetchAndPopulate();
-            },
-            error: (err) => {
-              console.log(err);
-              this.displayMessage(extractServerErrorMessage(err) ?? "Action enregistrée mais non transmise — réessayez plus tard.");
-            },
-          });
-        },
+    const sk = this.userService.getSecretKey();
+    this.backupService.applyAndSave(this.user, sk, () => buildTx().export())
+      .subscribe({
+        next: (wire) => this.send(wire),
         error: (err) => {
           console.log(err);
-          this.displayMessage(extractServerErrorMessage(err) ?? "Action faite localement mais pas sauvegardée sur le serveur.");
+          this.displayMessage(this.cancelledActionMessage(err));
         },
       });
-    } catch (err) {
-      const message = duplicateTransactionMessage(err);
-      if (message) {
-        this.displayMessage(message);
-        return;
-      }
-      console.log(err);
-      this.displayMessage("Une erreur est survenue oO");
+  }
+
+  private send(wire: any): void {
+    this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, wire).subscribe({
+      next: () => {
+        this.displayMessage("Action enregistrée et envoyée avec succès.");
+        this.fetchAndPopulate();
+      },
+      error: (err) => {
+        console.log(err);
+        this.displayMessage(extractServerErrorMessage(err) ?? "Action enregistrée mais non transmise — réessayez plus tard.");
+      },
+    });
+  }
+
+  private cancelledActionMessage(err: unknown): string {
+    if (!(err instanceof HttpErrorResponse)) {
+      return duplicateTransactionMessage(err) ?? "Une erreur est survenue oO";
     }
+    return extractServerErrorMessage(err) ?? "Action annulée : rien n'a été enregistré.";
   }
 
   displayMessage(message: string): void {
