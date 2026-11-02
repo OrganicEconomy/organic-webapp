@@ -3,11 +3,13 @@ import { provideRouter } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { decodeQr } from 'organic-protocol';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { PayOffline } from './pay-offline';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
+import { MALFORMED_PUBLIC_KEY_MESSAGE } from '../../utils/public-key.util';
 
 const MY_PK = '02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3';
 const CONTACT_PK = '0306ffd8f4fe843f5f7183179dcf36f550326813f56ec824911abca9c9d1cd7834';
@@ -87,6 +89,20 @@ describe('PayOffline', () => {
     component.target = CONTACT_PK;
     component.amount = 0;
     component.payOffline();
+    expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
+  it('should not pay a contact whose public key is malformed, so nothing is debited', () => {
+    const snackBar = TestBed.inject(MatSnackBar);
+    spyOn(snackBar, 'open');
+    component.target = 'abcdef123456';
+    component.amount = 5;
+
+    component.payOffline();
+
+    expect(snackBar.open).toHaveBeenCalledWith(MALFORMED_PUBLIC_KEY_MESSAGE, 'Fermer', { duration: 3000 });
+
+    expect(dialogSpy.open).not.toHaveBeenCalled();
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
   });
 

@@ -6,6 +6,8 @@ import { AddContact } from './add-contact';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
 
+const basilePk = '02' + 'b5'.repeat(32);
+
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
@@ -47,6 +49,15 @@ describe('AddContact', () => {
     expect(component.addcontactForm.value.url).toBe('https://trifouillis.fr');
   });
 
+  it('should clear a previous form error once a scanned contact QR fills the form', async () => {
+    component.addcontactForm.setValue({ name: 'Basile', pk: 'abcdef123456', url: '' });
+    await component.addContact();
+
+    component.scanSuccessHandler(encodeContactQr({ pk: basilePk, url: 'https://trifouillis.fr', n: 'Basile' }));
+
+    expect(component.formError).toBe('');
+  });
+
   it('should show an error for a QR of another type, without crashing', () => {
     const paperQr = encodePaperQr({
       tx: { v: 1, d: 20260722, t: 5, p: 'referent-pk', s: 'signer-pk', m: '', i: '', h: 'sig' },
@@ -64,13 +75,35 @@ describe('AddContact', () => {
   });
 
   it('should add a well-formed Contact (4 fields) from manual entry', async () => {
-    component.addcontactForm.setValue({ name: 'Basile', pk: 'basile-pk', url: 'https://trifouillis.fr' });
+    component.addcontactForm.setValue({ name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr' });
 
     await component.addContact();
 
     expect(fakeAccount.contacts).toEqual([
-      { name: 'Basile', pk: 'basile-pk', url: 'https://trifouillis.fr', type: 'citizen' },
+      { name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr', type: 'citizen' },
     ]);
     expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
+  });
+
+  it('should add a contact whose pasted key has surrounding spaces', async () => {
+    component.addcontactForm.setValue({ name: 'Basile', pk: `  ${basilePk} `, url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([
+      { name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr', type: 'citizen' },
+    ]);
+  });
+
+  it('should refuse to add a contact whose public key is malformed', async () => {
+    component.addcontactForm.setValue({ name: 'Basile', pk: 'abcdef123456', url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([]);
+    expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+    expect(component.formError).toBe(
+      "Cette clé publique n'est pas valide : elle doit faire 66 caractères (0-9, a-f) et commencer par 02 ou 03.",
+    );
   });
 });

@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { of, throwError, Subject } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { Pay } from './pay';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -9,8 +10,12 @@ import { ServerConnexionService } from '../../services/server-connection.service
 import { LevelUpService } from '../../services/level-up.service';
 import { BackupService } from '../../services/backup.service';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
+import { MALFORMED_PUBLIC_KEY_MESSAGE } from '../../utils/public-key.util';
 
-const MY_PK = 'my-pk';
+const MY_PK = '02' + 'a1'.repeat(32);
+const SOMEONE_ELSES_PK = '03' + 'b2'.repeat(32);
+const ECO_PK = '02' + 'c3'.repeat(32);
+const CITIZEN_PK = '03' + 'd4'.repeat(32);
 
 // Minimal stand-in for a logged-in account — see home.spec.ts for context.
 let fakeTx: any;
@@ -94,7 +99,7 @@ describe('Pay', () => {
   });
 
   it('should use recordPayment (mandatory push) when paying someone else', () => {
-    component.target = 'someone-elses-pk';
+    component.target = SOMEONE_ELSES_PK;
     component.amount = 5;
 
     component.pay();
@@ -105,7 +110,7 @@ describe('Pay', () => {
   it('should only send the transaction after recordPayment succeeds', () => {
     const subject = new Subject<unknown>();
     backupSpy.recordPayment.and.returnValue(subject.asObservable());
-    component.target = 'someone-elses-pk';
+    component.target = SOMEONE_ELSES_PK;
     component.amount = 5;
 
     component.pay();
@@ -116,19 +121,19 @@ describe('Pay', () => {
   });
 
   it("should send via sendEcosystemTx (not sendTransaction) when paying a contact of type 'ecosystem'", () => {
-    fakeAccount.contacts.push({ pk: 'eco-pk', name: 'Boulangerie', url: '', type: 'ecosystem' });
-    component.target = 'eco-pk';
+    fakeAccount.contacts.push({ pk: ECO_PK, name: 'Boulangerie', url: '', type: 'ecosystem' });
+    component.target = ECO_PK;
     component.amount = 5;
 
     component.pay();
 
-    expect(serverDBSpy.sendEcosystemTx).toHaveBeenCalledWith('https://trifouillis.fr', 'eco-pk', { exported: true } as any);
+    expect(serverDBSpy.sendEcosystemTx).toHaveBeenCalledWith('https://trifouillis.fr', ECO_PK, { exported: true } as any);
     expect(serverDBSpy.sendTransaction).not.toHaveBeenCalled();
   });
 
   it("should send via sendTransaction when paying a contact of type 'citizen'", () => {
-    fakeAccount.contacts.push({ pk: 'citizen-pk', name: 'Farid', url: '', type: 'citizen' });
-    component.target = 'citizen-pk';
+    fakeAccount.contacts.push({ pk: CITIZEN_PK, name: 'Farid', url: '', type: 'citizen' });
+    component.target = CITIZEN_PK;
     component.amount = 5;
 
     component.pay();
@@ -139,7 +144,7 @@ describe('Pay', () => {
 
   it('should not send when recordPayment fails (e.g. offline) — payment stays local-only', () => {
     backupSpy.recordPayment.and.returnValue(throwError(() => ({ status: 0 })));
-    component.target = 'someone-elses-pk';
+    component.target = SOMEONE_ELSES_PK;
     component.amount = 5;
 
     component.pay();
@@ -157,12 +162,26 @@ describe('Pay', () => {
   });
 
   it('should navigate back to home after a successful payment to someone else', () => {
-    component.target = 'someone-elses-pk';
+    component.target = SOMEONE_ELSES_PK;
     component.amount = 5;
 
     component.pay();
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
+  });
+
+  it("should not pay a contact whose public key is malformed, so nothing is debited", () => {
+    const snackBar = TestBed.inject(MatSnackBar);
+    spyOn(snackBar, 'open');
+    component.target = 'abcdef123456';
+    component.amount = 5;
+
+    component.pay();
+
+    expect(snackBar.open).toHaveBeenCalledWith(MALFORMED_PUBLIC_KEY_MESSAGE, 'Fermer', { duration: 3000 });
+
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+    expect(fakeBlockchain.pay).not.toHaveBeenCalled();
   });
 
   it('should not pay when the amount is zero', () => {

@@ -16,6 +16,7 @@ import { LevelUpService } from '../../services/level-up.service';
 import { BackupService } from '../../services/backup.service';
 import { toDisplayRow, getContactName } from '../../utils/transaction-display.util';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
+import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
 
 @Component({
   selector: 'app-pay',
@@ -77,6 +78,10 @@ export class Pay {
   pay(): void {
     if (!this.target) {
       this.displayMessage("Le  champs 'Qui est-ce qu'on paye ?' est obligatoire.")
+      return;
+    }
+    if (!isWellFormedPublicKey(this.target)) {
+      this.displayMessage(MALFORMED_PUBLIC_KEY_MESSAGE)
       return;
     }
     if (this.amount <= 0) {
