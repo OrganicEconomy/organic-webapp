@@ -49,6 +49,15 @@ describe('AddContact', () => {
     expect(component.addcontactForm.value.url).toBe('https://trifouillis.fr');
   });
 
+  it('should clear a previous form error once a scanned contact QR fills the form', async () => {
+    component.addcontactForm.setValue({ name: 'Basile', pk: 'abcdef123456', url: '' });
+    await component.addContact();
+
+    component.scanSuccessHandler(encodeContactQr({ pk: basilePk, url: 'https://trifouillis.fr', n: 'Basile' }));
+
+    expect(component.formError).toBe('');
+  });
+
   it('should show an error for a QR of another type, without crashing', () => {
     const paperQr = encodePaperQr({
       tx: { v: 1, d: 20260722, t: 5, p: 'referent-pk', s: 'signer-pk', m: '', i: '', h: 'sig' },
@@ -74,6 +83,16 @@ describe('AddContact', () => {
       { name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr', type: 'citizen' },
     ]);
     expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
+  });
+
+  it('should add a contact whose pasted key has surrounding spaces', async () => {
+    component.addcontactForm.setValue({ name: 'Basile', pk: `  ${basilePk} `, url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([
+      { name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr', type: 'citizen' },
+    ]);
   });
 
   it('should refuse to add a contact whose public key is malformed', async () => {
