@@ -64,6 +64,7 @@ export class AddContact {
       return
     }
     this.scannedIsEcosystem = !!decoded.payload.e
+    this.formError = ''
     this.addcontactForm.patchValue({
       name: decoded.payload.n,
       pk: decoded.payload.pk,
@@ -72,13 +73,14 @@ export class AddContact {
   }
 
   async addContact() {
-    if (!isWellFormedPublicKey(this.addcontactForm.value.pk)) {
+    const pk = this.addcontactForm.value.pk.trim()
+    if (!isWellFormedPublicKey(pk)) {
       this.formError = MALFORMED_PUBLIC_KEY_MESSAGE
       return
     }
     const contact: Contact = {
       name: this.addcontactForm.value.name,
-      pk: this.addcontactForm.value.pk,
+      pk,
       url: this.addcontactForm.value.url,
       type: this.scannedIsEcosystem ? 'ecosystem' : 'citizen',
     }

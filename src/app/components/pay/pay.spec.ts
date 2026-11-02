@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { of, throwError, Subject } from 'rxjs';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { Pay } from './pay';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -9,6 +10,7 @@ import { ServerConnexionService } from '../../services/server-connection.service
 import { LevelUpService } from '../../services/level-up.service';
 import { BackupService } from '../../services/backup.service';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
+import { MALFORMED_PUBLIC_KEY_MESSAGE } from '../../utils/public-key.util';
 
 const MY_PK = '02' + 'a1'.repeat(32);
 const SOMEONE_ELSES_PK = '03' + 'b2'.repeat(32);
@@ -169,10 +171,14 @@ describe('Pay', () => {
   });
 
   it("should not pay a contact whose public key is malformed, so nothing is debited", () => {
+    const snackBar = TestBed.inject(MatSnackBar);
+    spyOn(snackBar, 'open');
     component.target = 'abcdef123456';
     component.amount = 5;
 
     component.pay();
+
+    expect(snackBar.open).toHaveBeenCalledWith(MALFORMED_PUBLIC_KEY_MESSAGE, 'Fermer', { duration: 3000 });
 
     expect(dialogSpy.open).not.toHaveBeenCalled();
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
