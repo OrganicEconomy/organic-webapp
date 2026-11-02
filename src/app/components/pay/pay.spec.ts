@@ -27,7 +27,7 @@ let serverDBSpy: jasmine.SpyObj<
   Pick<ServerConnexionService, 'sendTransaction' | 'sendEcosystemTx' | 'getValidationStatus' | 'getEcosystemInfo'>
 >;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic' | 'recordPayment'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic' | 'applyAndSave'>>;
 let dialogSpy: jasmine.SpyObj<MatDialog>;
 
 describe('Pay', () => {
@@ -68,8 +68,8 @@ describe('Pay', () => {
     serverDBSpy.sendTransaction.and.returnValue(of({}));
     serverDBSpy.sendEcosystemTx.and.returnValue(of({}));
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic', 'recordPayment']);
-    backupSpy.recordPayment.and.returnValue(of({}));
+    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic', 'applyAndSave']);
+    backupSpy.applyAndSave.and.callFake((user: any, sk: string, change: () => any) => of(change()));
     dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
     dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
 
@@ -97,36 +97,37 @@ describe('Pay', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should use recordAutomatic (policy-respecting), not recordPayment, on a self-pay', () => {
+  it('should use recordAutomatic (policy-respecting), not applyAndSave, on a self-pay', () => {
     component.target = MY_PK;
     component.amount = 5;
 
     component.pay();
 
     expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
-    expect(backupSpy.recordPayment).not.toHaveBeenCalled();
+    expect(backupSpy.applyAndSave).not.toHaveBeenCalled();
     expect(serverDBSpy.sendTransaction).not.toHaveBeenCalled();
   });
 
-  it('should use recordPayment (mandatory push) when paying someone else', () => {
+  it('should pay someone else through applyAndSave (mandatory push)', () => {
     component.target = SOMEONE_ELSES_PK;
     component.amount = 5;
 
     component.pay();
 
-    expect(backupSpy.recordPayment).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+    expect(backupSpy.applyAndSave).toHaveBeenCalledWith(fakeAccount, 'the-real-sk', jasmine.any(Function));
+    expect(fakeBlockchain.pay).toHaveBeenCalledWith('the-real-sk', SOMEONE_ELSES_PK, 5);
   });
 
-  it('should only send the transaction after recordPayment succeeds', () => {
-    const subject = new Subject<unknown>();
-    backupSpy.recordPayment.and.returnValue(subject.asObservable());
+  it('should only send the transaction after the save succeeds', () => {
+    const subject = new Subject<any>();
+    backupSpy.applyAndSave.and.returnValue(subject.asObservable());
     component.target = SOMEONE_ELSES_PK;
     component.amount = 5;
 
     component.pay();
     expect(serverDBSpy.sendTransaction).not.toHaveBeenCalled();
 
-    subject.next({});
+    subject.next(fakeTx);
     expect(serverDBSpy.sendTransaction).toHaveBeenCalledWith('https://trifouillis.fr', { exported: true } as any);
   });
 
@@ -152,14 +153,55 @@ describe('Pay', () => {
     expect(serverDBSpy.sendEcosystemTx).not.toHaveBeenCalled();
   });
 
-  it('should not send when recordPayment fails (e.g. offline) — payment stays local-only', () => {
-    backupSpy.recordPayment.and.returnValue(throwError(() => ({ status: 0 })));
+  it('should not send when the save fails (e.g. offline)', () => {
+    backupSpy.applyAndSave.and.returnValue(throwError(() => ({ status: 0 })));
     component.target = SOMEONE_ELSES_PK;
     component.amount = 5;
 
     component.pay();
 
     expect(serverDBSpy.sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it('should cancel the payment, with no celebration, when this device was revoked by a newer login', () => {
+    backupSpy.applyAndSave.and.returnValue(
+      throwError(() => new HttpErrorResponse({ status: 409, error: { code: 'DEVICE_REVOKED' } })),
+    );
+    spyOn(component, 'displayMessage');
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(
+      "Ce compte est actif sur un autre appareil : paiement annulé, rien n'a été débité.",
+    );
+    expect(levelUpSpy.celebrateIfLevelUp).not.toHaveBeenCalled();
+    expect(serverDBSpy.sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it('should cancel the payment when the server could not save it', () => {
+    backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+    spyOn(component, 'displayMessage');
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(
+      "Paiement annulé : il n'a pas pu être enregistré sur le serveur. Rien n'a été débité.",
+    );
+  });
+
+  it('should not blame the server when the payment itself is impossible', () => {
+    backupSpy.applyAndSave.and.returnValue(throwError(() => new Error('Unsufficient funds.')));
+    spyOn(component, 'displayMessage');
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith('Une erreur est survenue oO');
   });
 
   it('should navigate back to home after a successful self-pay', () => {
