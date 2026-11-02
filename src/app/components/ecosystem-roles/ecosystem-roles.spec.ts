@@ -176,6 +176,30 @@ describe('EcosystemRoles', () => {
       expect(component.displayMessage).toHaveBeenCalledWith("Action annulée : rien n'a été enregistré.");
     });
 
+    it('should cancel the action when this device was revoked by a newer login', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 409, error: { error: 'This device has been revoked by a more recent login.', code: 'DEVICE_REVOKED' },
+      })));
+
+      component.removeRole('admin', 'admin-pk');
+
+      expect(component.displayMessage).toHaveBeenCalledWith(
+        "Ce compte est actif sur un autre appareil : action annulée, rien n'a été enregistré.",
+      );
+    });
+
+    it("should not show the server's technical reason when it refused the save", () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 400, error: { error: 'Block leaves the chain invalid.' },
+      })));
+
+      component.removeRole('admin', 'admin-pk');
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Action annulée : rien n'a été enregistré.");
+    });
+
     it('should not blame the server when the action itself is impossible', () => {
       spyOn(component, 'displayMessage');
       fakeBlockchain.unsetAdmin.and.throwError(new Error('Not an admin.'));

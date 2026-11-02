@@ -1,4 +1,4 @@
-import { extractServerErrorMessage, isDuplicateTransactionError, duplicateTransactionMessage } from './server-error.util';
+import { extractServerErrorMessage, isDuplicateTransactionError, duplicateTransactionMessage, isDeviceRevoked } from './server-error.util';
 import { InvalidTransactionError } from 'organic-money/src/errors.js';
 
 describe('server-error.util', () => {
@@ -74,6 +74,25 @@ describe('server-error.util', () => {
     it('should return null for a null/undefined input', () => {
       expect(extractServerErrorMessage(null)).toBeNull();
       expect(extractServerErrorMessage(undefined)).toBeNull();
+    });
+  });
+
+  describe('isDeviceRevoked', () => {
+    it('should return true when the server revoked this device', () => {
+      const err = { status: 409, error: { error: 'This device has been revoked by a more recent login.', code: 'DEVICE_REVOKED' } };
+
+      expect(isDeviceRevoked(err)).toBeTrue();
+    });
+
+    it('should return false for another conflict', () => {
+      const err = { status: 409, error: { error: 'Block does not chain onto the stored last block.' } };
+
+      expect(isDeviceRevoked(err)).toBeFalse();
+    });
+
+    it('should return false for a null/undefined input', () => {
+      expect(isDeviceRevoked(null)).toBeFalse();
+      expect(isDeviceRevoked(undefined)).toBeFalse();
     });
   });
 });

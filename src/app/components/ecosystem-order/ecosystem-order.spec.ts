@@ -189,6 +189,34 @@ describe('EcosystemOrder', () => {
       expect(component.displayMessage).toHaveBeenCalledWith("Ordre annulé : rien n'a été enregistré.");
     });
 
+    it('should cancel the order when this device was revoked by a newer login', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 409, error: { error: 'This device has been revoked by a more recent login.', code: 'DEVICE_REVOKED' },
+      })));
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+
+      expect(component.displayMessage).toHaveBeenCalledWith(
+        "Ce compte est actif sur un autre appareil : ordre annulé, rien n'a été enregistré.",
+      );
+    });
+
+    it("should not show the server's technical reason when it refused the save", () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 400, error: { error: 'Block leaves the chain invalid.' },
+      })));
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Ordre annulé : rien n'a été enregistré.");
+    });
+
     it('should not blame the server when the order itself is impossible', () => {
       spyOn(component, 'displayMessage');
       fakeCitizenBlockchain.payerOrder.and.throwError(new Error('Not a payer.'));

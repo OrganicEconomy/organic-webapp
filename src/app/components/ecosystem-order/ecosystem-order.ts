@@ -13,7 +13,7 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { BackupService } from '../../services/backup.service';
-import { extractServerErrorMessage, duplicateTransactionMessage } from '../../services/server-error.util';
+import { extractServerErrorMessage, duplicateTransactionMessage, isDeviceRevoked } from '../../services/server-error.util';
 
 @Component({
   selector: 'app-ecosystem-order',
@@ -121,7 +121,10 @@ export class EcosystemOrder {
     if (!(err instanceof HttpErrorResponse)) {
       return duplicateTransactionMessage(err) ?? "Une erreur est survenue oO";
     }
-    return extractServerErrorMessage(err) ?? "Ordre annulé : rien n'a été enregistré.";
+    if (isDeviceRevoked(err)) {
+      return "Ce compte est actif sur un autre appareil : ordre annulé, rien n'a été enregistré.";
+    }
+    return "Ordre annulé : rien n'a été enregistré.";
   }
 
   displayMessage(message: string): void {

@@ -177,6 +177,34 @@ describe('EcosystemInvest', () => {
       expect(component.displayMessage).toHaveBeenCalledWith("Engagement annulé : rien n'a été enregistré.");
     });
 
+    it('should cancel the engagement when this device was revoked by a newer login', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 409, error: { error: 'This device has been revoked by a more recent login.', code: 'DEVICE_REVOKED' },
+      })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith(
+        "Ce compte est actif sur un autre appareil : engagement annulé, rien n'a été enregistré.",
+      );
+    });
+
+    it("should not show the server's technical reason when it refused the save", () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 400, error: { error: 'Block leaves the chain invalid.' },
+      })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Engagement annulé : rien n'a été enregistré.");
+    });
+
     it('should not blame the server when the engagement itself is impossible', () => {
       spyOn(component, 'displayMessage');
       fakeBlockchain.engageInvests.and.throwError('Unsufficient funds.');

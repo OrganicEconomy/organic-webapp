@@ -12,7 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { BackupService } from '../../services/backup.service';
-import { extractServerErrorMessage } from '../../services/server-error.util';
+import { extractServerErrorMessage, isDeviceRevoked } from '../../services/server-error.util';
 
 @Component({
   selector: 'app-ecosystem-invest',
@@ -83,7 +83,10 @@ export class EcosystemInvest {
     if (!(err instanceof HttpErrorResponse)) {
       return "Une erreur est survenue oO";
     }
-    return extractServerErrorMessage(err) ?? "Engagement annulé : rien n'a été enregistré.";
+    if (isDeviceRevoked(err)) {
+      return "Ce compte est actif sur un autre appareil : engagement annulé, rien n'a été enregistré.";
+    }
+    return "Engagement annulé : rien n'a été enregistré.";
   }
 
   private send(tx: any): void {

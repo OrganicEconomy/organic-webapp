@@ -6,6 +6,10 @@ export function extractServerErrorMessage(err: any): string | null {
   return typeof message === 'string' ? message : null
 }
 
+export function isDeviceRevoked(err: any): boolean {
+  return err?.error?.code === 'DEVICE_REVOKED'
+}
+
 /** organic-money throws this when a transaction's signature already appears in recent history — e.g. the exact same role change repeated the same day. */
 export function isDuplicateTransactionError(err: unknown): boolean {
   return err instanceof InvalidTransactionError && err.message.startsWith('Transaction duplicate')

@@ -16,7 +16,7 @@ import { ServerConnexionService } from '../../services/server-connection.service
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { BackupService } from '../../services/backup.service';
 import { resolveContactName } from '../../services/resolve-contact-name.util';
-import { extractServerErrorMessage, duplicateTransactionMessage } from '../../services/server-error.util';
+import { extractServerErrorMessage, duplicateTransactionMessage, isDeviceRevoked } from '../../services/server-error.util';
 
 type RoleType = 'admin' | 'actor' | 'payer';
 
@@ -171,7 +171,10 @@ export class EcosystemRoles {
     if (!(err instanceof HttpErrorResponse)) {
       return duplicateTransactionMessage(err) ?? "Une erreur est survenue oO";
     }
-    return extractServerErrorMessage(err) ?? "Action annulée : rien n'a été enregistré.";
+    if (isDeviceRevoked(err)) {
+      return "Ce compte est actif sur un autre appareil : action annulée, rien n'a été enregistré.";
+    }
+    return "Action annulée : rien n'a été enregistré.";
   }
 
   displayMessage(message: string): void {
