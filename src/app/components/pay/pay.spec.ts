@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
+import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError, Subject } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
@@ -22,7 +23,9 @@ let fakeTx: any;
 let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'sendTransaction' | 'sendEcosystemTx'>>;
+let serverDBSpy: jasmine.SpyObj<
+  Pick<ServerConnexionService, 'sendTransaction' | 'sendEcosystemTx' | 'getValidationStatus' | 'getEcosystemInfo'>
+>;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic' | 'recordPayment'>>;
 let dialogSpy: jasmine.SpyObj<MatDialog>;
@@ -54,7 +57,14 @@ describe('Pay', () => {
       getSecretKey: () => 'the-real-sk',
       isReadOnlySession: () => false,
     };
-    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['sendTransaction', 'sendEcosystemTx']);
+    serverDBSpy = jasmine.createSpyObj('ServerConnexionService', [
+      'sendTransaction',
+      'sendEcosystemTx',
+      'getValidationStatus',
+      'getEcosystemInfo',
+    ]);
+    serverDBSpy.getValidationStatus.and.returnValue(of({ status: 'active', blocks: [] }));
+    serverDBSpy.getEcosystemInfo.and.returnValue(of({} as any));
     serverDBSpy.sendTransaction.and.returnValue(of({}));
     serverDBSpy.sendEcosystemTx.and.returnValue(of({}));
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
@@ -168,6 +178,174 @@ describe('Pay', () => {
     component.pay();
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
+  });
+
+  it('should not pay a contact registered on another server, so nothing is debited', () => {
+    fakeAccount.contacts.push({ pk: CITIZEN_PK, name: 'Farid', url: 'https://ailleurs.fr', type: 'citizen' });
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+    expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
+  it('should consider a contact whose server address only adds a trailing slash to be on this server', () => {
+    fakeAccount.contacts.push({ pk: CITIZEN_PK, name: 'Farid', url: 'https://trifouillis.fr/', type: 'citizen' });
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(dialogSpy.open).toHaveBeenCalled();
+  });
+
+  it('should check the recipient only once when Payer is tapped twice during the check', () => {
+    serverDBSpy.getValidationStatus.and.returnValue(new Subject<any>());
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+    component.pay();
+
+    expect(serverDBSpy.getValidationStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('should check the recipient again on a new tap once the previous check is over', () => {
+    serverDBSpy.getValidationStatus.and.returnValue(of({ status: 'rejected', blocks: [] }));
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+    component.pay();
+
+    expect(serverDBSpy.getValidationStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it('should disable the Payer button while the recipient is being checked', () => {
+    serverDBSpy.getValidationStatus.and.returnValue(new Subject<any>());
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.pay-btn').disabled).toBeTrue();
+  });
+
+  it('should not ask for confirmation once the page has been left during the check', () => {
+    const lookup = new Subject<any>();
+    serverDBSpy.getValidationStatus.and.returnValue(lookup);
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+    fixture.destroy();
+    lookup.next({ status: 'active', blocks: [] });
+
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+  });
+
+  it('should not pay a citizen this server does not know, so nothing is debited', () => {
+    serverDBSpy.getValidationStatus.and.returnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    fakeAccount.contacts.push({ pk: CITIZEN_PK, name: 'Farid', url: 'https://trifouillis.fr', type: 'citizen' });
+    spyOn(component, 'displayMessage');
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith("Ce destinataire n'est pas inscrit sur ton serveur.");
+    expect(serverDBSpy.getValidationStatus).toHaveBeenCalledWith('https://trifouillis.fr', CITIZEN_PK);
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+    expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
+  it('should not pay a citizen who is not active, so nothing is debited', () => {
+    serverDBSpy.getValidationStatus.and.returnValue(of({ status: 'rejected', blocks: [] }));
+    spyOn(component, 'displayMessage');
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith("Ce destinataire n'est pas un citoyen actif.");
+
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+    expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
+  it('should not pay an ecosystem this server does not know, so nothing is debited', () => {
+    serverDBSpy.getEcosystemInfo.and.returnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    fakeAccount.contacts.push({ pk: ECO_PK, name: 'Boulangerie', url: '', type: 'ecosystem' });
+    spyOn(component, 'displayMessage');
+    component.target = ECO_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith("Cet écosystème n'existe pas sur ton serveur.");
+    expect(serverDBSpy.getEcosystemInfo).toHaveBeenCalledWith('https://trifouillis.fr', ECO_PK);
+    expect(dialogSpy.open).not.toHaveBeenCalled();
+    expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
+  it('should explain that the recipient could not be checked when the server is unreachable', () => {
+    serverDBSpy.getValidationStatus.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+    spyOn(component, 'displayMessage');
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(
+      'Impossible de vérifier le destinataire : pas de connexion au serveur.',
+    );
+    expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
+  it('should not ask the server about yourself on a self-pay', () => {
+    component.target = MY_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(serverDBSpy.getValidationStatus).not.toHaveBeenCalled();
+  });
+
+  it('should explain that the recipient could not be checked when the server fails', () => {
+    serverDBSpy.getValidationStatus.and.returnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+    spyOn(component, 'displayMessage');
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(
+      'Impossible de vérifier le destinataire : le serveur ne répond pas correctement.',
+    );
+    expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
+  it('should consider a contact whose server address differs only in case or default port to be on this server', () => {
+    fakeAccount.contacts.push({ pk: CITIZEN_PK, name: 'Farid', url: 'HTTPS://Trifouillis.fr:443', type: 'citizen' });
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(dialogSpy.open).toHaveBeenCalled();
+  });
+
+  it('should not pay a contact whose server address is not a valid URL', () => {
+    fakeAccount.contacts.push({ pk: CITIZEN_PK, name: 'Farid', url: 'pas une adresse', type: 'citizen' });
+    component.target = CITIZEN_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(dialogSpy.open).not.toHaveBeenCalled();
   });
 
   it("should not pay a contact whose public key is malformed, so nothing is debited", () => {
