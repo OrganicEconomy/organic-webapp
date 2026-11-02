@@ -1,4 +1,5 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -16,11 +17,17 @@ import { LevelUpService } from '../../services/level-up.service';
 import { BackupService } from '../../services/backup.service';
 import { toDisplayRow, getContactName } from '../../utils/transaction-display.util';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
-import { Observable, catchError, map, of } from 'rxjs';
+import { Observable, catchError, finalize, map, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
 
-const withoutTrailingSlash = (url: string) => url.replace(/\/+$/, '')
+function originOf(url: string): string {
+  try {
+    return new URL(url).origin
+  } catch {
+    return url
+  }
+}
 
 @Component({
   selector: 'app-pay',
@@ -49,9 +56,11 @@ export class Pay {
   max = 0;
   target: string = "";
   recentTransactions: any[] = []
+  checkingRecipient = false
 
   private _snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
+  private destroyRef = inject(DestroyRef);
 
   public payForm !: FormGroup
 
@@ -80,6 +89,9 @@ export class Pay {
   }
 
   pay(): void {
+    if (this.checkingRecipient) {
+      return;
+    }
     if (!this.target) {
       this.displayMessage("Le  champs 'Qui est-ce qu'on paye ?' est obligatoire.")
       return;
@@ -105,9 +117,13 @@ export class Pay {
       this.confirmPayment()
       return
     }
-    this.recipientRefusal().subscribe((refusal) =>
-      refusal ? this.displayMessage(refusal) : this.confirmPayment()
-    )
+    this.checkingRecipient = true
+    this.recipientRefusal()
+      .pipe(
+        finalize(() => this.checkingRecipient = false),
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe((refusal) => refusal ? this.displayMessage(refusal) : this.confirmPayment())
   }
 
   private recipientRefusal(): Observable<string | null> {
@@ -125,15 +141,19 @@ export class Pay {
 
   private citizenRefusal(): Observable<string | null> {
     return this.serverDB.getValidationStatus(this.user.serverUrl, this.target).pipe(
-      map(({ status }) => status === 'active' ? null : "Ce destinataire n'est pas encore un citoyen actif."),
+      map(({ status }) => status === 'active' ? null : "Ce destinataire n'est pas un citoyen actif."),
       catchError((error) => of(this.lookupRefusal(error, "Ce destinataire n'est pas inscrit sur ton serveur."))),
     )
   }
 
   private lookupRefusal(error: HttpErrorResponse, unknownRecipientMessage: string): string {
-    return error.status === 0
-      ? 'Impossible de vérifier le destinataire : pas de connexion au serveur.'
-      : unknownRecipientMessage
+    if (error.status === 404) {
+      return unknownRecipientMessage
+    }
+    if (error.status === 0) {
+      return 'Impossible de vérifier le destinataire : pas de connexion au serveur.'
+    }
+    return 'Impossible de vérifier le destinataire : le serveur ne répond pas correctement.'
   }
 
   private confirmPayment(): void {
@@ -152,7 +172,7 @@ export class Pay {
   }
 
   private isOnAnotherServer(contact: any): boolean {
-    return !!contact?.url && withoutTrailingSlash(contact.url) !== withoutTrailingSlash(this.user.serverUrl)
+    return !!contact?.url && originOf(contact.url) !== originOf(this.user.serverUrl)
   }
 
   private executePayment(): void {
