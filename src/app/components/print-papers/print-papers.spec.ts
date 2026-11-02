@@ -3,7 +3,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { Dialog } from '@angular/cdk/dialog';
 import { MatDialog } from '@angular/material/dialog';
 import { HttpErrorResponse } from '@angular/common/http';
-import { defer, of, throwError } from 'rxjs';
+import { defer, of, throwError, Subject } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { decodeQr } from 'organic-protocol';
 import { TransactionMaker } from 'organic-money/src/index.js';
@@ -141,13 +141,70 @@ describe('PrintPapers', () => {
       expect(dialogSpy.open).not.toHaveBeenCalled();
     });
 
-    it('should explain that the papers could never be cashed when the server refuses the save', () => {
-      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
+    it('should not generate a second batch while the first one is being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+      component.generatePapers();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(1);
+    });
+
+    it('should allow generating again once the save has failed', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+      component.generatePapers();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should allow generating again once the papers have been saved', () => {
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+      component.generatePapers();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should disable the generate button while the papers are being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+      component.selectedValue({ value: 1 } as any, 5);
+      fixture.detectChanges();
+      const generateButton: HTMLButtonElement = fixture.nativeElement.querySelector('button[mat-flat-button]');
+      expect(generateButton.disabled).toBeFalse();
+
+      component.generatePapers();
+      fixture.detectChanges();
+
+      expect(generateButton.disabled).toBeTrue();
+    });
+
+    it('should not blame another device for any other conflict', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 409, error: { error: 'Block does not chain onto the stored last block.' },
+      })));
       component.papercounts[5] = 1;
 
       component.generatePapers();
 
-      expect(snackBarSpy.open).toHaveBeenCalledWith(jasmine.stringMatching(/jamais/), 'Fermer', jasmine.anything());
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        "Billets annulés : ils n'ont pas pu être enregistrés sur le serveur. Rien n'a été débité.", 'Fermer', jasmine.anything());
+    });
+
+    it('should cancel the papers when this device was revoked by a newer login', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 409, error: { error: 'This device has been revoked by a more recent login.', code: 'DEVICE_REVOKED' },
+      })));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        "Ce compte est actif sur un autre appareil : billets annulés, rien n'a été débité.", 'Fermer', jasmine.anything());
     });
 
     it('should not generate any paper when the session is read-only', () => {

@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
+import { isDeviceRevoked } from '../../services/server-error.util';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatCardModule } from '@angular/material/card';
@@ -68,6 +69,7 @@ export class PrintPapers {
   max: number = 0
   papers: any = []
   canGenerate: boolean = false
+  submitting: boolean = false
 
   constructor(private router: Router, private cdRef: ChangeDetectorRef) {
     if (!this.user) {
@@ -180,7 +182,7 @@ export class PrintPapers {
   }
 
   generatePapers() {
-    if (this.userService.isReadOnlySession() || this.isMissingCore()) return
+    if (this.submitting || this.userService.isReadOnlySession() || this.isMissingCore()) return
 
     const dialogRef = this.confirmDialog.open(ConfirmDialog, {
       data: { title: 'Générer les billets', message: `Générer ${this.total} unité(s) en billets ? Cette action est irréversible.` },
@@ -192,13 +194,18 @@ export class PrintPapers {
   }
 
   private executeGeneratePapers() {
+    this.submitting = true
     const sk = this.userService.getSecretKey()
     this.backupService.applyAndSave(this.user, sk, () => this.generateEveryPaper(sk)).subscribe({
       next: (papers) => {
+        this.submitting = false
         this.papers.push(...papers)
         this.openDialog()
       },
-      error: (err) => this.explainCancelledPapers(err),
+      error: (err) => {
+        this.submitting = false
+        this.explainCancelledPapers(err)
+      },
     })
   }
 
@@ -220,8 +227,8 @@ export class PrintPapers {
     if (!(err instanceof HttpErrorResponse)) {
       return "Une erreur est survenue oO"
     }
-    if (err.status === 409) {
-      return "Cet appareil n'est plus synchronisé avec ton compte : ces billets ne pourront jamais être encaissés, ils n'ont donc pas été imprimés."
+    if (isDeviceRevoked(err)) {
+      return "Ce compte est actif sur un autre appareil : billets annulés, rien n'a été débité."
     }
     return "Billets annulés : ils n'ont pas pu être enregistrés sur le serveur. Rien n'a été débité."
   }
