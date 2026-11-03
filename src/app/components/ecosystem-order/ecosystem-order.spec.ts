@@ -1,7 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { Location } from '@angular/common';
-import { of, throwError, Subject } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { defer, of, throwError, Subject } from 'rxjs';
 import { InvalidTransactionError } from 'organic-money/src/errors.js';
 
 import { EcosystemOrder } from './ecosystem-order';
@@ -22,7 +23,7 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let stubViewedEcosystemService: any;
 let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getEcosystemInfo' | 'sendEcosystemTx'>>;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordPayment'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'applyAndSave'>>;
 
 describe('EcosystemOrder', () => {
   let component: EcosystemOrder;
@@ -57,8 +58,8 @@ describe('EcosystemOrder', () => {
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getEcosystemInfo', 'sendEcosystemTx']);
     serverSpy.getEcosystemInfo.and.returnValue(of(ECO_INFO));
     serverSpy.sendEcosystemTx.and.returnValue(of({}));
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordPayment']);
-    backupSpy.recordPayment.and.returnValue(of({}));
+    backupSpy = jasmine.createSpyObj('BackupService', ['applyAndSave']);
+    backupSpy.applyAndSave.and.callFake((user: any, sk: string, change: () => any) => defer(() => of(change())));
 
     TestBed.configureTestingModule({
       imports: [EcosystemOrder],
@@ -155,16 +156,16 @@ describe('EcosystemOrder', () => {
       expect(fakeCitizenBlockchain.payerOrder).toHaveBeenCalledWith(SK, ECO_PK, 'contact-pk', ['u1', 'u2']);
     });
 
-    it('should save via recordPayment then send via sendEcosystemTx only after it succeeds', () => {
+    it('should save via applyAndSave then send via sendEcosystemTx only after it succeeds', () => {
       const subject = new Subject<unknown>();
-      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      backupSpy.applyAndSave.and.returnValue(subject.asObservable());
       component.targetPk = 'contact-pk';
       component.amount = 2;
 
       component.submitOrder();
       expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
 
-      subject.next({});
+      subject.next({ exported: true });
       expect(serverSpy.sendEcosystemTx).toHaveBeenCalledWith(SERVER_URL, ECO_PK, { exported: true } as any);
     });
 
@@ -175,6 +176,56 @@ describe('EcosystemOrder', () => {
       component.submitOrder();
 
       expect(router.navigate).toHaveBeenCalledWith(['/ecosystems', ECO_PK]);
+    });
+
+    it('should cancel the order when the server could not save it', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Ordre annulé : rien n'a été enregistré.");
+    });
+
+    it('should cancel the order when this device was revoked by a newer login', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 409, error: { error: 'This device has been revoked by a more recent login.', code: 'DEVICE_REVOKED' },
+      })));
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+
+      expect(component.displayMessage).toHaveBeenCalledWith(
+        "Ce compte est actif sur un autre appareil : ordre annulé, rien n'a été enregistré.",
+      );
+    });
+
+    it("should not show the server's technical reason when it refused the save", () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 400, error: { error: 'Block leaves the chain invalid.' },
+      })));
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Ordre annulé : rien n'a été enregistré.");
+    });
+
+    it('should not blame the server when the order itself is impossible', () => {
+      spyOn(component, 'displayMessage');
+      fakeCitizenBlockchain.payerOrder.and.throwError(new Error('Not a payer.'));
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Une erreur est survenue oO');
     });
 
     it("should show the server's own error message when the send is rejected", () => {
@@ -212,19 +263,19 @@ describe('EcosystemOrder', () => {
 
     it('should not build a second order while the first is still pending (double-click guard)', () => {
       const subject = new Subject<unknown>();
-      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      backupSpy.applyAndSave.and.returnValue(subject.asObservable());
       component.targetPk = 'contact-pk';
       component.amount = 2;
 
       component.submitOrder();
       component.submitOrder();
 
-      expect(fakeCitizenBlockchain.payerOrder).toHaveBeenCalledTimes(1);
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(1);
     });
 
     it('should disable the submit button while a submission is pending', () => {
       const subject = new Subject<unknown>();
-      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      backupSpy.applyAndSave.and.returnValue(subject.asObservable());
       component.targetPk = 'contact-pk';
       component.amount = 2;
 
@@ -237,7 +288,7 @@ describe('EcosystemOrder', () => {
 
     it('should re-enable the submit button once the submission settles', () => {
       const subject = new Subject<unknown>();
-      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      backupSpy.applyAndSave.and.returnValue(subject.asObservable());
       component.targetPk = 'contact-pk';
       component.amount = 2;
 
@@ -251,17 +302,14 @@ describe('EcosystemOrder', () => {
       expect(submitButton.disabled).toBeFalse();
     });
 
-    it('should not leave submitting stuck true if building the wire payload throws asynchronously', () => {
-      const subject = new Subject<unknown>();
-      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+    it('should not leave submitting stuck true if building the wire payload throws', () => {
       fakeTx.export.and.callFake(() => { throw new Error('boom'); });
       component.targetPk = 'contact-pk';
       component.amount = 2;
 
-      component.submitOrder();
-
-      expect(() => subject.next({})).not.toThrow();
+      expect(() => component.submitOrder()).not.toThrow();
       expect(component.submitting).toBeFalse();
+      expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
     });
   });
 

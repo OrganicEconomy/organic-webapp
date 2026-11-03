@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,7 +12,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { BackupService } from '../../services/backup.service';
-import { extractServerErrorMessage } from '../../services/server-error.util';
+import { extractServerErrorMessage, isDeviceRevoked } from '../../services/server-error.util';
 
 @Component({
   selector: 'app-ecosystem-invest',
@@ -36,6 +37,7 @@ export class EcosystemInvest {
   ecosystemPk = '';
   dailyAmount = 0;
   days = 1;
+  submitting = false;
 
   constructor(private route: ActivatedRoute, private router: Router, private location: Location) {
     this.user = this.userService.getConnectedUser();
@@ -55,6 +57,7 @@ export class EcosystemInvest {
   }
 
   engage(): void {
+    if (this.submitting) return;
     if (this.dailyAmount <= 0) {
       this.displayMessage("Le montant par jour doit être supérieur à zéro.");
       return;
@@ -67,32 +70,41 @@ export class EcosystemInvest {
       this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.");
       return;
     }
-    try {
-      const sk = this.userService.getSecretKey();
-      const tx = this.user.blockchain.engageInvests(sk, this.ecosystemPk, this.dailyAmount, this.days);
-
-      this.backupService.recordPayment(this.user, sk).subscribe({
-        next: () => {
-          this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, tx.export()).subscribe({
-            next: () => {
-              this.displayMessage("Engagement enregistré et envoyé avec succès.");
-              this.router.navigate(['/ecosystems', this.ecosystemPk]);
-            },
-            error: (err) => {
-              console.log(err);
-              this.displayMessage(extractServerErrorMessage(err) ?? "Engagement enregistré mais non transmis — réessayez plus tard.");
-            },
-          });
-        },
+    this.submitting = true;
+    const sk = this.userService.getSecretKey();
+    this.backupService.applyAndSave(this.user, sk, () => this.user.blockchain.engageInvests(sk, this.ecosystemPk, this.dailyAmount, this.days))
+      .subscribe({
+        next: (tx) => this.send(tx),
         error: (err) => {
+          this.submitting = false;
           console.log(err);
-          this.displayMessage(extractServerErrorMessage(err) ?? "Engagement fait localement mais pas sauvegardé sur le serveur.");
+          this.displayMessage(this.cancelledEngagementMessage(err));
         },
       });
-    } catch (err) {
-      console.log(err);
-      this.displayMessage("Une erreur est survenue oO");
+  }
+
+  private cancelledEngagementMessage(err: unknown): string {
+    if (!(err instanceof HttpErrorResponse)) {
+      return "Une erreur est survenue oO";
     }
+    if (isDeviceRevoked(err)) {
+      return "Ce compte est actif sur un autre appareil : engagement annulé, rien n'a été enregistré.";
+    }
+    return "Engagement annulé : rien n'a été enregistré.";
+  }
+
+  private send(tx: any): void {
+    this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, tx.export()).subscribe({
+      next: () => {
+        this.displayMessage("Engagement enregistré et envoyé avec succès.");
+        this.router.navigate(['/ecosystems', this.ecosystemPk]);
+      },
+      error: (err) => {
+        this.submitting = false;
+        console.log(err);
+        this.displayMessage(extractServerErrorMessage(err) ?? "Engagement enregistré mais non transmis — réessayez plus tard.");
+      },
+    });
   }
 
   displayMessage(message: string): void {

@@ -21,7 +21,7 @@
   </mat-card-content>
 
   <mat-card-actions>
-    <button mat-flat-button (click)="engage()" [disabled]="userService.isReadOnlySession()">Engager</button>
+    <button mat-flat-button (click)="engage()" [disabled]="submitting || userService.isReadOnlySession()">Engager</button>
     <button mat-stroked-button class="back-btn" (click)="goBack()">
       <i class="bi bi-arrow-left"></i> Retour
     </button>

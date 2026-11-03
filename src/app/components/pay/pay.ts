@@ -15,6 +15,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
 import { BackupService } from '../../services/backup.service';
+import { isDeviceRevoked } from '../../services/server-error.util';
 import { toDisplayRow, getContactName } from '../../utils/transaction-display.util';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { Observable, catchError, finalize, map, of } from 'rxjs';
@@ -215,7 +216,7 @@ export class Pay {
     if (!(err instanceof HttpErrorResponse)) {
       return "Une erreur est survenue oO"
     }
-    if (err.error?.code === 'DEVICE_REVOKED') {
+    if (isDeviceRevoked(err)) {
       return "Ce compte est actif sur un autre appareil : paiement annulé, rien n'a été débité."
     }
     return "Paiement annulé : il n'a pas pu être enregistré sur le serveur. Rien n'a été débité."

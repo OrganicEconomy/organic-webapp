@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { provideRouter } from '@angular/router';
 import { Location } from '@angular/common';
-import { of, throwError, Subject } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { defer, of, throwError, Subject } from 'rxjs';
 
 import { EcosystemInvest } from './ecosystem-invest';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -18,7 +19,7 @@ let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'sendEcosystemTx'>>;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordPayment'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'applyAndSave'>>;
 
 describe('EcosystemInvest', () => {
   let component: EcosystemInvest;
@@ -40,8 +41,8 @@ describe('EcosystemInvest', () => {
     };
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['sendEcosystemTx']);
     serverSpy.sendEcosystemTx.and.returnValue(of({}));
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordPayment']);
-    backupSpy.recordPayment.and.returnValue(of({}));
+    backupSpy = jasmine.createSpyObj('BackupService', ['applyAndSave']);
+    backupSpy.applyAndSave.and.callFake((user: any, sk: string, change: () => any) => defer(() => of(change())));
 
     TestBed.configureTestingModule({
       imports: [EcosystemInvest],
@@ -123,39 +124,39 @@ describe('EcosystemInvest', () => {
       expect(fakeBlockchain.engageInvests).toHaveBeenCalledWith(SK, ECO_PK, 3, 5);
     });
 
-    it('should not save or send when building the transaction throws (e.g. insufficient funds)', () => {
+    it('should not send when building the transaction throws (e.g. insufficient funds)', () => {
       fakeBlockchain.engageInvests.and.throwError('Unsufficient funds.');
       component.dailyAmount = 3;
       component.days = 5;
 
       expect(() => component.engage()).not.toThrow();
-      expect(backupSpy.recordPayment).not.toHaveBeenCalled();
+      expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
     });
 
-    it('should save locally via recordPayment before sending', () => {
+    it('should engage through applyAndSave (mandatory push)', () => {
       component.dailyAmount = 3;
       component.days = 5;
 
       component.engage();
 
-      expect(backupSpy.recordPayment).toHaveBeenCalledWith(fakeAccount, SK);
+      expect(backupSpy.applyAndSave).toHaveBeenCalledWith(fakeAccount, SK, jasmine.any(Function));
     });
 
-    it('should only send after recordPayment succeeds', () => {
+    it('should only send after the save succeeds', () => {
       const subject = new Subject<unknown>();
-      backupSpy.recordPayment.and.returnValue(subject.asObservable());
+      backupSpy.applyAndSave.and.returnValue(subject.asObservable());
       component.dailyAmount = 3;
       component.days = 5;
 
       component.engage();
       expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
 
-      subject.next({});
+      subject.next(fakeTx);
       expect(serverSpy.sendEcosystemTx).toHaveBeenCalledWith(SERVER_URL, ECO_PK, { exported: true } as any);
     });
 
-    it('should not send when recordPayment fails', () => {
-      backupSpy.recordPayment.and.returnValue(throwError(() => ({ status: 0 })));
+    it('should not send when the save fails', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => ({ status: 0 })));
       component.dailyAmount = 3;
       component.days = 5;
 
@@ -163,6 +164,100 @@ describe('EcosystemInvest', () => {
 
       expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
       expect(router.navigate).not.toHaveBeenCalledWith(['/ecosystems', ECO_PK]);
+    });
+
+    it('should cancel the engagement when the server could not save it', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Engagement annulé : rien n'a été enregistré.");
+    });
+
+    it('should cancel the engagement when this device was revoked by a newer login', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 409, error: { error: 'This device has been revoked by a more recent login.', code: 'DEVICE_REVOKED' },
+      })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith(
+        "Ce compte est actif sur un autre appareil : engagement annulé, rien n'a été enregistré.",
+      );
+    });
+
+    it("should not show the server's technical reason when it refused the save", () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 400, error: { error: 'Block leaves the chain invalid.' },
+      })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Engagement annulé : rien n'a été enregistré.");
+    });
+
+    it('should not blame the server when the engagement itself is impossible', () => {
+      spyOn(component, 'displayMessage');
+      fakeBlockchain.engageInvests.and.throwError('Unsufficient funds.');
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Une erreur est survenue oO');
+    });
+
+    it('should not start a second engagement while the first one is being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+      component.engage();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(1);
+    });
+
+    it('should allow engaging again once the save has failed', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+      component.engage();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should allow engaging again once the send has failed', () => {
+      serverSpy.sendEcosystemTx.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+      component.engage();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should disable the Engager button while the engagement is being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('button[mat-flat-button]').disabled).toBeTrue();
     });
 
     it('should navigate back to the ecosystem detail page after a successful save and send', () => {

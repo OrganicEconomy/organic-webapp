@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,7 +13,7 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { BackupService } from '../../services/backup.service';
-import { extractServerErrorMessage, duplicateTransactionMessage } from '../../services/server-error.util';
+import { extractServerErrorMessage, duplicateTransactionMessage, isDeviceRevoked } from '../../services/server-error.util';
 
 @Component({
   selector: 'app-ecosystem-order',
@@ -88,43 +89,42 @@ export class EcosystemOrder {
       return;
     }
     this.submitting = true;
-    try {
-      const sk = this.userService.getSecretKey();
-      const invests = this.ecosystemBlockchain.invests.slice(0, this.amount);
-      const tx = this.user.blockchain.payerOrder(sk, this.ecosystemPk, this.targetPk, invests);
-      const wire = tx.export();
-
-      this.backupService.recordPayment(this.user, sk).subscribe({
-        next: () => {
-          this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, wire).subscribe({
-            next: () => {
-              this.submitting = false;
-              this.displayMessage("Ordre enregistré et envoyé avec succès.");
-              this.router.navigate(['/ecosystems', this.ecosystemPk]);
-            },
-            error: (err) => {
-              this.submitting = false;
-              console.log(err);
-              this.displayMessage(extractServerErrorMessage(err) ?? "Ordre enregistré mais non transmis — réessayez plus tard.");
-            },
-          });
-        },
+    const sk = this.userService.getSecretKey();
+    const invests = this.ecosystemBlockchain.invests.slice(0, this.amount);
+    this.backupService.applyAndSave(this.user, sk, () => this.user.blockchain.payerOrder(sk, this.ecosystemPk, this.targetPk, invests).export())
+      .subscribe({
+        next: (wire) => this.send(wire),
         error: (err) => {
           this.submitting = false;
           console.log(err);
-          this.displayMessage(extractServerErrorMessage(err) ?? "Ordre fait localement mais pas sauvegardé sur le serveur.");
+          this.displayMessage(this.cancelledOrderMessage(err));
         },
       });
-    } catch (err) {
-      this.submitting = false;
-      const message = duplicateTransactionMessage(err);
-      if (message) {
-        this.displayMessage(message);
-        return;
-      }
-      console.log(err);
-      this.displayMessage("Une erreur est survenue oO");
+  }
+
+  private send(wire: any): void {
+    this.server.sendEcosystemTx(this.user.serverUrl, this.ecosystemPk, wire).subscribe({
+      next: () => {
+        this.submitting = false;
+        this.displayMessage("Ordre enregistré et envoyé avec succès.");
+        this.router.navigate(['/ecosystems', this.ecosystemPk]);
+      },
+      error: (err) => {
+        this.submitting = false;
+        console.log(err);
+        this.displayMessage(extractServerErrorMessage(err) ?? "Ordre enregistré mais non transmis — réessayez plus tard.");
+      },
+    });
+  }
+
+  private cancelledOrderMessage(err: unknown): string {
+    if (!(err instanceof HttpErrorResponse)) {
+      return duplicateTransactionMessage(err) ?? "Une erreur est survenue oO";
     }
+    if (isDeviceRevoked(err)) {
+      return "Ce compte est actif sur un autre appareil : ordre annulé, rien n'a été enregistré.";
+    }
+    return "Ordre annulé : rien n'a été enregistré.";
   }
 
   displayMessage(message: string): void {
