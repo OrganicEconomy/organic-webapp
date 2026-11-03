@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
-import { concatMap, from, last, Observable, tap } from 'rxjs';
+import { concatMap, defer, from, last, map, Observable, tap } from 'rxjs';
 import { LocalDatabaseService } from './local-database.service';
 import { ServerConnexionService } from './server-connection.service';
 import { ConnectedUserService } from './connected-user.service';
 import type { LoadedAccount } from '../models/account';
+import { CitizenBlockchain } from 'organic-money/src/index.js';
 
 @Injectable({ providedIn: 'root' })
 export class BackupService {
@@ -32,6 +33,36 @@ export class BackupService {
   recordPayment(user: LoadedAccount, sk: string): Observable<unknown> {
     this.localDB.saveUser(user)
     return this.pushToServer(user, sk)
+  }
+
+  applyAndSave<T>(user: LoadedAccount, sk: string, change: () => T): Observable<T> {
+    return defer(() => {
+      const chainBeforeChange = user.blockchain.export()
+      const result = this.applyOrUndo(user, chainBeforeChange, change)
+      this.localDB.saveUser(user)
+      return this.pushToServer(user, sk).pipe(
+        map(() => result),
+        tap({ error: () => this.restoreChain(user, chainBeforeChange) }),
+      )
+    })
+  }
+
+  private applyOrUndo<T>(user: LoadedAccount, chainBeforeChange: unknown, change: () => T): T {
+    try {
+      return change()
+    } catch (err) {
+      this.undoChange(user, chainBeforeChange)
+      throw err
+    }
+  }
+
+  private restoreChain(user: LoadedAccount, chain: unknown): void {
+    this.undoChange(user, chain)
+    this.localDB.saveUser(user)
+  }
+
+  private undoChange(user: LoadedAccount, chain: unknown): void {
+    user.blockchain = new CitizenBlockchain(chain)
   }
 
   /** "Sauvegarder maintenant" button (manual policy). */

@@ -57,6 +57,7 @@ export class Pay {
   target: string = "";
   recentTransactions: any[] = []
   checkingRecipient = false
+  paying = false
 
   private _snackBar = inject(MatSnackBar);
   private dialog = inject(MatDialog);
@@ -89,7 +90,7 @@ export class Pay {
   }
 
   pay(): void {
-    if (this.checkingRecipient) {
+    if (this.checkingRecipient || this.paying) {
       return;
     }
     if (!this.target) {
@@ -176,56 +177,70 @@ export class Pay {
   }
 
   private executePayment(): void {
+    const sk = this.userService.getSecretKey()
+    const oldLevel = this.user.blockchain.getLevel()
+    if (this.itIsMe(this.target)) {
+      this.payMyself(sk, oldLevel)
+    } else {
+      this.paySomeoneElse(sk, oldLevel)
+    }
+  }
+
+  private payMyself(sk: string, oldLevel: number): void {
     try {
-      const sk = this.userService.getSecretKey()
-      const oldLevel = this.user.blockchain.getLevel()
-      const tx = this.user.blockchain.pay(sk, this.target, this.amount)
-
-      const onDone = () => {
-        this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
-        this.router.navigate(['/home']);
-      }
-
-      if (this.itIsMe(tx.target)) {
-        // Self-pay never sends — a personal ledger update, not network-dependent.
-        // Respects the account's backup policy like any other automatic mutation.
-        this.backupService.recordAutomatic(this.user, sk)
-        this.displayMessage("Paiement enregistré avec succès.")
-        onDone()
-      } else {
-        // Paying someone else needs cross-verification server-side, so the save
-        // here is mandatory regardless of policy — send only after it succeeds
-        // (strict pay → save → send order). An ecosystem contact has no phone
-        // polling /tx/send's waiting queue, so it must go through its own
-        // dedicated endpoint instead — the only thing that actually credits it.
-        const targetContact = this.targetContact()
-        const send = () => targetContact?.type === 'ecosystem'
-          ? this.serverDB.sendEcosystemTx(this.user.serverUrl, this.target, tx.export())
-          : this.serverDB.sendTransaction(this.user.serverUrl, tx.export())
-
-        this.backupService.recordPayment(this.user, sk).subscribe({
-          next: () => {
-            send().subscribe({
-              next: () => {
-                this.displayMessage("Paiement enregistré et envoyé avec succès.")
-                onDone()
-              },
-              error: (err) => {
-                console.log(err)
-                this.displayMessage("Paiement enregistré mais non transmis au destinataire — réessayez plus tard.")
-              },
-            })
-          },
-          error: (err) => {
-            console.log(err)
-            this.displayMessage("Paiement fait localement mais pas sauvegardé sur le serveur — le destinataire ne pourra pas encore le recevoir.")
-          },
-        })
-      }
+      this.user.blockchain.pay(sk, this.target, this.amount)
+      this.backupService.recordAutomatic(this.user, sk)
+      this.displayMessage("Paiement enregistré avec succès.")
+      this.finishPayment(oldLevel)
     } catch (err) {
       console.log(err)
       this.displayMessage("Une erreur est survenue oO")
     }
+  }
+
+  private paySomeoneElse(sk: string, oldLevel: number): void {
+    this.paying = true
+    this.backupService.applyAndSave(this.user, sk, () => this.user.blockchain.pay(sk, this.target, this.amount))
+      .subscribe({
+        next: (tx) => this.send(tx, oldLevel),
+        error: (err) => {
+          this.paying = false
+          console.log(err)
+          this.displayMessage(this.cancelledPaymentMessage(err))
+        },
+      })
+  }
+
+  private cancelledPaymentMessage(err: any): string {
+    if (!(err instanceof HttpErrorResponse)) {
+      return "Une erreur est survenue oO"
+    }
+    if (err.error?.code === 'DEVICE_REVOKED') {
+      return "Ce compte est actif sur un autre appareil : paiement annulé, rien n'a été débité."
+    }
+    return "Paiement annulé : il n'a pas pu être enregistré sur le serveur. Rien n'a été débité."
+  }
+
+  private send(tx: any, oldLevel: number): void {
+    const sending = this.targetContact()?.type === 'ecosystem'
+      ? this.serverDB.sendEcosystemTx(this.user.serverUrl, this.target, tx.export())
+      : this.serverDB.sendTransaction(this.user.serverUrl, tx.export())
+    sending.subscribe({
+      next: () => {
+        this.displayMessage("Paiement enregistré et envoyé avec succès.")
+        this.finishPayment(oldLevel)
+      },
+      error: (err) => {
+        this.paying = false
+        console.log(err)
+        this.displayMessage("Paiement enregistré mais non transmis au destinataire — réessayez plus tard.")
+      },
+    })
+  }
+
+  private finishPayment(oldLevel: number): void {
+    this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel())
+    this.router.navigate(['/home']);
   }
 
   displayMessage(message: string) {

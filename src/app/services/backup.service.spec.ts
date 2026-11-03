@@ -5,6 +5,17 @@ import { BackupService } from './backup.service';
 import { LocalDatabaseService } from './local-database.service';
 import { ServerConnexionService } from './server-connection.service';
 import { ConnectedUserService } from './connected-user.service';
+import { CitizenBlockchain } from 'organic-money/src/index.js';
+
+const VALIDATOR_SK = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f';
+const RECIPIENT_PK = '03' + 'd4'.repeat(32);
+
+function makeAccountWithMoney(): { account: any; sk: string } {
+  const blockchain = new CitizenBlockchain();
+  const sk = blockchain.startBlockchain('Camille', new Date(2000, 0, 1), VALIDATOR_SK);
+  blockchain.createMoneyAndInvests(sk);
+  return { account: { backupPolicy: 'manual', lastSavedBlockSignature: null, blockchain }, sk };
+}
 
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveBlock'>>;
@@ -154,5 +165,58 @@ describe('BackupService', () => {
     service.recordPayment(fakeUser, 'sk').subscribe({ error: () => {} });
 
     expect(callCount).toBe(1);
+  });
+
+  describe('applyAndSave', () => {
+    it('should apply the change, save it on the server and return its result', () => {
+      const { account, sk } = makeAccountWithMoney();
+      let result: any;
+
+      service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1))
+        .subscribe((tx) => (result = tx));
+
+      expect(result.target).toBe(RECIPIENT_PK);
+      expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(account, sk, account.blockchain.blocks[0]);
+    });
+
+    it('should undo the change and save the undone chain locally when the server save fails', () => {
+      serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 0 })));
+      const { account, sk } = makeAccountWithMoney();
+      const moneyBefore = account.blockchain.getAvailableMoneyAmount();
+      const experienceBefore = account.blockchain.experience;
+
+      service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1))
+        .subscribe({ error: () => {} });
+
+      expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
+      expect(account.blockchain.experience).toBe(experienceBefore);
+      expect(localDBSpy.saveUser).toHaveBeenCalledTimes(2);
+      const savedAccount: any = localDBSpy.saveUser.calls.mostRecent().args[0];
+      expect(savedAccount.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
+    });
+
+    it('should not save anything when the change itself fails', () => {
+      const { account, sk } = makeAccountWithMoney();
+      let failure: any;
+
+      service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1000))
+        .subscribe({ error: (err) => (failure = err) });
+
+      expect(failure).toBeTruthy();
+      expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
+      expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+    });
+
+    it('should undo what the change already did when it fails halfway', () => {
+      const { account, sk } = makeAccountWithMoney();
+      const moneyBefore = account.blockchain.getAvailableMoneyAmount();
+
+      service.applyAndSave(account, sk, () => {
+        account.blockchain.pay(sk, RECIPIENT_PK, 1);
+        throw new Error('boom');
+      }).subscribe({ error: () => {} });
+
+      expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
+    });
   });
 });
