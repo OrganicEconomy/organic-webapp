@@ -81,14 +81,8 @@ describe('BackupService', () => {
     expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
   });
 
-  it('recordPayment should always push to the server, regardless of policy', () => {
-    fakeUser.backupPolicy = 'manual';
-    service.recordPayment(fakeUser, 'sk').subscribe();
-    expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(fakeUser, 'sk', fakeUser.blockchain.blocks[0]);
-  });
-
   it('should update lastBackupAt and isuptodate on a successful push', () => {
-    service.recordPayment(fakeUser, 'sk').subscribe();
+    service.saveNow(fakeUser, 'sk').subscribe();
     expect(fakeUser.isuptodate).toBeTrue();
     expect(fakeUser.lastBackupAt).not.toBeNull();
     expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeUser);
@@ -96,11 +90,11 @@ describe('BackupService', () => {
 
   it('should mark the session read-only on a 409', () => {
     serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 409 })));
-    service.recordPayment(fakeUser, 'sk').subscribe({ error: () => {} });
+    service.saveNow(fakeUser, 'sk').subscribe({ error: () => {} });
     expect(userServiceSpy.setReadOnly).toHaveBeenCalled();
   });
 
-  it('recordPayment should not issue a second server request when the caller subscribes to the returned observable', () => {
+  it('saveNow should not issue a second server request when the caller subscribes to the returned observable', () => {
     let subscribeCount = 0;
     serverDBSpy.saveBlock.and.returnValue(new Observable((subscriber) => {
       subscribeCount++;
@@ -108,8 +102,7 @@ describe('BackupService', () => {
       subscriber.complete();
     }));
 
-    // Mirrors real usage in pay.ts: the caller subscribes to what recordPayment returns.
-    service.recordPayment(fakeUser, 'sk').subscribe();
+    service.saveNow(fakeUser, 'sk').subscribe();
 
     expect(subscribeCount).toBe(1);
   });
@@ -130,7 +123,7 @@ describe('BackupService', () => {
       return of({});
     });
 
-    service.recordPayment(fakeUser, 'sk').subscribe();
+    service.saveNow(fakeUser, 'sk').subscribe();
 
     expect(sentBlocks).toEqual([closedA, closedB, current]);
   });
@@ -142,7 +135,7 @@ describe('BackupService', () => {
     fakeUser.blockchain.blocks = [current, closedA, oldKnown];
     fakeUser.lastSavedBlockSignature = 'sig-old-known';
 
-    service.recordPayment(fakeUser, 'sk').subscribe();
+    service.saveNow(fakeUser, 'sk').subscribe();
 
     // closedA is signed (its signature is now confirmed server-side); the
     // still-open current block has no stable signature to point to.
@@ -162,7 +155,7 @@ describe('BackupService', () => {
       return throwError(() => ({ status: 500 }));
     });
 
-    service.recordPayment(fakeUser, 'sk').subscribe({ error: () => {} });
+    service.saveNow(fakeUser, 'sk').subscribe({ error: () => {} });
 
     expect(callCount).toBe(1);
   });

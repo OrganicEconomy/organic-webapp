@@ -38,7 +38,7 @@
     </mat-card-content>
 
     <mat-card-actions>
-        <button mat-flat-button (click)="generatePapers()" [disabled]="!canGenerate || userService.isReadOnlySession()">
+        <button mat-flat-button (click)="generatePapers()" [disabled]="!canGenerate || submitting || userService.isReadOnlySession()">
             <i class="bi bi-printer"></i> Générer PDF
         </button>
         <a mat-stroked-button routerLink="/pay">

@@ -2,7 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Dialog } from '@angular/cdk/dialog';
 import { MatDialog } from '@angular/material/dialog';
-import { of, throwError } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { defer, of, throwError, Subject } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { decodeQr } from 'organic-protocol';
 import { TransactionMaker } from 'organic-money/src/index.js';
@@ -27,7 +28,7 @@ function makePaperTxWire(overrides: Partial<any> = {}): any {
 let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordPayment'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'applyAndSave'>>;
 let dialogSpy: jasmine.SpyObj<Pick<Dialog, 'open'>>;
 let confirmDialogSpy: jasmine.SpyObj<MatDialog>;
 let snackBarSpy: jasmine.SpyObj<Pick<MatSnackBar, 'open'>>;
@@ -52,8 +53,8 @@ describe('PrintPapers', () => {
       getSecretKey: () => 'the-real-sk',
       isReadOnlySession: () => false,
     };
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordPayment']);
-    backupSpy.recordPayment.and.returnValue(of(undefined));
+    backupSpy = jasmine.createSpyObj('BackupService', ['applyAndSave']);
+    backupSpy.applyAndSave.and.callFake((user: any, sk: string, change: () => any) => defer(() => of(change())));
     dialogSpy = jasmine.createSpyObj('Dialog', ['open']);
     dialogSpy.open.and.returnValue({ closed: of(undefined) } as any);
     confirmDialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
@@ -100,29 +101,21 @@ describe('PrintPapers', () => {
 
       component.generatePapers();
 
-      expect(backupSpy.recordPayment).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+      expect(backupSpy.applyAndSave).toHaveBeenCalledWith(fakeAccount, 'the-real-sk', jasmine.any(Function));
     });
 
-    it('should warn that the papers cannot be cashed yet when the mandatory save fails', () => {
-      backupSpy.recordPayment.and.returnValue(throwError(() => new Error('offline')));
+    it('should cancel the papers when the mandatory save fails', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
       component.papercounts[5] = 1;
 
       component.generatePapers();
 
-      expect(snackBarSpy.open).toHaveBeenCalledWith(jasmine.stringMatching(/encaiss/), 'Fermer', jasmine.anything());
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        "Billets annulés : ils n'ont pas pu être enregistrés sur le serveur. Rien n'a été débité.", 'Fermer', jasmine.anything());
     });
 
-    it('should still offer the PDF when the mandatory save fails', () => {
-      backupSpy.recordPayment.and.returnValue(throwError(() => new Error('offline')));
-      component.papercounts[5] = 1;
-
-      component.generatePapers();
-
-      expect(dialogSpy.open).toHaveBeenCalled();
-    });
-
-    it('should not offer the PDF when the server refuses the save, since the papers could never be cashed', () => {
-      backupSpy.recordPayment.and.returnValue(throwError(() => ({ status: 409 })));
+    it('should not offer the PDF when the mandatory save fails', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
       component.papercounts[5] = 1;
 
       component.generatePapers();
@@ -130,13 +123,88 @@ describe('PrintPapers', () => {
       expect(dialogSpy.open).not.toHaveBeenCalled();
     });
 
-    it('should explain that the papers could never be cashed when the server refuses the save', () => {
-      backupSpy.recordPayment.and.returnValue(throwError(() => ({ status: 409 })));
+    it('should not blame the server when the papers themselves cannot be generated', () => {
+      fakeBlockchain.generatePaper.and.throwError(new Error('Unsufficient funds.'));
       component.papercounts[5] = 1;
 
       component.generatePapers();
 
-      expect(snackBarSpy.open).toHaveBeenCalledWith(jasmine.stringMatching(/jamais/), 'Fermer', jasmine.anything());
+      expect(snackBarSpy.open).toHaveBeenCalledWith('Une erreur est survenue oO', 'Fermer', jasmine.anything());
+    });
+
+    it('should not offer the PDF when the server refuses the save, since the papers could never be cashed', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(dialogSpy.open).not.toHaveBeenCalled();
+    });
+
+    it('should not generate a second batch while the first one is being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+      component.generatePapers();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(1);
+    });
+
+    it('should allow generating again once the save has failed', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+      component.generatePapers();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should allow generating again once the papers have been saved', () => {
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+      component.generatePapers();
+
+      expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+    });
+
+    it('should disable the generate button while the papers are being saved', () => {
+      backupSpy.applyAndSave.and.returnValue(new Subject<any>());
+      component.selectedValue({ value: 1 } as any, 5);
+      fixture.detectChanges();
+      const generateButton: HTMLButtonElement = fixture.nativeElement.querySelector('button[mat-flat-button]');
+      expect(generateButton.disabled).toBeFalse();
+
+      component.generatePapers();
+      fixture.detectChanges();
+
+      expect(generateButton.disabled).toBeTrue();
+    });
+
+    it('should not blame another device for any other conflict', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 409, error: { error: 'Block does not chain onto the stored last block.' },
+      })));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        "Billets annulés : ils n'ont pas pu être enregistrés sur le serveur. Rien n'a été débité.", 'Fermer', jasmine.anything());
+    });
+
+    it('should cancel the papers when this device was revoked by a newer login', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({
+        status: 409, error: { error: 'This device has been revoked by a more recent login.', code: 'DEVICE_REVOKED' },
+      })));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        "Ce compte est actif sur un autre appareil : billets annulés, rien n'a été débité.", 'Fermer', jasmine.anything());
     });
 
     it('should not generate any paper when the session is read-only', () => {
@@ -146,7 +214,7 @@ describe('PrintPapers', () => {
       component.generatePapers();
 
       expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
-      expect(backupSpy.recordPayment).not.toHaveBeenCalled();
+      expect(backupSpy.applyAndSave).not.toHaveBeenCalled();
     });
 
     it('should target the real core ecosystem public key', () => {
@@ -164,7 +232,7 @@ describe('PrintPapers', () => {
       component.generatePapers();
 
       expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
-      expect(backupSpy.recordPayment).not.toHaveBeenCalled();
+      expect(backupSpy.applyAndSave).not.toHaveBeenCalled();
     });
 
     it('should open a confirmation dialog before generating', () => {
@@ -185,7 +253,7 @@ describe('PrintPapers', () => {
       component.generatePapers();
 
       expect(fakeBlockchain.generatePaper).not.toHaveBeenCalled();
-      expect(backupSpy.recordPayment).not.toHaveBeenCalled();
+      expect(backupSpy.applyAndSave).not.toHaveBeenCalled();
     });
   });
 
