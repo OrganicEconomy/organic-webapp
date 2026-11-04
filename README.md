@@ -97,10 +97,13 @@ CHROME_BIN="/path/to/chrome" ng test --watch=false --browsers=ChromeHeadless
 
 ## Running end-to-end tests
 
-For end-to-end (e2e) testing, run:
+End-to-end tests use [Playwright](https://playwright.dev) and live in `e2e/`. Install the browser once, then run them:
 
 ```bash
-ng e2e
+npx playwright install chromium
+npm run e2e
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+They need [organic-webserver](https://github.com/OrganicEconomy/organic-webserver) cloned next to this repository. `npm run e2e` starts it in test mode (in-memory database, no rate limit) on port 6870, and the webapp on port 4300, so it does not clash with dev servers on 6868 and 4200. Both are stopped when the tests end.
+
+On a fresh server, the first signup is active at once.
