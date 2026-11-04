@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, HttpRequest } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { decodeQr } from 'organic-protocol';
@@ -12,7 +12,9 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
 
 const SERVER_URL = 'https://trifouillis.fr'
-const STATUS_URL = `${SERVER_URL}/api/v1/validations/status/camille-pk`
+const MY_VALIDATION_URL = `${SERVER_URL}/api/v1/validations/mine`
+const CAMILLE_SK_HEX = '9f2b6c1d3e4a5b6c7d8e9f0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e'
+const isMyValidationRequest = (req: HttpRequest<unknown>) => req.url === MY_VALIDATION_URL
 const ADMIN_SK_HEX = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f'
 
 function makeValidatedBlocks(): unknown[] {
@@ -47,6 +49,7 @@ describe('PendingValidation', () => {
     };
     stubConnectedUserService = {
       getConnectedUser: () => fakeAccount,
+      getSecretKey: () => CAMILLE_SK_HEX,
     };
 
     await TestBed.configureTestingModule({
@@ -78,7 +81,7 @@ describe('PendingValidation', () => {
     createComponent();
     expect(component).toBeTruthy();
 
-    httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'pending-validation' });
   });
 
   it('should redirect to /user-selection if there is no connected user', () => {
@@ -101,21 +104,23 @@ describe('PendingValidation', () => {
       expect(decoded.payload.n).toBe('Camille');
     }
 
-    httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'pending-validation' });
   });
 
-  it('should call getValidationStatus immediately on init', () => {
+  it('should ask the server for its own validation, authenticated, immediately on init', () => {
     createComponent();
 
-    const req = httpMock.expectOne(STATUS_URL);
+    const req = httpMock.expectOne(isMyValidationRequest);
     expect(req.request.method).toBe('GET');
-    req.flush({ status: 'pending-validation' });
+    expect(req.request.headers.has('x-signature')).toBeTrue();
+    expect(req.request.params.get('publickey')).toBe('camille-pk');
+    req.flush({ status: 'pending-validation', blocks: makePendingBlocks() });
   });
 
   it('should stay on the screen when the server still reports pending-validation', () => {
     createComponent();
 
-    httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'pending-validation' });
 
     expect(router.navigate).not.toHaveBeenCalledWith(['/home']);
   });
@@ -123,7 +128,7 @@ describe('PendingValidation', () => {
   it('should navigate to /home when the server reports active on the first check', () => {
     createComponent();
 
-    httpMock.expectOne(STATUS_URL).flush({ status: 'active', blocks: makeValidatedBlocks() });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'active', blocks: makeValidatedBlocks() });
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
@@ -132,7 +137,7 @@ describe('PendingValidation', () => {
     const saveSpy = spyOn(localDB, 'saveUser').and.callThrough();
     createComponent();
 
-    httpMock.expectOne(STATUS_URL).flush({ status: 'active', blocks: makeValidatedBlocks() });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'active', blocks: makeValidatedBlocks() });
 
     expect(saveSpy).toHaveBeenCalled();
     expect(saveSpy.calls.mostRecent().args[0].status).toBe('active');
@@ -142,7 +147,7 @@ describe('PendingValidation', () => {
   it('should adopt the server\'s validated chain so the home screen shows the earned level', () => {
     createComponent();
 
-    httpMock.expectOne(STATUS_URL).flush({ status: 'active', blocks: makeValidatedBlocks() });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'active', blocks: makeValidatedBlocks() });
 
     expect(component.user.blockchain.isValidated()).toBe(true);
     expect(component.user.blockchain.getLevel()).toBe(1);
@@ -150,43 +155,43 @@ describe('PendingValidation', () => {
 
   it('should schedule a follow-up check 30s later when still pending', fakeAsync(() => {
     createComponent();
-    httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'pending-validation' });
 
     tick(30000);
 
-    httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'pending-validation' });
     fixture.destroy();
   }));
 
   it('should navigate to /home once a later poll (not the first) reports active', fakeAsync(() => {
     createComponent();
-    httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'pending-validation' });
 
     tick(30000);
-    httpMock.expectOne(STATUS_URL).flush({ status: 'active', blocks: makeValidatedBlocks() });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'active', blocks: makeValidatedBlocks() });
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
   }));
 
   it('should stop polling once the component is destroyed', fakeAsync(() => {
     createComponent();
-    httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'pending-validation' });
 
     fixture.destroy();
     tick(30000);
 
-    httpMock.expectNone(STATUS_URL);
+    httpMock.expectNone(isMyValidationRequest);
   }));
 
   it('should keep polling silently after a network error, without navigating or crashing', fakeAsync(() => {
     createComponent();
-    httpMock.expectOne(STATUS_URL).error(new ProgressEvent('network error'));
+    httpMock.expectOne(isMyValidationRequest).error(new ProgressEvent('network error'));
 
     expect(router.navigate).not.toHaveBeenCalledWith(['/home']);
 
     tick(30000);
 
-    httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'pending-validation' });
     fixture.destroy();
   }));
 
@@ -196,20 +201,20 @@ describe('PendingValidation', () => {
     createComponent();
 
     expect(component.qrData).toBe('');
-    httpMock.expectNone(STATUS_URL);
+    httpMock.expectNone(isMyValidationRequest);
   });
 
   it('should stop polling and not navigate home when a later poll reports rejected', fakeAsync(() => {
     createComponent();
-    httpMock.expectOne(STATUS_URL).flush({ status: 'pending-validation' });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'pending-validation' });
 
     tick(30000);
-    httpMock.expectOne(STATUS_URL).flush({ status: 'rejected', blocks: makePendingBlocks() });
+    httpMock.expectOne(isMyValidationRequest).flush({ status: 'rejected', blocks: makePendingBlocks() });
 
     expect(router.navigate).not.toHaveBeenCalledWith(['/home']);
     expect(component.user.status).toBe('rejected');
 
     tick(30000);
-    httpMock.expectNone(STATUS_URL);
+    httpMock.expectNone(isMyValidationRequest);
   }));
 });

@@ -3,7 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import type {
   RegisterBody, RegisterResponse, LoginResponse, InfoResponse, ServersResponse,
-  EcosystemInfoResponse, ValidationStatusResponse, MyEcosystemsResponse, EcosystemListResponse,
+  EcosystemInfoResponse, ValidationStatusResponse, MyValidationResponse, MyEcosystemsResponse, EcosystemListResponse,
   EcosystemCreateResponse, ValidationListResponse, ValidationDetailResponse,
 } from 'organic-protocol';
 import { BlockMaker } from 'organic-money/src/index.js';
@@ -221,6 +221,21 @@ describe('ServerConnexionService', () => {
     req.flush({ status: 'pending-validation' })
 
     expect(result?.status).toBe('pending-validation')
+  });
+
+  describe('getMyValidation', () => {
+    it('should GET /validations/mine with a timestamp-auth x-signature', () => {
+      let result: MyValidationResponse | undefined
+      service.getMyValidation(SERVER_URL, TEST_PK, TEST_SK).subscribe((res) => (result = res))
+
+      const req = httpMock.expectOne((r) => r.url === `${SERVER_URL}/api/v1/validations/mine`)
+      expect(req.request.method).toBe('GET')
+      expect(req.request.headers.has('x-signature')).toBeTrue()
+      expect(req.request.params.get('publickey')).toBe(TEST_PK)
+      req.flush({ status: 'active', blocks: [] })
+
+      expect(result).toEqual({ status: 'active', blocks: [] })
+    });
   });
 
   it('getMyEcosystems: GETs /ecosystems/mine with publickey as a query param (public, no auth)', () => {
