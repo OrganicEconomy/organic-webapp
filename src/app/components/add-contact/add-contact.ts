@@ -1,6 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { FormGroup, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, firstValueFrom, map, of } from 'rxjs';
+import { ServerConnexionService } from '../../services/server-connection.service';
+import { lookupFailure } from '../../utils/lookup-failure.util';
 import { decodeQr } from 'organic-protocol';
 import type { Contact } from '../../models/account';
 import { LocalDatabaseService } from '../../services/local-database.service';
@@ -31,6 +35,7 @@ export class AddContact {
   public formError = ''
   userService = inject(ConnectedUserService)
   localDB = inject(LocalDatabaseService)
+  server = inject(ServerConnexionService)
 
   user = this.userService.getConnectedUser()
   private scannedIsEcosystem = false
@@ -73,19 +78,70 @@ export class AddContact {
   }
 
   async addContact() {
-    const pk = this.addcontactForm.value.pk.trim()
-    if (!isWellFormedPublicKey(pk)) {
-      this.formError = MALFORMED_PUBLIC_KEY_MESSAGE
+    const contact = this.contactFromForm()
+    const refusal = this.formRefusal(contact) ?? await this.serverRefusal(contact)
+    if (refusal) {
+      this.formError = refusal
       return
-    }
-    const contact: Contact = {
-      name: this.addcontactForm.value.name,
-      pk,
-      url: this.addcontactForm.value.url,
-      type: this.scannedIsEcosystem ? 'ecosystem' : 'citizen',
     }
     this.user.contacts.push(contact)
     await this.localDB.saveUser(this.user)
     this.router.navigate(['/contacts']);
+  }
+
+  private contactFromForm(): Contact {
+    return {
+      name: this.addcontactForm.value.name.trim(),
+      pk: this.addcontactForm.value.pk.trim(),
+      url: this.addcontactForm.value.url,
+      type: this.scannedIsEcosystem ? 'ecosystem' : 'citizen',
+    }
+  }
+
+  private formRefusal(contact: Contact): string | null {
+    if (!contact.name) {
+      return 'Le nom du contact est obligatoire.'
+    }
+    if (!isWellFormedPublicKey(contact.pk)) {
+      return MALFORMED_PUBLIC_KEY_MESSAGE
+    }
+    const existing = this.existingContactWithKey(contact.pk)
+    if (existing) {
+      return `Cette clé est déjà dans vos contacts, sous le nom ${existing.name}.`
+    }
+    return null
+  }
+
+  private serverRefusal(contact: Contact): Promise<string | null> {
+    return firstValueFrom(
+      this.lookUp(contact).pipe(
+        map(() => null),
+        catchError((error) => of(this.lookupRefusal(error, contact))),
+      ),
+    )
+  }
+
+  private lookUp(contact: Contact): Observable<unknown> {
+    const serverUrl = contact.url || this.user.serverUrl
+    return contact.type === 'ecosystem'
+      ? this.server.getEcosystemInfo(serverUrl, contact.pk)
+      : this.server.getValidationStatus(serverUrl, contact.pk)
+  }
+
+  private lookupRefusal(error: HttpErrorResponse, contact: Contact): string {
+    switch (lookupFailure(error)) {
+      case 'unknown':
+        return contact.type === 'ecosystem'
+          ? "Aucun écosystème n'a cette clé sur ce serveur."
+          : "Aucun citoyen n'a cette clé sur ce serveur."
+      case 'unreachable':
+        return 'Impossible de vérifier ce contact : pas de connexion au serveur.'
+      case 'server-error':
+        return 'Impossible de vérifier ce contact : le serveur ne répond pas correctement.'
+    }
+  }
+
+  private existingContactWithKey(pk: string): Contact | undefined {
+    return this.user.contacts.find((contact: Contact) => contact.pk === pk)
   }
 }
