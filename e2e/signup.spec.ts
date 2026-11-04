@@ -1,17 +1,20 @@
 import { expect, test } from '@playwright/test';
-import { SERVER_URL } from '../playwright.config';
+import { ensureCoreGuardian } from './support/core-guardian';
+import { signUpApprovedCitizen, signUpThroughApp } from './support/signup';
 
 test.describe('signup', () => {
-  test('should open the home page for the first citizen of a fresh server', async ({ page }) => {
-    await page.goto(`/signup?server=${encodeURIComponent(SERVER_URL)}`);
+  test('should show the pending validation page to a new citizen', async ({ page }) => {
+    await ensureCoreGuardian();
 
-    await page.getByLabel('Adresse mail').fill('alice@example.org');
-    await page.getByLabel('Nom & prénom').fill('Alice Dupont');
-    await page.getByLabel('Date de naissance').fill('01/02/1990');
-    await page.getByRole('textbox', { name: 'Mot de passe' }).fill('secret');
-    await page.getByRole('button', { name: 'Créer mon compte' }).click();
+    await signUpThroughApp(page, 'Alice Dupont');
 
-    await expect(page).toHaveURL(/\/home$/);
-    await expect(page.getByText('Alice Dupont')).toBeVisible();
+    await expect(page).toHaveURL(/\/pending-validation$/);
+    await expect(page.getByText('Bonjour Alice Dupont')).toBeVisible();
+  });
+
+  test('should open the home page once a core member approves the citizen', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Bob Martin');
+
+    await expect(page.getByText('Bob Martin')).toBeVisible();
   });
 });
