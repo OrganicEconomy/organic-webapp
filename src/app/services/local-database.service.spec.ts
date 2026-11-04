@@ -60,6 +60,20 @@ describe('LocalDatabaseService', () => {
     expect(loaded.myEcosystems).toEqual([{ publickey: 'eco-pk', name: 'Boulangerie', role: 'actor' }])
   });
 
+  it('should leave out the contact holding the account own key, created at signup by older versions', async () => {
+    const pk = uniquePk('self-contact')
+    const account = makeDefaultAccount(pk)
+    account.contacts = [
+      { name: 'moi', pk, url: 'https://trifouillis.fr', type: 'citizen' },
+      { name: 'Bob', pk: 'bob-pk', url: 'https://trifouillis.fr', type: 'citizen' },
+    ]
+
+    await service.saveUser(account)
+    const loaded: any = await service.getUser(pk)
+
+    expect(loaded.contacts).toEqual([{ name: 'Bob', pk: 'bob-pk', url: 'https://trifouillis.fr', type: 'citizen' }])
+  });
+
   it('should round-trip the cached corePk', async () => {
     const pk = uniquePk('core-pk')
     const account = makeDefaultAccount(pk)

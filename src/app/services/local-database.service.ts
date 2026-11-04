@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core'
 import localforage from 'localforage'
 import { CitizenBlockchain } from 'organic-money/src/index.js'
-import type { Account, LoadedAccount } from '../models/account'
+import type { Account, Contact, LoadedAccount } from '../models/account'
 
 @Injectable({
     providedIn: 'root',
@@ -68,10 +68,18 @@ export class LocalDatabaseService {
         try {
             const account = await localforage.getItem<Account>(pk)
             if (!account) return null
-            return { ...account, blockchain: new CitizenBlockchain(account.blocks) }
+            return {
+                ...account,
+                contacts: this.withoutOwnContact(account),
+                blockchain: new CitizenBlockchain(account.blocks),
+            }
         } catch (err) {
             console.log(err)
             return null
         }
+    }
+
+    private withoutOwnContact(account: Account): Contact[] {
+        return account.contacts.filter((contact) => contact.pk !== account.publickey)
     }
 }
