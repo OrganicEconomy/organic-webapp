@@ -63,7 +63,7 @@ describe('Pay', () => {
       'getValidationStatus',
       'getEcosystemInfo',
     ]);
-    serverDBSpy.getValidationStatus.and.returnValue(of({ status: 'active', blocks: [] }));
+    serverDBSpy.getValidationStatus.and.returnValue(of({ status: 'active' }));
     serverDBSpy.getEcosystemInfo.and.returnValue(of({} as any));
     serverDBSpy.sendTransaction.and.returnValue(of({}));
     serverDBSpy.sendEcosystemTx.and.returnValue(of({}));
@@ -255,7 +255,7 @@ describe('Pay', () => {
   });
 
   it('should check the recipient again on a new tap once the previous check is over', () => {
-    serverDBSpy.getValidationStatus.and.returnValue(of({ status: 'rejected', blocks: [] }));
+    serverDBSpy.getValidationStatus.and.returnValue(of({ status: 'rejected' }));
     component.target = CITIZEN_PK;
     component.amount = 5;
 
@@ -328,7 +328,7 @@ describe('Pay', () => {
 
     component.pay();
     fixture.destroy();
-    lookup.next({ status: 'active', blocks: [] });
+    lookup.next({ status: 'active' });
 
     expect(dialogSpy.open).not.toHaveBeenCalled();
   });
@@ -349,7 +349,7 @@ describe('Pay', () => {
   });
 
   it('should not pay a citizen who is not active, so nothing is debited', () => {
-    serverDBSpy.getValidationStatus.and.returnValue(of({ status: 'rejected', blocks: [] }));
+    serverDBSpy.getValidationStatus.and.returnValue(of({ status: 'rejected' }));
     spyOn(component, 'displayMessage');
     component.target = CITIZEN_PK;
     component.amount = 5;

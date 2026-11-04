@@ -55,7 +55,7 @@ export class PendingValidation implements OnDestroy {
   }
 
   private checkStatus(): void {
-    this.pollSubscription = this.server.getValidationStatus(this.user.serverUrl, this.user.publickey).subscribe({
+    this.pollSubscription = this.server.getMyValidation(this.user.serverUrl, this.user.publickey, this.userService.getSecretKey()).subscribe({
       next: (res) => {
         if (res.status !== this.user.status) {
           this.user.status = res.status;

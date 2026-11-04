@@ -12,7 +12,7 @@ import type {
   TxVerifyBody, TxVerifyResponse,
   IsCashedResponse,
   TxWire,
-  EcosystemInfoResponse, ValidationStatusResponse, MyEcosystemsResponse, EcosystemListResponse,
+  EcosystemInfoResponse, ValidationStatusResponse, MyValidationResponse, MyEcosystemsResponse, EcosystemListResponse,
   EcosystemTxBody, EcosystemDistributeBody,
   EcosystemCreateBody, EcosystemCreateResponse, EcosystemMetaUpdateBody,
   ValidationListResponse, ValidationDetailResponse, ValidationRejectBody, ValidationApproveBody,
@@ -111,6 +111,14 @@ export class ServerConnexionService {
 
   public getValidationStatus(serverUrl: string, publickey: string): Observable<ValidationStatusResponse> {
     return this.http.get<ValidationStatusResponse>(`${serverUrl}${API_PATH}/validations/status/${publickey}`)
+  }
+
+  public getMyValidation(serverUrl: string, publickey: string, sk: string): Observable<MyValidationResponse> {
+    const { headers, timestamp } = timestampAuthHeaders(publickey, sk)
+    return this.http.get<MyValidationResponse>(`${serverUrl}${API_PATH}/validations/mine`, {
+      headers,
+      params: { publickey, timestamp },
+    })
   }
 
   public getMyEcosystems(serverUrl: string, publickey: string): Observable<MyEcosystemsResponse> {
