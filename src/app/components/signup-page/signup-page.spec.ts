@@ -106,6 +106,23 @@ describe('SignupPage', () => {
     expect(savedAccount.status).toBe('pending-validation')
   });
 
+  it('should not add the new citizen to their own contacts', async () => {
+    const saveSpy = spyOn(localDB, 'saveUser').and.callThrough()
+    const connectSpy = spyOn(userService, 'setConnectedUser').and.callThrough()
+
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+    await component.signup()
+
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
+    const publickey = req.request.body.publickey
+    req.flush({ publickey, status: 'pending-validation', blocks: [], devicetoken: 'dt-1' })
+    await waitUntil(() => connectSpy.calls.count() > 0)
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
+
+    expect(saveSpy.calls.mostRecent().args[0].contacts).toEqual([])
+  });
+
   it('should navigate to /pending-validation when the server reports pending-validation', async () => {
     const connectSpy = spyOn(userService, 'setConnectedUser').and.callThrough()
 
