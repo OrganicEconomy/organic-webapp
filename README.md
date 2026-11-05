@@ -107,3 +107,9 @@ npm run e2e
 They need [organic-webserver](https://github.com/OrganicEconomy/organic-webserver) cloned next to this repository. `npm run e2e` starts it in test mode (in-memory database, no rate limit) on port 6870, and the webapp on port 4300, so it does not clash with dev servers on 6868 and 4200. Both are stopped when the tests end.
 
 On a fresh server, the first signup is active at once.
+
+To test against another checkout of the server (for example `main` while the sibling folder holds work in progress), point `E2E_SERVER_DIR` at its `organic-webserver` folder. Its parent folder must hold a `.env.test`:
+
+```bash
+E2E_SERVER_DIR=/path/to/organic-webserver/organic-webserver npm run e2e
+```

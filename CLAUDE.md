@@ -16,7 +16,7 @@ npm run e2e                                      # Playwright, starts its own se
 
 `npm run e2e` expects `organic-webserver` cloned next to this repository. It starts it in test mode
 (in-memory database) on port 6870 and the webapp on port 4300, so it does not clash with dev servers.
-On a fresh server the first signup is active at once.
+On a fresh server the first signup is active at once. `E2E_SERVER_DIR` points it at another server checkout (its parent folder needs a `.env.test`).
 
 The default server URL lives in `src/environments/environment.development.ts`.
 

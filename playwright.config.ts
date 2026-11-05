@@ -2,7 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 const WEBAPP_PORT = 4300;
 const SERVER_PORT = 6870;
-const SERVER_DIRECTORY = '../organic-webserver/organic-webserver';
+const SERVER_DIRECTORY = process.env['E2E_SERVER_DIR'] ?? '../organic-webserver/organic-webserver';
 
 export const SERVER_URL = `http://127.0.0.1:${SERVER_PORT}`;
 
