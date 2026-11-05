@@ -20,6 +20,7 @@ import { toDisplayRow, getContactName } from '../../utils/transaction-display.ut
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { Observable, catchError, finalize, map, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { lookupFailure } from '../../utils/lookup-failure.util';
 import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
 
 function originOf(url: string): string {
@@ -149,13 +150,14 @@ export class Pay {
   }
 
   private lookupRefusal(error: HttpErrorResponse, unknownRecipientMessage: string): string {
-    if (error.status === 404) {
-      return unknownRecipientMessage
+    switch (lookupFailure(error)) {
+      case 'unknown':
+        return unknownRecipientMessage
+      case 'unreachable':
+        return 'Impossible de vérifier le destinataire : pas de connexion au serveur.'
+      case 'server-error':
+        return 'Impossible de vérifier le destinataire : le serveur ne répond pas correctement.'
     }
-    if (error.status === 0) {
-      return 'Impossible de vérifier le destinataire : pas de connexion au serveur.'
-    }
-    return 'Impossible de vérifier le destinataire : le serveur ne répond pas correctement.'
   }
 
   private confirmPayment(): void {

@@ -1,16 +1,20 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, throwError } from 'rxjs';
 import { encodeContactQr, encodePaperQr } from 'organic-protocol';
 
 import { AddContact } from './add-contact';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
+import { ServerConnexionService } from '../../services/server-connection.service';
 
 const basilePk = '02' + 'b5'.repeat(32);
 
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
+let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getValidationStatus' | 'getEcosystemInfo'>>;
 
 describe('AddContact', () => {
   let component: AddContact;
@@ -20,6 +24,9 @@ describe('AddContact', () => {
     fakeAccount = { contacts: [] };
     stubConnectedUserService = { getConnectedUser: () => fakeAccount, getSecretKey: () => '' };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
+    serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getValidationStatus', 'getEcosystemInfo']);
+    serverSpy.getValidationStatus.and.returnValue(of({ status: 'active' }));
+    serverSpy.getEcosystemInfo.and.returnValue(of({ blocks: [] } as any));
 
     TestBed.configureTestingModule({
       imports: [AddContact],
@@ -27,6 +34,7 @@ describe('AddContact', () => {
         provideRouter([]),
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: LocalDatabaseService, useValue: localDBSpy },
+        { provide: ServerConnexionService, useValue: serverSpy },
       ],
     });
 
@@ -93,6 +101,58 @@ describe('AddContact', () => {
     expect(fakeAccount.contacts).toEqual([
       { name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr', type: 'citizen' },
     ]);
+  });
+
+  it('should refuse to add a contact without a name', async () => {
+    component.addcontactForm.setValue({ name: '  ', pk: basilePk, url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([]);
+    expect(component.formError).toBe('Le nom du contact est obligatoire.');
+  });
+
+  it('should refuse to add a key already among the contacts', async () => {
+    const basile = { name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr', type: 'citizen' };
+    fakeAccount.contacts = [basile];
+    component.addcontactForm.setValue({ name: 'Basile bis', pk: basilePk, url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([basile]);
+    expect(component.formError).toBe('Cette clé est déjà dans vos contacts, sous le nom Basile.');
+  });
+
+  it('should refuse a citizen key unknown to the contact server', async () => {
+    serverSpy.getValidationStatus.and.returnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    component.addcontactForm.setValue({ name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(serverSpy.getValidationStatus).toHaveBeenCalledWith('https://trifouillis.fr', basilePk);
+    expect(fakeAccount.contacts).toEqual([]);
+    expect(component.formError).toBe("Aucun citoyen n'a cette clé sur ce serveur.");
+  });
+
+  it('should refuse a scanned ecosystem key unknown to the contact server', async () => {
+    serverSpy.getEcosystemInfo.and.returnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
+    component.scanSuccessHandler(encodeContactQr({ pk: basilePk, url: 'https://trifouillis.fr', n: 'Boulangerie', e: true }));
+
+    await component.addContact();
+
+    expect(serverSpy.getEcosystemInfo).toHaveBeenCalledWith('https://trifouillis.fr', basilePk);
+    expect(fakeAccount.contacts).toEqual([]);
+    expect(component.formError).toBe("Aucun écosystème n'a cette clé sur ce serveur.");
+  });
+
+  it('should not add a contact that could not be checked because the server is unreachable', async () => {
+    serverSpy.getValidationStatus.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+    component.addcontactForm.setValue({ name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([]);
+    expect(component.formError).toBe('Impossible de vérifier ce contact : pas de connexion au serveur.');
   });
 
   it('should refuse to add a contact whose public key is malformed', async () => {
