@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -23,8 +23,10 @@ describe('UserSelection', () => {
   // result now drives real navigation logic (redirect on first launch), and
   // the real service shares IndexedDB state across every spec in this run.
   let getUserListSpy: jasmine.Spy;
+  let queryParams: Record<string, string>;
 
   beforeEach(async () => {
+    queryParams = {}
     getUserListSpy = jasmine.createSpy('getUserList').and.resolveTo([
       { name: 'Alice', publickey: 'pk', secretkey: 'encrypted-blob' },
     ])
@@ -43,6 +45,7 @@ describe('UserSelection', () => {
         provideHttpClient(),
         provideHttpClientTesting(),
         { provide: LocalDatabaseService, useValue: { getUserList: getUserListSpy, saveUser: jasmine.createSpy('saveUser') } },
+        { provide: ActivatedRoute, useValue: { snapshot: { get queryParamMap() { return convertToParamMap(queryParams); } } } },
       ],
     })
     .compileComponents();
@@ -139,5 +142,30 @@ describe('UserSelection', () => {
     httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
 
     expect(router.navigate).toHaveBeenCalledWith(['/pending-validation']);
+  });
+
+  describe('selectUser', () => {
+    async function unlockActiveAlice() {
+      const secretkey = await encryptSecretKey('ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f', 'correct-password')
+      getUserListSpy.and.resolveTo([{ name: 'Alice', publickey: 'pk', secretkey, status: 'active', blocks: [] }])
+      fixture.detectChanges();
+      await fixture.whenStable();
+      spyOn(component.dialog, 'open').and.returnValue({ afterClosed: () => of('correct-password') } as any)
+      const navigateByUrl = spyOn(router, 'navigateByUrl')
+
+      component.selectUser(0)
+      await waitUntil(() => navigateByUrl.calls.count() + (router.navigate as jasmine.Spy).calls.count() > 0)
+      httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
+      httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
+      return navigateByUrl
+    }
+
+    it('should open the page kept in "next", such as a shared contact link', async () => {
+      queryParams = { next: '/addcontact?pk=02ab&name=Basile' }
+
+      const navigateByUrl = await unlockActiveAlice()
+
+      expect(navigateByUrl).toHaveBeenCalledWith('/addcontact?pk=02ab&name=Basile')
+    });
   });
 });

@@ -1,4 +1,4 @@
-import { expect, Page, test } from '@playwright/test';
+import { Browser, expect, Page, test } from '@playwright/test';
 import { SERVER_URL } from '../playwright.config';
 import { ensureCoreGuardian, registerPendingCitizen } from './support/core-guardian';
 import { pointCameraAtContactCard } from './support/fake-camera';
@@ -65,5 +65,32 @@ test.describe('contacts', () => {
 
     await page.getByLabel('Rechercher').fill('xavier');
     await expect(page.getByText('Aucun contact ne correspond à « xavier ».')).toBeVisible();
+  });
+});
+
+async function newCitizenPage(browser: Browser, name: string): Promise<Page> {
+  const context = await browser.newContext({ permissions: ['clipboard-read', 'clipboard-write'] });
+  const page = await context.newPage();
+  await signUpApprovedCitizen(page, name);
+  return page;
+}
+
+test.describe('contact link', () => {
+  test('should let a citizen add a contact from the link that contact shared', async ({ browser }) => {
+    const hugo = await newCitizenPage(browser, 'Hugo Lambert');
+    await hugo.getByRole('link', { name: 'Mon compte' }).click();
+    await hugo.getByRole('button', { name: 'Copier mon lien de contact' }).click();
+    await expect(hugo.getByText('Lien copié')).toBeVisible();
+    const link = await hugo.evaluate(() => navigator.clipboard.readText());
+
+    const ines = await newCitizenPage(browser, 'Inès Faure');
+    await ines.goto(link);
+    await ines.getByRole('button', { name: 'Inès Faure' }).click();
+    await ines.getByPlaceholder('Mot de passe').fill('secret');
+    await ines.getByRole('button', { name: 'OK' }).click();
+
+    await expect(ines.getByLabel('Nom')).toHaveValue('Hugo Lambert');
+    await ines.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(ines.getByRole('cell', { name: 'Hugo Lambert' })).toBeVisible();
   });
 });

@@ -17,6 +17,12 @@
     </mat-card-content>
 
     <qrcode [qrdata]="myContactQr" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>
+
+    <mat-card-actions>
+        <button mat-stroked-button type="button" (click)="copyContactLink()">
+            <i class="bi bi-link-45deg"></i> Copier mon lien de contact
+        </button>
+    </mat-card-actions>
 </mat-card>
 
 <mat-card appearance="outlined">
