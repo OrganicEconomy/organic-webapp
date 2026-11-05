@@ -166,4 +166,39 @@ describe('AddContact', () => {
       "Cette clé publique n'est pas valide : elle doit faire 66 caractères (0-9, a-f) et commencer par 02 ou 03.",
     );
   });
+
+  describe('scanSuccessHandler', () => {
+    it('should close the scanner once a contact card is recognized', () => {
+      component.scanSuccessHandler(encodeContactQr({ pk: basilePk, url: 'https://trifouillis.fr', n: 'Basile' }));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('app-qr-scanner')).toBeNull();
+    });
+
+    it('should confirm the recognized contact by name', () => {
+      component.scanSuccessHandler(encodeContactQr({ pk: basilePk, url: 'https://trifouillis.fr', n: 'Basile' }));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.scan-success').textContent).toContain('Contact reconnu : Basile');
+    });
+
+    it('should keep the scanner open for a QR that is not a contact card', () => {
+      component.scanSuccessHandler('not a qr at all');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('app-qr-scanner')).not.toBeNull();
+    });
+  });
+
+  describe('scanAgain', () => {
+    it('should reopen the scanner', () => {
+      component.scanSuccessHandler(encodeContactQr({ pk: basilePk, url: 'https://trifouillis.fr', n: 'Basile' }));
+      fixture.detectChanges();
+
+      component.scanAgain();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('app-qr-scanner')).not.toBeNull();
+    });
+  });
 });

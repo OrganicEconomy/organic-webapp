@@ -2,7 +2,15 @@
     <mat-card-content>
         <h1>Nouveau contact</h1>
 
-        <app-qr-scanner (scanSuccess)="scanSuccessHandler($event)"></app-qr-scanner>
+        @if (recognizedContactName === null) {
+            <app-qr-scanner (scanSuccess)="scanSuccessHandler($event)"></app-qr-scanner>
+        } @else {
+            <div class="scan-success">
+                <i class="bi bi-check-circle-fill"></i>
+                <p>Contact reconnu : {{ recognizedContactName }}</p>
+                <button mat-stroked-button type="button" (click)="scanAgain()">Scanner un autre QR</button>
+            </div>
+        }
         @if (scanError) {
             <p class="scan-error">{{ scanError }}</p>
         }
