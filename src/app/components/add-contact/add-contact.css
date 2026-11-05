@@ -33,6 +33,26 @@ h1 {
     margin: 4px 0;
 }
 
+.scan-success {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 0;
+    text-align: center;
+}
+
+.scan-success .bi-check-circle-fill {
+    font-size: 4rem;
+    color: #2e7d32;
+}
+
+.scan-success p {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
 form {
     display: flex;
     flex-direction: column;

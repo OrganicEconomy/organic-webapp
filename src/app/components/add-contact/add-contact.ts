@@ -33,6 +33,7 @@ export class AddContact {
   public addcontactForm !: FormGroup
   public scanError = ''
   public formError = ''
+  public recognizedContactName: string | null = null
   userService = inject(ConnectedUserService)
   localDB = inject(LocalDatabaseService)
   server = inject(ServerConnexionService)
@@ -69,12 +70,17 @@ export class AddContact {
       return
     }
     this.scannedIsEcosystem = !!decoded.payload.e
+    this.recognizedContactName = decoded.payload.n
     this.formError = ''
     this.addcontactForm.patchValue({
       name: decoded.payload.n,
       pk: decoded.payload.pk,
       url: decoded.payload.url,
     })
+  }
+
+  scanAgain() {
+    this.recognizedContactName = null
   }
 
   async addContact() {
