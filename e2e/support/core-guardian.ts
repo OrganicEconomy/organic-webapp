@@ -29,6 +29,15 @@ export async function approveCandidateNamed(name: string): Promise<void> {
   });
 }
 
+export async function registerPendingCitizen(name: string): Promise<string> {
+  await ensureCoreGuardian();
+  const chain = new CitizenBlockchain();
+  chain.makeBirthBlock(name, new Date(Date.UTC(1990, 0, 1)));
+  const publickey = chain.getMyPublicKey();
+  await register(chain, publickey, name);
+  return publickey;
+}
+
 async function findOrRegisterGuardian(): Promise<Guardian> {
   const chain = new CitizenBlockchain();
   const secretKey = chain.makeBirthBlock(
@@ -50,20 +59,25 @@ async function isRegistered(publickey: string): Promise<boolean> {
 }
 
 async function registerGuardian(chain: CitizenBlockchain, publickey: string): Promise<void> {
+  const status = await register(chain, publickey, 'Gardien du cœur');
+  if (status !== 'active') {
+    throw new Error('The core guardian must be the first account of a fresh e2e server');
+  }
+}
+
+async function register(chain: CitizenBlockchain, publickey: string, name: string): Promise<string> {
   const registered = await send('POST', '/users/register', {
     body: {
       publickey,
-      name: 'Gardien du cœur',
-      mail: 'gardien@e2e.test',
-      password: 'gardien',
+      name,
+      mail: `${name.replace(/\W/g, '').toLowerCase()}-api@e2e.test`,
+      password: 'e2e-password',
       birthdate: '1980-01-01',
       secretkey: 'unused',
       blocks: chain.export(),
     },
   });
-  if (registered.status !== 'active') {
-    throw new Error('The core guardian must be the first account of a fresh e2e server');
-  }
+  return registered.status;
 }
 
 async function findCandidatePk(name: string, publickey: string, secretKey: string): Promise<string> {
