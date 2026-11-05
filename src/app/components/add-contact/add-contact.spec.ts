@@ -1,5 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
 import { encodeContactQr, encodePaperQr } from 'organic-protocol';
@@ -14,6 +14,7 @@ const basilePk = '02' + 'b5'.repeat(32);
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
+let linkParams: Record<string, string>;
 let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getValidationStatus' | 'getEcosystemInfo'>>;
 
 describe('AddContact', () => {
@@ -22,6 +23,7 @@ describe('AddContact', () => {
 
   beforeEach(() => {
     fakeAccount = { contacts: [] };
+    linkParams = {};
     stubConnectedUserService = { getConnectedUser: () => fakeAccount, getSecretKey: () => '' };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getValidationStatus', 'getEcosystemInfo']);
@@ -35,13 +37,26 @@ describe('AddContact', () => {
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: LocalDatabaseService, useValue: localDBSpy },
         { provide: ServerConnexionService, useValue: serverSpy },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: {
+              get queryParams() { return linkParams; },
+              get queryParamMap() { return convertToParamMap(linkParams); },
+            },
+          },
+        },
       ],
     });
 
+    createComponent();
+  });
+
+  function createComponent() {
     fixture = TestBed.createComponent(AddContact);
     component = fixture.componentInstance;
     fixture.detectChanges();
-  });
+  }
 
   it('should create', () => {
     expect(component).toBeTruthy();
@@ -199,6 +214,30 @@ describe('AddContact', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('app-qr-scanner')).not.toBeNull();
+    });
+  });
+
+  describe('constructor', () => {
+    it('should send a visitor with no open account to the account choice, keeping the shared link', () => {
+      fakeAccount = null;
+      linkParams = { pk: basilePk, server: 'https://trifouillis.fr', name: 'Basile' };
+      const navigate = spyOn(TestBed.inject(Router), 'navigate');
+
+      createComponent();
+
+      expect(navigate).toHaveBeenCalledWith(['/user-selection'], {
+        queryParams: { next: `/addcontact?pk=${basilePk}&server=https:%2F%2Ftrifouillis.fr&name=Basile` },
+      });
+    });
+  });
+
+  describe('ngOnInit', () => {
+    it('should prefill the form from a shared contact link', () => {
+      linkParams = { pk: basilePk, server: 'https://trifouillis.fr', name: 'Basile' };
+
+      createComponent();
+
+      expect(component.addcontactForm.value).toEqual({ name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr' });
     });
   });
 });

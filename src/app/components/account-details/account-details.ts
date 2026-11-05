@@ -18,6 +18,7 @@ import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { QRCodeComponent } from 'angularx-qrcode';
+import { contactLink } from '../../utils/contact-link.util';
 
 @Component({
   selector: 'app-account-details',
@@ -78,6 +79,16 @@ export class AccountDetails {
       next: (info) => { this.serverInfo = info },
       error: () => { /* offline or unreachable — server info panel just stays empty */ },
     })
+  }
+
+  async copyContactLink(): Promise<void> {
+    const link = contactLink(document.baseURI, { pk: this.publickey, url: this.user.serverUrl, name: this.name })
+    try {
+      await navigator.clipboard.writeText(link)
+      this.displayMessage('Lien copié : envoie-le à ton contact.')
+    } catch {
+      this.displayMessage("Impossible de copier le lien.")
+    }
   }
 
   updateBackupPolicy(policy: BackupPolicy): void {

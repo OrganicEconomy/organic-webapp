@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LocalDatabaseService } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -35,7 +35,7 @@ export class UserSelection {
   dialog = inject(MatDialog);
   users: any[] = [];
 
-  constructor(private router: Router) { }
+  constructor(private router: Router, private route: ActivatedRoute) { }
 
   async ngOnInit() {
     this.users = await this.localDB.getUserList();
@@ -63,9 +63,18 @@ export class UserSelection {
       if (this.users[index].status !== 'active') {
         this.router.navigate(['/pending-validation']);
       } else {
-        this.router.navigate(['/home']);
+        this.openRequestedPageOrHome();
       }
     });
+  }
+
+  private openRequestedPageOrHome(): void {
+    const requestedPage = this.route.snapshot.queryParamMap.get('next')
+    if (requestedPage) {
+      this.router.navigateByUrl(requestedPage);
+    } else {
+      this.router.navigate(['/home']);
+    }
   }
 
   /**

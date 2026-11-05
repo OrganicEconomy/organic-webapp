@@ -9,6 +9,7 @@ import { LocalDatabaseService } from '../../services/local-database.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { BackupService } from '../../services/backup.service';
 import { encryptSecretKey } from '../../services/secret-key-crypto.util';
+import { contactLink } from '../../utils/contact-link.util';
 
 const REAL_SK_HEX = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f';
 
@@ -139,5 +140,17 @@ describe('AccountDetails', () => {
     await component.changePassword();
 
     expect(serverDBSpy.changePassword).not.toHaveBeenCalled();
+  });
+
+  describe('copyContactLink', () => {
+    it('should copy to the clipboard the link that opens the contact form filled with my card', async () => {
+      const writeText = spyOn(navigator.clipboard, 'writeText').and.resolveTo();
+
+      await component.copyContactLink();
+
+      expect(writeText).toHaveBeenCalledWith(
+        contactLink(document.baseURI, { pk: 'alice-pk', url: 'https://trifouillis.fr', name: 'Alice' }),
+      );
+    });
   });
 });

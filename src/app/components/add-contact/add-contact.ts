@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormGroup, FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, catchError, firstValueFrom, map, of } from 'rxjs';
 import { ServerConnexionService } from '../../services/server-connection.service';
@@ -41,18 +41,24 @@ export class AddContact {
   user = this.userService.getConnectedUser()
   private scannedIsEcosystem = false
 
-  constructor(private formBuilder: FormBuilder, private router: Router) {
+  constructor(private formBuilder: FormBuilder, private router: Router, private route: ActivatedRoute) {
     if (this.user === null) {
-      this.router.navigate(['/user-selection']);
+      this.router.navigate(['/user-selection'], { queryParams: { next: this.thisPageUrl() } });
       return
     }
   }
 
+  private thisPageUrl(): string {
+    const thisPage = this.router.createUrlTree(['/addcontact'], { queryParams: this.route.snapshot.queryParams })
+    return this.router.serializeUrl(thisPage)
+  }
+
   ngOnInit(): void {
+    const sharedContact = this.route.snapshot.queryParamMap
     this.addcontactForm = this.formBuilder.group({
-      name: [""],
-      pk: [""],
-      url: [""],
+      name: [sharedContact.get('name') ?? ""],
+      pk: [sharedContact.get('pk') ?? ""],
+      url: [sharedContact.get('server') ?? ""],
     })
   }
 
