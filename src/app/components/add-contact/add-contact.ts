@@ -6,6 +6,7 @@ import { Observable, catchError, firstValueFrom, map, of } from 'rxjs';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { lookupFailure } from '../../utils/lookup-failure.util';
 import { decodeQr } from 'organic-protocol';
+import type { ServerListEntry } from 'organic-protocol';
 import type { Contact } from '../../models/account';
 import { LocalDatabaseService } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
@@ -13,6 +14,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { QrScanner } from '../qr-scanner/qr-scanner';
 import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
 
@@ -24,6 +26,7 @@ import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
+    MatAutocompleteModule,
     QrScanner,
   ],
   templateUrl: './add-contact.html',
@@ -34,6 +37,7 @@ export class AddContact {
   public scanError = ''
   public formError = ''
   public recognizedContactName: string | null = null
+  public knownServers: ServerListEntry[] = []
   userService = inject(ConnectedUserService)
   localDB = inject(LocalDatabaseService)
   server = inject(ServerConnexionService)
@@ -58,7 +62,17 @@ export class AddContact {
     this.addcontactForm = this.formBuilder.group({
       name: [sharedContact.get('name') ?? ""],
       pk: [sharedContact.get('pk') ?? ""],
-      url: [sharedContact.get('server') ?? ""],
+      url: [sharedContact.get('server') ?? this.user?.serverUrl ?? ""],
+    })
+    if (this.user) {
+      this.loadKnownServers()
+    }
+  }
+
+  private loadKnownServers(): void {
+    this.server.getKnownServers(this.user.serverUrl).subscribe({
+      next: (servers) => this.knownServers = servers,
+      error: () => this.knownServers = [],
     })
   }
 

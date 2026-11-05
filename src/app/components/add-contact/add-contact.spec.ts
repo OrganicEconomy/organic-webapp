@@ -15,18 +15,19 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
 let linkParams: Record<string, string>;
-let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getValidationStatus' | 'getEcosystemInfo'>>;
+let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getValidationStatus' | 'getEcosystemInfo' | 'getKnownServers'>>;
 
 describe('AddContact', () => {
   let component: AddContact;
   let fixture: ComponentFixture<AddContact>;
 
   beforeEach(() => {
-    fakeAccount = { contacts: [] };
+    fakeAccount = { contacts: [], serverUrl: 'https://mon-serveur.fr' };
     linkParams = {};
     stubConnectedUserService = { getConnectedUser: () => fakeAccount, getSecretKey: () => '' };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
-    serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getValidationStatus', 'getEcosystemInfo']);
+    serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getValidationStatus', 'getEcosystemInfo', 'getKnownServers']);
+    serverSpy.getKnownServers.and.returnValue(of([]));
     serverSpy.getValidationStatus.and.returnValue(of({ status: 'active' }));
     serverSpy.getEcosystemInfo.and.returnValue(of({ blocks: [] } as any));
 
@@ -232,6 +233,20 @@ describe('AddContact', () => {
   });
 
   describe('ngOnInit', () => {
+    it('should prefill the server with my own server when no link was shared', () => {
+      expect(component.addcontactForm.value.url).toBe('https://mon-serveur.fr');
+    });
+
+    it('should offer the servers known to my own server', () => {
+      const servers = [{ name: 'Trifouillis', url: 'https://trifouillis.fr' }];
+      serverSpy.getKnownServers.and.returnValue(of(servers));
+
+      createComponent();
+
+      expect(serverSpy.getKnownServers).toHaveBeenCalledWith('https://mon-serveur.fr');
+      expect(component.knownServers).toEqual(servers);
+    });
+
     it('should prefill the form from a shared contact link', () => {
       linkParams = { pk: basilePk, server: 'https://trifouillis.fr', name: 'Basile' };
 

@@ -75,6 +75,21 @@ async function newCitizenPage(browser: Browser, name: string): Promise<Page> {
   return page;
 }
 
+test.describe('contact server', () => {
+  test('should prefill my own server and offer the other known servers', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Jade Mercier');
+    await page.getByRole('link', { name: 'Contacts' }).click();
+    await page.getByRole('link', { name: 'Nouveau contact' }).click();
+
+    const serverField = page.getByLabel('Serveur');
+    await expect(serverField).toHaveValue(SERVER_URL);
+
+    await serverField.fill('');
+    await page.getByRole('option', { name: 'Trifouillis' }).click();
+    await expect(serverField).toHaveValue('https://trifouillis.fr');
+  });
+});
+
 test.describe('contact link', () => {
   test('should let a citizen add a contact from the link that contact shared', async ({ browser }) => {
     const hugo = await newCitizenPage(browser, 'Hugo Lambert');

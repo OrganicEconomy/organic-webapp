@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import path from 'node:path';
 
 const WEBAPP_PORT = 4300;
 const SERVER_PORT = 6870;
@@ -25,6 +26,7 @@ export default defineConfig({
         NODE_ENV: 'test',
         NODE_LOCAL_PORT: String(SERVER_PORT),
         CORS_EXTRA_ORIGINS: `http://localhost:${WEBAPP_PORT}`,
+        KNOWN_SERVERS_FILE: path.resolve(__dirname, 'e2e/fixtures/known-servers.json'),
       },
       reuseExistingServer: false,
       timeout: 60_000,
