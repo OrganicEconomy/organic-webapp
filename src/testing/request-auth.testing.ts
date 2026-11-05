@@ -1,7 +1,7 @@
 import type { HttpRequest } from '@angular/common/http';
 import type { HttpTestingController, TestRequest } from '@angular/common/http/testing';
 
-const SERVER_INFO = {
+export const SERVER_INFO = {
   protocolVersion: 1,
   apiVersion: '1',
   name: 'Serveur de test',

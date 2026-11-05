@@ -12,11 +12,11 @@ import { BlockMaker } from 'organic-money/src/index.js';
 import { verifySignature } from 'organic-money/src/crypto.js';
 
 import { ServerConnexionService } from './server-connection.service';
+import { SERVER_INFO } from '../../testing/request-auth.testing';
 
 const SERVER_URL = 'https://trifouillis.fr'
 const TEST_SK = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f'
 const TEST_PK = '02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3'
-const SERVER_PK = '03e7e050c53dcaba20afd83512b355cd0b966fa4af726c1d6cee75b2c11a29f189'
 const ECO_PK = 'eco-a1b2c3'
 const CANDIDATE_PK = 'candidate-d4e5f6'
 
@@ -38,7 +38,7 @@ describe('ServerConnexionService', () => {
 
   function answerServerInfo(): void {
     httpMock.expectOne(`${SERVER_URL}/api/v1/info`)
-      .flush({ protocolVersion: 1, apiVersion: '1', name: 'Serveur de Trifouillis', serverPk: SERVER_PK, corePk: null, stats: { users: 1 } })
+      .flush(SERVER_INFO)
   }
 
   function expectRequestAuth(req: TestRequest, method: string, path: string): void {
@@ -50,7 +50,7 @@ describe('ServerConnexionService', () => {
       timestamp: Number(headers.get(REQUEST_AUTH_HEADERS.timestamp)),
       nonce: headers.get(REQUEST_AUTH_HEADERS.nonce)!,
       body: req.request.body ?? '',
-      serverPk: SERVER_PK,
+      serverPk: SERVER_INFO.serverPk,
       publickey: TEST_PK,
     })
     expect(verifySignature(signedRequest, headers.get(REQUEST_AUTH_HEADERS.signature)!, TEST_PK)).toBeTrue()
@@ -175,6 +175,15 @@ describe('ServerConnexionService', () => {
     service.getValidationList(SERVER_URL, TEST_PK, TEST_SK).subscribe()
     httpMock.expectNone(`${SERVER_URL}/api/v1/info`)
     httpMock.expectOne(`${SERVER_URL}/api/v1/validations`).flush([])
+  });
+
+  it('should read the key of a server again on the next request when the previous read failed', () => {
+    service.getTransactionList(SERVER_URL, TEST_PK, TEST_SK).subscribe({ error: () => {} })
+    httpMock.expectOne(`${SERVER_URL}/api/v1/info`).error(new ProgressEvent('network error'))
+
+    service.getTransactionList(SERVER_URL, TEST_PK, TEST_SK).subscribe()
+    answerServerInfo()
+    httpMock.expectOne(`${SERVER_URL}/api/v1/tx/list`).flush([])
   });
 
   it('sendTransaction: POSTs { tx } to /tx/send', () => {
