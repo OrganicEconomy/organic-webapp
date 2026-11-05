@@ -33,7 +33,12 @@
             <section>
                 <mat-form-field>
                     <mat-label>Serveur</mat-label>
-                    <input matInput type="text" formControlName="url" placeholder="https://…">
+                    <input matInput type="text" formControlName="url" placeholder="https://…" [matAutocomplete]="serverList">
+                    <mat-autocomplete #serverList="matAutocomplete">
+                        @for (server of knownServers; track server.url) {
+                            <mat-option [value]="server.url">{{ server.name }}</mat-option>
+                        }
+                    </mat-autocomplete>
                 </mat-form-field>
             </section>
 
