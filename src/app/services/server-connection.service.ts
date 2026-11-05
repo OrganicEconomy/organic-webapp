@@ -146,7 +146,7 @@ export class ServerConnexionService {
   }
 
   public updateEcosystemMeta(serverUrl: string, ecosystemPk: string, publickey: string, sk: string, updates: { name?: string; description?: string; lat?: number; lng?: number }): Observable<unknown> {
-    const body: EcosystemMetaUpdateBody = { ...updates }
+    const body: EcosystemMetaUpdateBody = updates
     return this.authenticatedRequest('PUT', serverUrl, `/ecosystems/${ecosystemPk}/meta`, publickey, sk, body)
   }
 

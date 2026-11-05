@@ -22,15 +22,14 @@ export function ensureCoreGuardian(): Promise<Guardian> {
 }
 
 export async function approveCandidateNamed(name: string): Promise<void> {
-  const { publickey, secretKey } = await ensureCoreGuardian();
-  const guardianAuth = { publickey, secretKey };
-  const candidatePk = await findCandidatePk(name, guardianAuth);
-  const candidate = await send('GET', `/validations/${candidatePk}`, { signedBy: guardianAuth });
-  const initBlock = new CitizenBlockchain(candidate.blocks).validateAccount(secretKey);
+  const coreGuardian = await ensureCoreGuardian();
+  const candidatePk = await findCandidatePk(name, coreGuardian);
+  const candidate = await send('GET', `/validations/${candidatePk}`, { signedBy: coreGuardian });
+  const initBlock = new CitizenBlockchain(candidate.blocks).validateAccount(coreGuardian.secretKey);
 
   await send('POST', `/validations/${candidatePk}/approve`, {
     body: { block: initBlock.export() },
-    signedBy: guardianAuth,
+    signedBy: coreGuardian,
   });
 }
 
@@ -85,8 +84,8 @@ async function register(chain: CitizenBlockchain, publickey: string, name: strin
   return registered.status;
 }
 
-async function findCandidatePk(name: string, guardianAuth: Guardian): Promise<string> {
-  const candidates: { pk: string; name: string }[] = await send('GET', '/validations', { signedBy: guardianAuth });
+async function findCandidatePk(name: string, coreGuardian: Guardian): Promise<string> {
+  const candidates: { pk: string; name: string }[] = await send('GET', '/validations', { signedBy: coreGuardian });
   const candidate = candidates.find((entry) => entry.name === name);
   if (!candidate) throw new Error(`No pending candidate named ${name}`);
   return candidate.pk;

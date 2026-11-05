@@ -114,7 +114,7 @@ describe('PendingValidation', () => {
 
     const req = expectAuthenticated(httpMock, isMyValidationRequest);
     expect(req.request.method).toBe('GET');
-    expect(req.request.headers.has('x-signature')).toBeTrue();
+    expect(req.request.headers.has(REQUEST_AUTH_HEADERS.signature)).toBeTrue();
     expect(req.request.headers.get(REQUEST_AUTH_HEADERS.publickey)).toBe('camille-pk');
     req.flush({ status: 'pending-validation', blocks: makePendingBlocks() });
   });
