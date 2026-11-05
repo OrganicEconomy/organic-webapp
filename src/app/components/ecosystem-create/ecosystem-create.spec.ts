@@ -8,6 +8,7 @@ import { EcosystemCreate } from './ecosystem-create';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { GeolocationService } from '../../services/geolocation.service';
+import { expectAuthenticated } from '../../../testing/request-auth.testing';
 
 const SERVER_URL = 'https://trifouillis.fr';
 const CREATE_URL = `${SERVER_URL}/api/v1/ecosystems`;
@@ -75,10 +76,10 @@ describe('EcosystemCreate', () => {
       await component.create();
 
       expect(stubGeolocationService.getCurrentPosition).not.toHaveBeenCalled();
-      const req = httpMock.expectOne((r) => r.url === CREATE_URL);
-      expect(req.request.body.name).toBe('Boulangerie associative');
-      expect(req.request.body.lat).toBeUndefined();
-      expect(req.request.body.lng).toBeUndefined();
+      const req = expectAuthenticated(httpMock, (r) => r.url === CREATE_URL);
+      expect(JSON.parse(req.request.body).name).toBe('Boulangerie associative');
+      expect(JSON.parse(req.request.body).lat).toBeUndefined();
+      expect(JSON.parse(req.request.body).lng).toBeUndefined();
       req.flush({ publickey: 'eco-pk', blocks: [], iscore: false });
     });
 
@@ -89,9 +90,9 @@ describe('EcosystemCreate', () => {
 
       await component.create();
 
-      const req = httpMock.expectOne((r) => r.url === CREATE_URL);
-      expect(req.request.body.lat).toBe(45.75);
-      expect(req.request.body.lng).toBe(4.85);
+      const req = expectAuthenticated(httpMock, (r) => r.url === CREATE_URL);
+      expect(JSON.parse(req.request.body).lat).toBe(45.75);
+      expect(JSON.parse(req.request.body).lng).toBe(4.85);
       req.flush({ publickey: 'eco-pk', blocks: [], iscore: false });
     });
 
@@ -101,7 +102,7 @@ describe('EcosystemCreate', () => {
 
       await component.create();
 
-      httpMock.expectOne((r) => r.url === CREATE_URL).flush({ publickey: 'eco-pk', blocks: [{ some: 'block' }], iscore: true });
+      expectAuthenticated(httpMock, (r) => r.url === CREATE_URL).flush({ publickey: 'eco-pk', blocks: [{ some: 'block' }], iscore: true });
 
       expect(stubViewedEcosystemService.setViewedEcosystem).toHaveBeenCalledWith({
         publickey: 'eco-pk',
@@ -119,7 +120,7 @@ describe('EcosystemCreate', () => {
 
       await component.create();
 
-      httpMock.expectOne((r) => r.url === CREATE_URL).flush({ publickey: 'eco-pk', blocks: [], iscore: false });
+      expectAuthenticated(httpMock, (r) => r.url === CREATE_URL).flush({ publickey: 'eco-pk', blocks: [], iscore: false });
 
       expect(stubConnectedUserService.refreshMyEcosystems).toHaveBeenCalled();
       expect(router.navigate).toHaveBeenCalledWith(['/ecosystems', 'eco-pk']);
@@ -130,7 +131,7 @@ describe('EcosystemCreate', () => {
 
       await component.create();
 
-      httpMock.expectOne((r) => r.url === CREATE_URL).error(new ProgressEvent('network error'));
+      expectAuthenticated(httpMock, (r) => r.url === CREATE_URL).error(new ProgressEvent('network error'));
 
       expect(component.actionError).toBeTruthy();
       expect(router.navigate).not.toHaveBeenCalledWith(['/ecosystems', 'eco-pk']);

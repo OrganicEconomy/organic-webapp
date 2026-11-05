@@ -6,6 +6,8 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 
 import { ValidationQueue } from './validation-queue';
 import { ConnectedUserService } from '../../services/connected-user.service';
+import { expectAuthenticated } from '../../../testing/request-auth.testing';
+import { REQUEST_AUTH_HEADERS } from 'organic-protocol';
 
 const SERVER_URL = 'https://trifouillis.fr';
 const LIST_URL = `${SERVER_URL}/api/v1/validations`;
@@ -60,7 +62,7 @@ describe('ValidationQueue', () => {
     createComponent();
     expect(component).toBeTruthy();
 
-    httpMock.expectOne((r) => r.url === LIST_URL).flush([]);
+    expectAuthenticated(httpMock, (r) => r.url === LIST_URL).flush([]);
   });
 
   it('should redirect to /user-selection if there is no connected user', () => {
@@ -75,16 +77,16 @@ describe('ValidationQueue', () => {
     it('should call getValidationList with the connected user identity on init', () => {
       createComponent();
 
-      const req = httpMock.expectOne((r) => r.url === LIST_URL);
+      const req = expectAuthenticated(httpMock, (r) => r.url === LIST_URL);
       expect(req.request.method).toBe('GET');
-      expect(req.request.params.get('publickey')).toBe('farid-pk');
+      expect(req.request.headers.get(REQUEST_AUTH_HEADERS.publickey)).toBe('farid-pk');
       req.flush([]);
     });
 
     it('should store the candidates returned by the server', () => {
       createComponent();
 
-      httpMock.expectOne((r) => r.url === LIST_URL).flush([
+      expectAuthenticated(httpMock, (r) => r.url === LIST_URL).flush([
         { pk: 'camille-pk', name: 'Camille', requestedAt: new Date().toISOString() },
       ]);
 
@@ -95,7 +97,7 @@ describe('ValidationQueue', () => {
     it('should treat a request error as an empty list, without throwing', () => {
       createComponent();
 
-      httpMock.expectOne((r) => r.url === LIST_URL).error(new ProgressEvent('network error'));
+      expectAuthenticated(httpMock, (r) => r.url === LIST_URL).error(new ProgressEvent('network error'));
 
       expect(component.candidates).toEqual([]);
     });
@@ -104,7 +106,7 @@ describe('ValidationQueue', () => {
   describe('requestedAgo', () => {
     it('should say "il y a moins d\'une heure" for a request made 10 minutes ago', () => {
       createComponent();
-      httpMock.expectOne((r) => r.url === LIST_URL).flush([]);
+      expectAuthenticated(httpMock, (r) => r.url === LIST_URL).flush([]);
 
       const tenMinutesAgo = new Date(Date.now() - 10 * 60000).toISOString();
 
@@ -113,7 +115,7 @@ describe('ValidationQueue', () => {
 
     it('should say "il y a 2h" for a request made 2 hours ago', () => {
       createComponent();
-      httpMock.expectOne((r) => r.url === LIST_URL).flush([]);
+      expectAuthenticated(httpMock, (r) => r.url === LIST_URL).flush([]);
 
       const twoHoursAgo = new Date(Date.now() - 2 * 3600000).toISOString();
 
@@ -122,7 +124,7 @@ describe('ValidationQueue', () => {
 
     it('should say "hier" for a request made 30 hours ago', () => {
       createComponent();
-      httpMock.expectOne((r) => r.url === LIST_URL).flush([]);
+      expectAuthenticated(httpMock, (r) => r.url === LIST_URL).flush([]);
 
       const thirtyHoursAgo = new Date(Date.now() - 30 * 3600000).toISOString();
 
@@ -131,7 +133,7 @@ describe('ValidationQueue', () => {
 
     it('should say "il y a 3 jours" for a request made 3 days ago', () => {
       createComponent();
-      httpMock.expectOne((r) => r.url === LIST_URL).flush([]);
+      expectAuthenticated(httpMock, (r) => r.url === LIST_URL).flush([]);
 
       const threeDaysAgo = new Date(Date.now() - 3 * 24 * 3600000).toISOString();
 
