@@ -12,6 +12,7 @@ import { BackupService } from '../../services/backup.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { decodeQr } from 'organic-protocol';
 import { CitizenBlockchain, TransactionMaker } from 'organic-money/src/index.js';
+import { isDeviceRevoked } from '../../services/server-error.util';
 
 @Component({
   selector: 'app-cash-papers',
@@ -154,6 +155,9 @@ export class CashPapers {
   }
 
   private refusalMessage(err: any): string {
+    if (isDeviceRevoked(err)) {
+      return "Ce compte est actif sur un autre appareil : rien n'a été encaissé."
+    }
     const refusedPaper = this.paper_list.find((paper: any) => this.isRefused(paper))
     if (refusedPaper) {
       return "Le billet de " + refusedPaper.money.length + " dont la signature commence par '" + refusedPaper.signature.slice(0, 8) + "' : "

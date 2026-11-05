@@ -75,7 +75,7 @@ export class ServerConnexionService {
   }
 
   public signLastBlock(user: LoadedAccount, sk: string): Observable<unknown> {
-    const body: SignBlockBody = { block: user.blockchain.lastblock.export() }
+    const body: SignBlockBody = { block: user.blockchain.lastblock.export(), devicetoken: user.devicetoken }
     return this.authenticatedRequest('PUT', user.serverUrl, '/users/sign', user.blockchain.getMyPublicKey(), sk, body)
   }
 

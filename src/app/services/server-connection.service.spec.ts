@@ -142,7 +142,7 @@ describe('ServerConnexionService', () => {
     req.flush({ message: 'ok' })
   });
 
-  it('signLastBlock: PUTs the exported block to /users/sign, request-auth signed, no devicetoken field', () => {
+  it('signLastBlock: PUTs the exported block and the devicetoken to /users/sign, request-auth signed', () => {
     const user = makeLoadedAccount()
     service.signLastBlock(user, TEST_SK).subscribe()
     answerServerInfo()
@@ -150,7 +150,7 @@ describe('ServerConnexionService', () => {
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/sign`)
     expect(req.request.method).toBe('PUT')
     expectRequestAuth(req, 'PUT', '/api/v1/users/sign')
-    expect(JSON.parse(req.request.body)).toEqual({ block: user.blockchain.lastblock.export() })
+    expect(JSON.parse(req.request.body)).toEqual({ block: user.blockchain.lastblock.export(), devicetoken: 'device-1' })
 
     req.flush({ message: 'ok' })
   });
