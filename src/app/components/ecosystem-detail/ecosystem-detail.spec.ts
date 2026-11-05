@@ -12,6 +12,8 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { LocalDatabaseService } from '../../services/local-database.service';
+import { expectAuthenticated } from '../../../testing/request-auth.testing';
+import { REQUEST_AUTH_HEADERS } from 'organic-protocol';
 
 const SERVER_URL = 'https://trifouillis.fr';
 const ECO_PK = 'eco-pk';
@@ -332,7 +334,7 @@ describe('EcosystemDetail', () => {
       expect(dialogSpy.open).toHaveBeenCalledWith(ConfirmDialog, {
         data: { title: 'Distribuer les salaires', message: 'Distribuer les salaires maintenant ?' },
       });
-      httpMock.expectOne(DISTRIBUTE_URL).flush({});
+      expectAuthenticated(httpMock, DISTRIBUTE_URL).flush({});
       httpMock.expectOne(INFO_URL).flush(ECO_INFO);
     });
 
@@ -348,8 +350,8 @@ describe('EcosystemDetail', () => {
     it('should call distributeSalary on the server when confirmed', () => {
       component.distributeSalary();
 
-      const req = httpMock.expectOne(DISTRIBUTE_URL);
-      expect(req.request.body.publickey).toBe('farid-pk');
+      const req = expectAuthenticated(httpMock, DISTRIBUTE_URL);
+      expect(req.request.headers.get(REQUEST_AUTH_HEADERS.publickey)).toBe('farid-pk');
       req.flush({});
       httpMock.expectOne(INFO_URL).flush(ECO_INFO);
     });
@@ -358,7 +360,7 @@ describe('EcosystemDetail', () => {
       spyOn(component, 'displayMessage');
 
       component.distributeSalary();
-      httpMock.expectOne(DISTRIBUTE_URL).flush({});
+      expectAuthenticated(httpMock, DISTRIBUTE_URL).flush({});
       httpMock.expectOne(INFO_URL).flush(ECO_INFO);
 
       expect(component.displayMessage).toHaveBeenCalledWith('Demande de versement de salaires envoyée avec succès.');
@@ -368,7 +370,7 @@ describe('EcosystemDetail', () => {
       spyOn(component, 'displayMessage');
 
       component.distributeSalary();
-      httpMock.expectOne(DISTRIBUTE_URL).flush({ error: 'Only admins can distribute salaries.' }, { status: 403, statusText: 'Forbidden' });
+      expectAuthenticated(httpMock, DISTRIBUTE_URL).flush({ error: 'Only admins can distribute salaries.' }, { status: 403, statusText: 'Forbidden' });
 
       expect(component.displayMessage).toHaveBeenCalledWith('Only admins can distribute salaries.');
     });
@@ -377,7 +379,7 @@ describe('EcosystemDetail', () => {
       spyOn(component, 'displayMessage');
 
       component.distributeSalary();
-      httpMock.expectOne(DISTRIBUTE_URL).error(new ProgressEvent('network error'));
+      expectAuthenticated(httpMock, DISTRIBUTE_URL).error(new ProgressEvent('network error'));
 
       expect(component.displayMessage).toHaveBeenCalledWith('La distribution a échoué — réessayez plus tard.');
     });

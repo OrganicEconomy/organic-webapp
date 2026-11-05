@@ -1,7 +1,10 @@
-import { CitizenBlockchain, hashTimestampAuth, signHash } from 'organic-money/src/index.js';
+import { randomBytes } from 'node:crypto';
+import { CitizenBlockchain, signHash } from 'organic-money/src/index.js';
+import { hashRequestAuth, REQUEST_AUTH_HEADERS } from 'organic-protocol';
 import { SERVER_URL } from '../../playwright.config';
 
-const API = `${SERVER_URL}/api/v1`;
+const API_PATH = '/api/v1';
+const API = `${SERVER_URL}${API_PATH}`;
 
 interface Guardian {
   publickey: string;
@@ -11,6 +14,7 @@ interface Guardian {
 const GUARDIAN_SECRET_KEY = '1'.repeat(64);
 
 let guardian: Promise<Guardian> | undefined;
+let serverPk: Promise<string> | undefined;
 
 export function ensureCoreGuardian(): Promise<Guardian> {
   guardian ??= findOrRegisterGuardian();
@@ -19,13 +23,14 @@ export function ensureCoreGuardian(): Promise<Guardian> {
 
 export async function approveCandidateNamed(name: string): Promise<void> {
   const { publickey, secretKey } = await ensureCoreGuardian();
-  const candidatePk = await findCandidatePk(name, publickey, secretKey);
-  const candidate = await getJson(`/validations/${candidatePk}`, timestampAuth(publickey, secretKey));
+  const guardianAuth = { publickey, secretKey };
+  const candidatePk = await findCandidatePk(name, guardianAuth);
+  const candidate = await send('GET', `/validations/${candidatePk}`, { signedBy: guardianAuth });
   const initBlock = new CitizenBlockchain(candidate.blocks).validateAccount(secretKey);
 
   await send('POST', `/validations/${candidatePk}/approve`, {
-    body: { publickey, block: initBlock.export() },
-    headers: { 'x-signature': signHash(initBlock.hash(), secretKey) },
+    body: { block: initBlock.export() },
+    signedBy: guardianAuth,
   });
 }
 
@@ -80,43 +85,49 @@ async function register(chain: CitizenBlockchain, publickey: string, name: strin
   return registered.status;
 }
 
-async function findCandidatePk(name: string, publickey: string, secretKey: string): Promise<string> {
-  const candidates: { pk: string; name: string }[] = await getJson(
-    '/validations',
-    timestampAuth(publickey, secretKey),
-  );
+async function findCandidatePk(name: string, guardianAuth: Guardian): Promise<string> {
+  const candidates: { pk: string; name: string }[] = await send('GET', '/validations', { signedBy: guardianAuth });
   const candidate = candidates.find((entry) => entry.name === name);
   if (!candidate) throw new Error(`No pending candidate named ${name}`);
   return candidate.pk;
 }
 
-function timestampAuth(publickey: string, secretKey: string) {
-  const timestamp = String(Math.floor(Date.now() / 1000));
-  return {
-    query: { publickey, timestamp },
-    headers: { 'x-signature': signHash(hashTimestampAuth(publickey, timestamp), secretKey) },
-  };
-}
-
-async function getJson(
-  path: string,
-  { query, headers }: { query: Record<string, string>; headers: Record<string, string> },
-) {
-  const url = `${API}${path}?${new URLSearchParams(query)}`;
-  return parseResponse(await fetch(url, { headers }));
-}
-
 async function send(
   method: string,
   path: string,
-  { body, headers = {} }: { body: unknown; headers?: Record<string, string> },
+  { body, signedBy }: { body?: unknown; signedBy?: Guardian },
 ) {
+  const json = body === undefined ? '' : JSON.stringify(body);
+  const authHeaders = signedBy ? await requestAuthHeaders(method, `${API_PATH}${path}`, json, signedBy) : {};
   const response = await fetch(`${API}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json', ...headers },
-    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json', ...authHeaders },
+    body: body === undefined ? undefined : json,
   });
   return parseResponse(response);
+}
+
+async function requestAuthHeaders(method: string, path: string, json: string, { publickey, secretKey }: Guardian) {
+  const fields = {
+    method,
+    path,
+    timestamp: Math.floor(Date.now() / 1000),
+    nonce: randomBytes(16).toString('hex'),
+    body: json,
+    serverPk: await knownServerPk(),
+    publickey,
+  };
+  return {
+    [REQUEST_AUTH_HEADERS.publickey]: publickey,
+    [REQUEST_AUTH_HEADERS.timestamp]: String(fields.timestamp),
+    [REQUEST_AUTH_HEADERS.nonce]: fields.nonce,
+    [REQUEST_AUTH_HEADERS.signature]: signHash(hashRequestAuth(fields), secretKey),
+  };
+}
+
+function knownServerPk(): Promise<string> {
+  serverPk ??= fetch(`${API}/info`).then(parseResponse).then((info) => info.serverPk);
+  return serverPk;
 }
 
 async function parseResponse(response: Response) {

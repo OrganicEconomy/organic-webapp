@@ -6,17 +6,17 @@ import type {
   EcosystemInfoResponse, ValidationStatusResponse, MyValidationResponse, MyEcosystemsResponse, EcosystemListResponse,
   EcosystemCreateResponse, ValidationListResponse, ValidationDetailResponse,
 } from 'organic-protocol';
+import { hashRequestAuth, REQUEST_AUTH_HEADERS } from 'organic-protocol';
+import type { TestRequest } from '@angular/common/http/testing';
 import { BlockMaker } from 'organic-money/src/index.js';
 import { verifySignature } from 'organic-money/src/crypto.js';
 
 import { ServerConnexionService } from './server-connection.service';
 
 const SERVER_URL = 'https://trifouillis.fr'
-// A real signed block, taken from organic-money's own test fixtures — needed because
-// saveLastBlock/signLastBlock call block.merkle()/block.hash() on it, which only work
-// on a real BlockMaker.make() instance.
 const TEST_SK = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f'
 const TEST_PK = '02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3'
+const SERVER_PK = '03e7e050c53dcaba20afd83512b355cd0b966fa4af726c1d6cee75b2c11a29f189'
 const ECO_PK = 'eco-a1b2c3'
 const CANDIDATE_PK = 'candidate-d4e5f6'
 
@@ -35,6 +35,26 @@ describe('ServerConnexionService', () => {
   afterEach(() => {
     httpMock.verify();
   });
+
+  function answerServerInfo(): void {
+    httpMock.expectOne(`${SERVER_URL}/api/v1/info`)
+      .flush({ protocolVersion: 1, apiVersion: '1', name: 'Serveur de Trifouillis', serverPk: SERVER_PK, corePk: null, stats: { users: 1 } })
+  }
+
+  function expectRequestAuth(req: TestRequest, method: string, path: string): void {
+    const headers = req.request.headers
+    expect(headers.get(REQUEST_AUTH_HEADERS.publickey)).toBe(TEST_PK)
+    const signedRequest = hashRequestAuth({
+      method,
+      path,
+      timestamp: Number(headers.get(REQUEST_AUTH_HEADERS.timestamp)),
+      nonce: headers.get(REQUEST_AUTH_HEADERS.nonce)!,
+      body: req.request.body ?? '',
+      serverPk: SERVER_PK,
+      publickey: TEST_PK,
+    })
+    expect(verifySignature(signedRequest, headers.get(REQUEST_AUTH_HEADERS.signature)!, TEST_PK)).toBeTrue()
+  }
 
   function makeBlock(): any {
     return BlockMaker.make({
@@ -109,51 +129,52 @@ describe('ServerConnexionService', () => {
     expect(result?.devicetoken).toBe('dt-2')
   });
 
-  it('saveLastBlock: PUTs with a valid x-signature header and the exported block', () => {
+  it('saveLastBlock: PUTs the exported block and the devicetoken, request-auth signed', () => {
     const user = makeLoadedAccount()
     service.saveLastBlock(user, TEST_SK).subscribe()
+    answerServerInfo()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/save`)
     expect(req.request.method).toBe('PUT')
-    expect(req.request.headers.has('x-signature')).toBeTrue()
-    expect(req.request.body.publickey).toBe(TEST_PK)
-    expect(req.request.body.devicetoken).toBe('device-1')
-
-    // x-signature proves the *request* comes from the block's owner — it is
-    // distinct from the block's own .h field, which stays empty for an open
-    // (not yet closed/signed) block; that's the normal case for a save.
-    const reconstructed = BlockMaker.make(req.request.body.block)
-    reconstructed.merkle()
-    const signature = req.request.headers.get('x-signature')
-    expect(signature).toBeTruthy()
-    expect(verifySignature(reconstructed.hash(), signature!, TEST_PK)).toBeTrue()
+    expectRequestAuth(req, 'PUT', '/api/v1/users/save')
+    expect(JSON.parse(req.request.body)).toEqual({ block: user.blockchain.lastblock.export(), devicetoken: 'device-1' })
 
     req.flush({ message: 'ok' })
   });
 
-  it('signLastBlock: PUTs to /users/sign with a valid x-signature, no devicetoken field', () => {
+  it('signLastBlock: PUTs the exported block to /users/sign, request-auth signed, no devicetoken field', () => {
     const user = makeLoadedAccount()
     service.signLastBlock(user, TEST_SK).subscribe()
+    answerServerInfo()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/sign`)
     expect(req.request.method).toBe('PUT')
-    expect(req.request.headers.has('x-signature')).toBeTrue()
-    expect(req.request.body.devicetoken).toBeUndefined()
+    expectRequestAuth(req, 'PUT', '/api/v1/users/sign')
+    expect(JSON.parse(req.request.body)).toEqual({ block: user.blockchain.lastblock.export() })
 
     req.flush({ message: 'ok' })
   });
 
-  it('changePassword: POSTs to /users/password with a timestamp-auth x-signature', () => {
+  it('changePassword: POSTs to /users/password, request-auth signed over the exact body sent', () => {
     service.changePassword(SERVER_URL, TEST_PK, 'newpw', 'new-encrypted-blob', TEST_SK).subscribe()
+    answerServerInfo()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/password`)
     expect(req.request.method).toBe('POST')
-    expect(req.request.headers.has('x-signature')).toBeTrue()
-    expect(req.request.body.newpassword).toBe('newpw')
-    expect(req.request.body.secretkey).toBe('new-encrypted-blob')
-    expect(typeof req.request.body.timestamp).toBe('number')
+    expectRequestAuth(req, 'POST', '/api/v1/users/password')
+    expect(JSON.parse(req.request.body)).toEqual({ newpassword: 'newpw', secretkey: 'new-encrypted-blob' })
 
     req.flush({ message: 'ok' })
+  });
+
+  it('should read the key of a server once, however many authenticated requests it receives', () => {
+    service.getTransactionList(SERVER_URL, TEST_PK, TEST_SK).subscribe()
+    answerServerInfo()
+    httpMock.expectOne(`${SERVER_URL}/api/v1/tx/list`).flush([])
+
+    service.getValidationList(SERVER_URL, TEST_PK, TEST_SK).subscribe()
+    httpMock.expectNone(`${SERVER_URL}/api/v1/info`)
+    httpMock.expectOne(`${SERVER_URL}/api/v1/validations`).flush([])
   });
 
   it('sendTransaction: POSTs { tx } to /tx/send', () => {
@@ -166,13 +187,13 @@ describe('ServerConnexionService', () => {
     req.flush({ message: 'ok' })
   });
 
-  it('getTransactionList: GETs /tx/list with a timestamp-auth x-signature', () => {
+  it('getTransactionList: GETs /tx/list, request-auth signed, without any query param', () => {
     service.getTransactionList(SERVER_URL, TEST_PK, TEST_SK).subscribe()
+    answerServerInfo()
 
-    const req = httpMock.expectOne((r) => r.url === `${SERVER_URL}/api/v1/tx/list`)
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/tx/list`)
     expect(req.request.method).toBe('GET')
-    expect(req.request.headers.has('x-signature')).toBeTrue()
-    expect(req.request.params.get('publickey')).toBe(TEST_PK)
+    expectRequestAuth(req, 'GET', '/api/v1/tx/list')
     req.flush([])
   });
 
@@ -224,14 +245,14 @@ describe('ServerConnexionService', () => {
   });
 
   describe('getMyValidation', () => {
-    it('should GET /validations/mine with a timestamp-auth x-signature', () => {
+    it('should GET /validations/mine, request-auth signed', () => {
       let result: MyValidationResponse | undefined
       service.getMyValidation(SERVER_URL, TEST_PK, TEST_SK).subscribe((res) => (result = res))
+      answerServerInfo()
 
-      const req = httpMock.expectOne((r) => r.url === `${SERVER_URL}/api/v1/validations/mine`)
+      const req = httpMock.expectOne(`${SERVER_URL}/api/v1/validations/mine`)
       expect(req.request.method).toBe('GET')
-      expect(req.request.headers.has('x-signature')).toBeTrue()
-      expect(req.request.params.get('publickey')).toBe(TEST_PK)
+      expectRequestAuth(req, 'GET', '/api/v1/validations/mine')
       req.flush({ status: 'active', blocks: [] })
 
       expect(result).toEqual({ status: 'active', blocks: [] })
@@ -284,97 +305,88 @@ describe('ServerConnexionService', () => {
     req.flush({ message: 'ok' })
   });
 
-  it('distributeSalary: POSTs to /ecosystems/:pk/distribute with a timestamp-auth x-signature', () => {
+  it('distributeSalary: POSTs to /ecosystems/:pk/distribute without body, request-auth signed', () => {
     service.distributeSalary(SERVER_URL, ECO_PK, TEST_PK, TEST_SK).subscribe()
+    answerServerInfo()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/ecosystems/${ECO_PK}/distribute`)
     expect(req.request.method).toBe('POST')
-    expect(req.request.headers.has('x-signature')).toBeTrue()
-    expect(req.request.body.publickey).toBe(TEST_PK)
-    expect(typeof req.request.body.timestamp).toBe('number')
+    expect(req.request.body).toBeNull()
+    expectRequestAuth(req, 'POST', `/api/v1/ecosystems/${ECO_PK}/distribute`)
     req.flush({ message: 'ok' })
   });
 
-  it('createEcosystem: POSTs to /ecosystems with founderPk (not publickey) and a timestamp-auth x-signature', () => {
+  it('createEcosystem: POSTs the ecosystem fields to /ecosystems, request-auth signed by the founder', () => {
     let result: EcosystemCreateResponse | undefined
     service.createEcosystem(SERVER_URL, TEST_PK, TEST_SK, 'Boulangerie associative', 'Pain bio', 48.85, 2.35).subscribe((res) => (result = res))
+    answerServerInfo()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/ecosystems`)
     expect(req.request.method).toBe('POST')
-    expect(req.request.headers.has('x-signature')).toBeTrue()
-    expect(req.request.body.founderPk).toBe(TEST_PK)
-    expect(req.request.body.publickey).toBeUndefined()
-    expect(typeof req.request.body.timestamp).toBe('number')
-    expect(req.request.body.name).toBe('Boulangerie associative')
-    expect(req.request.body.description).toBe('Pain bio')
+    expectRequestAuth(req, 'POST', '/api/v1/ecosystems')
+    expect(JSON.parse(req.request.body)).toEqual({ name: 'Boulangerie associative', description: 'Pain bio', lat: 48.85, lng: 2.35 })
     req.flush({ publickey: ECO_PK, blocks: [], iscore: false })
 
     expect(result?.publickey).toBe(ECO_PK)
   });
 
-  it('updateEcosystemMeta: PUTs to /ecosystems/:pk/meta with a timestamp-auth x-signature', () => {
+  it('updateEcosystemMeta: PUTs the updates to /ecosystems/:pk/meta, request-auth signed', () => {
     service.updateEcosystemMeta(SERVER_URL, ECO_PK, TEST_PK, TEST_SK, { name: 'Nouveau nom' }).subscribe()
+    answerServerInfo()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/ecosystems/${ECO_PK}/meta`)
     expect(req.request.method).toBe('PUT')
-    expect(req.request.headers.has('x-signature')).toBeTrue()
-    expect(req.request.body.publickey).toBe(TEST_PK)
-    expect(req.request.body.name).toBe('Nouveau nom')
-    expect(typeof req.request.body.timestamp).toBe('number')
+    expectRequestAuth(req, 'PUT', `/api/v1/ecosystems/${ECO_PK}/meta`)
+    expect(JSON.parse(req.request.body)).toEqual({ name: 'Nouveau nom' })
     req.flush({ message: 'ok' })
   });
 
-  it('getValidationList: GETs /validations with a timestamp-auth x-signature', () => {
+  it('getValidationList: GETs /validations, request-auth signed', () => {
     let result: ValidationListResponse | undefined
     service.getValidationList(SERVER_URL, TEST_PK, TEST_SK).subscribe((res) => (result = res))
+    answerServerInfo()
 
-    const req = httpMock.expectOne((r) => r.url === `${SERVER_URL}/api/v1/validations`)
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/validations`)
     expect(req.request.method).toBe('GET')
-    expect(req.request.headers.has('x-signature')).toBeTrue()
-    expect(req.request.params.get('publickey')).toBe(TEST_PK)
+    expectRequestAuth(req, 'GET', '/api/v1/validations')
     req.flush([{ pk: CANDIDATE_PK, name: 'Bob', requestedAt: '2026-08-01T00:00:00.000Z' }])
 
     expect(result?.length).toBe(1)
   });
 
-  it('getValidationDetail: GETs /validations/:pk with a timestamp-auth x-signature', () => {
+  it('getValidationDetail: GETs /validations/:pk, request-auth signed', () => {
     let result: ValidationDetailResponse | undefined
     service.getValidationDetail(SERVER_URL, CANDIDATE_PK, TEST_PK, TEST_SK).subscribe((res) => (result = res))
+    answerServerInfo()
 
-    const req = httpMock.expectOne((r) => r.url === `${SERVER_URL}/api/v1/validations/${CANDIDATE_PK}`)
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/validations/${CANDIDATE_PK}`)
     expect(req.request.method).toBe('GET')
-    expect(req.request.headers.has('x-signature')).toBeTrue()
-    expect(req.request.params.get('publickey')).toBe(TEST_PK)
+    expectRequestAuth(req, 'GET', `/api/v1/validations/${CANDIDATE_PK}`)
     req.flush({ name: 'Bob', blocks: [] })
 
     expect(result?.name).toBe('Bob')
   });
 
-  it('rejectValidation: POSTs to /validations/:pk/reject with a timestamp-auth x-signature and an optional reason', () => {
+  it('rejectValidation: POSTs the optional reason to /validations/:pk/reject, request-auth signed', () => {
     service.rejectValidation(SERVER_URL, CANDIDATE_PK, TEST_PK, TEST_SK, 'Compte suspect').subscribe()
+    answerServerInfo()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/validations/${CANDIDATE_PK}/reject`)
     expect(req.request.method).toBe('POST')
-    expect(req.request.headers.has('x-signature')).toBeTrue()
-    expect(req.request.body.publickey).toBe(TEST_PK)
-    expect(req.request.body.reason).toBe('Compte suspect')
-    expect(typeof req.request.body.timestamp).toBe('number')
+    expectRequestAuth(req, 'POST', `/api/v1/validations/${CANDIDATE_PK}/reject`)
+    expect(JSON.parse(req.request.body)).toEqual({ reason: 'Compte suspect' })
     req.flush({ message: 'ok' })
   });
 
-  it('approveValidation: POSTs to /validations/:pk/approve with a valid x-signature over the block', () => {
+  it('approveValidation: POSTs the exported block to /validations/:pk/approve, request-auth signed', () => {
     const block = makeBlock()
     service.approveValidation(SERVER_URL, CANDIDATE_PK, TEST_PK, TEST_SK, block).subscribe()
+    answerServerInfo()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/validations/${CANDIDATE_PK}/approve`)
     expect(req.request.method).toBe('POST')
-    expect(req.request.body.publickey).toBe(TEST_PK)
-
-    const reconstructed = BlockMaker.make(req.request.body.block)
-    reconstructed.merkle()
-    const signature = req.request.headers.get('x-signature')
-    expect(signature).toBeTruthy()
-    expect(verifySignature(reconstructed.hash(), signature!, TEST_PK)).toBeTrue()
+    expectRequestAuth(req, 'POST', `/api/v1/validations/${CANDIDATE_PK}/approve`)
+    expect(JSON.parse(req.request.body)).toEqual({ block: block.export() })
 
     req.flush({ message: 'ok' })
   });

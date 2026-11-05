@@ -1,7 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { signHash, hashTimestampAuth } from 'organic-money/src/crypto.js';
+import { Observable, map, shareReplay, switchMap } from 'rxjs';
+import { signHash } from 'organic-money/src/crypto.js';
+import { hashRequestAuth, REQUEST_AUTH_HEADERS, type RequestAuthFields } from 'organic-protocol';
 import type {
   InfoResponse, ServersResponse,
   RegisterBody, RegisterResponse,
@@ -13,7 +14,7 @@ import type {
   IsCashedResponse,
   TxWire,
   EcosystemInfoResponse, ValidationStatusResponse, MyValidationResponse, MyEcosystemsResponse, EcosystemListResponse,
-  EcosystemTxBody, EcosystemDistributeBody,
+  EcosystemTxBody,
   EcosystemCreateBody, EcosystemCreateResponse, EcosystemMetaUpdateBody,
   ValidationListResponse, ValidationDetailResponse, ValidationRejectBody, ValidationApproveBody,
 } from 'organic-protocol';
@@ -21,21 +22,28 @@ import type { LoadedAccount } from '../models/account';
 
 const API_PATH = '/api/v1'
 
-function blockAuthHeaders(block: any, sk: string): HttpHeaders {
-  block.merkle()
-  return new HttpHeaders({ 'x-signature': signHash(block.hash(), sk) })
+type AuthenticatedMethod = 'GET' | 'POST' | 'PUT'
+
+function requestAuthHeaders(fields: RequestAuthFields, sk: string): HttpHeaders {
+  return new HttpHeaders({
+    'Content-Type': 'application/json',
+    [REQUEST_AUTH_HEADERS.publickey]: fields.publickey,
+    [REQUEST_AUTH_HEADERS.timestamp]: String(fields.timestamp),
+    [REQUEST_AUTH_HEADERS.nonce]: fields.nonce,
+    [REQUEST_AUTH_HEADERS.signature]: signHash(hashRequestAuth(fields), sk),
+  })
 }
 
-function timestampAuthHeaders(publickey: string, sk: string): { headers: HttpHeaders; timestamp: number } {
-  const timestamp = Math.floor(Date.now() / 1000)
-  const headers = new HttpHeaders({ 'x-signature': signHash(hashTimestampAuth(publickey, timestamp), sk) })
-  return { headers, timestamp }
+function randomNonce(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
 @Injectable({ providedIn: 'root' })
 export class ServerConnexionService {
 
   private http = inject(HttpClient);
+  private serverPks = new Map<string, Observable<string>>();
 
   /** Public identity card of a server — used by server-selection to verify a URL before use. */
   public getServerInfo(serverUrl: string): Observable<InfoResponse> {
@@ -58,9 +66,8 @@ export class ServerConnexionService {
 
   /** Saves one specific block — not necessarily the current one, see BackupService.blocksNeedingSync. */
   public saveBlock(user: LoadedAccount, sk: string, block: any): Observable<unknown> {
-    const headers = blockAuthHeaders(block, sk)
-    const body: SaveBlockBody = { publickey: user.blockchain.getMyPublicKey(), block: block.export(), devicetoken: user.devicetoken }
-    return this.http.put(`${user.serverUrl}${API_PATH}/users/save`, body, { headers })
+    const body: SaveBlockBody = { block: block.export(), devicetoken: user.devicetoken }
+    return this.authenticatedRequest('PUT', user.serverUrl, '/users/save', user.blockchain.getMyPublicKey(), sk, body)
   }
 
   public saveLastBlock(user: LoadedAccount, sk: string): Observable<unknown> {
@@ -68,16 +75,13 @@ export class ServerConnexionService {
   }
 
   public signLastBlock(user: LoadedAccount, sk: string): Observable<unknown> {
-    const block = user.blockchain.lastblock
-    const headers = blockAuthHeaders(block, sk)
-    const body: SignBlockBody = { publickey: user.blockchain.getMyPublicKey(), block: block.export() }
-    return this.http.put(`${user.serverUrl}${API_PATH}/users/sign`, body, { headers })
+    const body: SignBlockBody = { block: user.blockchain.lastblock.export() }
+    return this.authenticatedRequest('PUT', user.serverUrl, '/users/sign', user.blockchain.getMyPublicKey(), sk, body)
   }
 
   public changePassword(serverUrl: string, publickey: string, newpassword: string, secretkey: string, sk: string): Observable<unknown> {
-    const { headers, timestamp } = timestampAuthHeaders(publickey, sk)
-    const body: PasswordChangeBody = { publickey, timestamp, newpassword, secretkey }
-    return this.http.post(`${serverUrl}${API_PATH}/users/password`, body, { headers })
+    const body: PasswordChangeBody = { newpassword, secretkey }
+    return this.authenticatedRequest('POST', serverUrl, '/users/password', publickey, sk, body)
   }
 
   public sendTransaction(serverUrl: string, tx: TxWire): Observable<unknown> {
@@ -86,11 +90,7 @@ export class ServerConnexionService {
   }
 
   public getTransactionList(serverUrl: string, publickey: string, sk: string): Observable<TxListResponse> {
-    const { headers, timestamp } = timestampAuthHeaders(publickey, sk)
-    return this.http.get<TxListResponse>(`${serverUrl}${API_PATH}/tx/list`, {
-      headers,
-      params: { publickey, timestamp },
-    })
+    return this.authenticatedRequest<TxListResponse>('GET', serverUrl, '/tx/list', publickey, sk)
   }
 
   public isPaperAlreadyCashed(serverUrl: string, hash: string): Observable<IsCashedResponse> {
@@ -114,11 +114,7 @@ export class ServerConnexionService {
   }
 
   public getMyValidation(serverUrl: string, publickey: string, sk: string): Observable<MyValidationResponse> {
-    const { headers, timestamp } = timestampAuthHeaders(publickey, sk)
-    return this.http.get<MyValidationResponse>(`${serverUrl}${API_PATH}/validations/mine`, {
-      headers,
-      params: { publickey, timestamp },
-    })
+    return this.authenticatedRequest<MyValidationResponse>('GET', serverUrl, '/validations/mine', publickey, sk)
   }
 
   public getMyEcosystems(serverUrl: string, publickey: string): Observable<MyEcosystemsResponse> {
@@ -141,48 +137,55 @@ export class ServerConnexionService {
   }
 
   public distributeSalary(serverUrl: string, ecosystemPk: string, publickey: string, sk: string): Observable<unknown> {
-    const { headers, timestamp } = timestampAuthHeaders(publickey, sk)
-    const body: EcosystemDistributeBody = { publickey, timestamp }
-    return this.http.post(`${serverUrl}${API_PATH}/ecosystems/${ecosystemPk}/distribute`, body, { headers })
+    return this.authenticatedRequest('POST', serverUrl, `/ecosystems/${ecosystemPk}/distribute`, publickey, sk)
   }
 
   public createEcosystem(serverUrl: string, founderPk: string, sk: string, name: string, description?: string, lat?: number, lng?: number): Observable<EcosystemCreateResponse> {
-    const { headers, timestamp } = timestampAuthHeaders(founderPk, sk)
-    const body: EcosystemCreateBody = { founderPk, timestamp, name, description, lat, lng }
-    return this.http.post<EcosystemCreateResponse>(`${serverUrl}${API_PATH}/ecosystems`, body, { headers })
+    const body: EcosystemCreateBody = { name, description, lat, lng }
+    return this.authenticatedRequest<EcosystemCreateResponse>('POST', serverUrl, '/ecosystems', founderPk, sk, body)
   }
 
   public updateEcosystemMeta(serverUrl: string, ecosystemPk: string, publickey: string, sk: string, updates: { name?: string; description?: string; lat?: number; lng?: number }): Observable<unknown> {
-    const { headers, timestamp } = timestampAuthHeaders(publickey, sk)
-    const body: EcosystemMetaUpdateBody = { publickey, timestamp, ...updates }
-    return this.http.put(`${serverUrl}${API_PATH}/ecosystems/${ecosystemPk}/meta`, body, { headers })
+    const body: EcosystemMetaUpdateBody = { ...updates }
+    return this.authenticatedRequest('PUT', serverUrl, `/ecosystems/${ecosystemPk}/meta`, publickey, sk, body)
   }
 
   public getValidationList(serverUrl: string, publickey: string, sk: string): Observable<ValidationListResponse> {
-    const { headers, timestamp } = timestampAuthHeaders(publickey, sk)
-    return this.http.get<ValidationListResponse>(`${serverUrl}${API_PATH}/validations`, {
-      headers,
-      params: { publickey, timestamp },
-    })
+    return this.authenticatedRequest<ValidationListResponse>('GET', serverUrl, '/validations', publickey, sk)
   }
 
   public getValidationDetail(serverUrl: string, candidatePk: string, publickey: string, sk: string): Observable<ValidationDetailResponse> {
-    const { headers, timestamp } = timestampAuthHeaders(publickey, sk)
-    return this.http.get<ValidationDetailResponse>(`${serverUrl}${API_PATH}/validations/${candidatePk}`, {
-      headers,
-      params: { publickey, timestamp },
-    })
+    return this.authenticatedRequest<ValidationDetailResponse>('GET', serverUrl, `/validations/${candidatePk}`, publickey, sk)
   }
 
   public rejectValidation(serverUrl: string, candidatePk: string, publickey: string, sk: string, reason?: string): Observable<unknown> {
-    const { headers, timestamp } = timestampAuthHeaders(publickey, sk)
-    const body: ValidationRejectBody = { publickey, timestamp, reason }
-    return this.http.post(`${serverUrl}${API_PATH}/validations/${candidatePk}/reject`, body, { headers })
+    const body: ValidationRejectBody = { reason }
+    return this.authenticatedRequest('POST', serverUrl, `/validations/${candidatePk}/reject`, publickey, sk, body)
   }
 
   public approveValidation(serverUrl: string, candidatePk: string, publickey: string, sk: string, block: any): Observable<unknown> {
-    const headers = blockAuthHeaders(block, sk)
-    const body: ValidationApproveBody = { publickey, block: block.export() }
-    return this.http.post(`${serverUrl}${API_PATH}/validations/${candidatePk}/approve`, body, { headers })
+    const body: ValidationApproveBody = { block: block.export() }
+    return this.authenticatedRequest('POST', serverUrl, `/validations/${candidatePk}/approve`, publickey, sk, body)
+  }
+
+  private authenticatedRequest<T>(method: AuthenticatedMethod, serverUrl: string, route: string, publickey: string, sk: string, body?: object): Observable<T> {
+    const path = `${API_PATH}${route}`
+    const json = body === undefined ? '' : JSON.stringify(body)
+    return this.serverPkOf(serverUrl).pipe(
+      switchMap((serverPk) => {
+        const fields = { method, path, timestamp: Math.floor(Date.now() / 1000), nonce: randomNonce(), body: json, serverPk, publickey }
+        return this.http.request<T>(method, `${serverUrl}${path}`, {
+          body: body === undefined ? undefined : json,
+          headers: requestAuthHeaders(fields, sk),
+        })
+      }),
+    )
+  }
+
+  private serverPkOf(serverUrl: string): Observable<string> {
+    if (!this.serverPks.has(serverUrl)) {
+      this.serverPks.set(serverUrl, this.getServerInfo(serverUrl).pipe(map((info) => info.serverPk), shareReplay(1)))
+    }
+    return this.serverPks.get(serverUrl)!
   }
 }
