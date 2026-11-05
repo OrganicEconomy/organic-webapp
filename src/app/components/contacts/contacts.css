@@ -30,6 +30,20 @@ table {
     width: 100%;
 }
 
+.search-field {
+    width: 100%;
+}
+
+.table-scroll {
+    max-height: 55vh;
+    overflow-y: auto;
+}
+
+.no-match {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+}
+
 .pk-cell {
     font-family: monospace;
     font-size: 0.85rem;

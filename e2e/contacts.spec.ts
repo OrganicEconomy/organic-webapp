@@ -1,6 +1,6 @@
 import { expect, Page, test } from '@playwright/test';
 import { SERVER_URL } from '../playwright.config';
-import { ensureCoreGuardian } from './support/core-guardian';
+import { ensureCoreGuardian, registerPendingCitizen } from './support/core-guardian';
 import { pointCameraAtContactCard } from './support/fake-camera';
 import { signUpApprovedCitizen } from './support/signup';
 
@@ -46,5 +46,24 @@ test.describe('add contact', () => {
 
     await page.getByRole('button', { name: 'Enregistrer' }).click();
     await expect(page.getByRole('cell', { name: 'Gardien', exact: true })).toBeVisible();
+  });
+});
+
+test.describe('contacts', () => {
+  test('should list the contacts by name and filter them with the search', async ({ page }) => {
+    const guardian = await ensureCoreGuardian();
+    const zoePk = await registerPendingCitizen('Zoé Garnier');
+    await signUpApprovedCitizen(page, 'Gaby Roux');
+    await addContact(page, 'Zoé', zoePk);
+    await addContact(page, 'Gardien', guardian.publickey);
+
+    const nameCells = page.locator('td.mat-column-name');
+    await expect(nameCells).toHaveText(['Gardien', 'Zoé']);
+
+    await page.getByLabel('Rechercher').fill('zoe');
+    await expect(nameCells).toHaveText(['Zoé']);
+
+    await page.getByLabel('Rechercher').fill('xavier');
+    await expect(page.getByText('Aucun contact ne correspond à « xavier ».')).toBeVisible();
   });
 });
