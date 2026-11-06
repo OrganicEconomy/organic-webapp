@@ -66,19 +66,48 @@ describe('Contacts', () => {
   describe('exportContacts', () => {
     afterEach(() => jasmine.clock().uninstall());
 
-    it('should download a file named after the user and the day', () => {
-      account.contacts = ['fanny'].map(contactNamed);
+    function exportedFileName(): string {
       createComponent();
       jasmine.clock().install();
-      jasmine.clock().mockDate(new Date(2026, 10, 6, 23, 30));
+      jasmine.clock().mockDate(new Date(2026, 10, 6, 0, 30));
       let downloadedFileName = '';
       spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) {
         downloadedFileName = this.download;
       });
-
       component.exportContacts();
+      return downloadedFileName;
+    }
 
-      expect(downloadedFileName).toBe('contacts-hugo-menard-2026-11-06.json');
+    it('should download a file named after the user and the day', () => {
+      expect(exportedFileName()).toBe('contacts-hugo-menard-2026-11-06.json');
+    });
+
+    it('should keep only the letters and digits of the name in the file name', () => {
+      account.name = ' Jean-Luc ! ';
+
+      expect(exportedFileName()).toBe('contacts-jean-luc-2026-11-06.json');
+    });
+
+    it('should keep the letters of any alphabet in the file name', () => {
+      account.name = 'Ζωή Cœur';
+
+      expect(exportedFileName()).toBe('contacts-ζωη-cœur-2026-11-06.json');
+    });
+
+    it('should name the file after the day alone when the name has no letter', () => {
+      account.name = '';
+
+      expect(exportedFileName()).toBe('contacts-2026-11-06.json');
+    });
+
+    it('should keep the file available for a minute, for the phones that download it late', () => {
+      const revokeObjectURL = spyOn(URL, 'revokeObjectURL');
+      exportedFileName();
+
+      jasmine.clock().tick(59_999);
+      expect(revokeObjectURL).not.toHaveBeenCalled();
+      jasmine.clock().tick(1);
+      expect(revokeObjectURL).toHaveBeenCalled();
     });
   });
 
@@ -99,6 +128,13 @@ describe('Contacts', () => {
       createComponent();
 
       expect(fixture.nativeElement.querySelector('.export-contacts').disabled).toBeTrue();
+    });
+
+    it('should offer to export the contacts once there is one', () => {
+      account.contacts = ['fanny'].map(contactNamed);
+      createComponent();
+
+      expect(fixture.nativeElement.querySelector('.export-contacts').disabled).toBeFalse();
     });
   });
 });

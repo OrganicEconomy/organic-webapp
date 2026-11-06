@@ -33,7 +33,7 @@
             <a mat-stroked-button routerLink="/addcontact">
                 <i class="bi bi-person-plus"></i> Nouveau contact
             </a>
-            <button mat-stroked-button type="button" class="export-contacts" (click)="exportContacts()" [disabled]="user.contacts.length === 0">
+            <button mat-stroked-button type="button" class="export-contacts" (click)="exportContacts()" [disabled]="hasNoContacts()">
                 <i class="bi bi-download"></i> Exporter mes contacts
             </button>
         </div>

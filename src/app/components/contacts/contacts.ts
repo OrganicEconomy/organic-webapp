@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import type { Contact } from '../../models/account';
 import { contactsFile } from '../../utils/contacts-file.util';
+import { offerToDownload } from '../../utils/download.util';
 
 @Component({
   selector: 'app-contacts',
@@ -41,13 +42,12 @@ export class Contacts {
     this.user.contacts.filter((contact: Contact) => nameContains(contact, this.search())).sort(byName),
   )
 
+  hasNoContacts(): boolean {
+    return this.user.contacts.length === 0
+  }
+
   exportContacts(): void {
-    const file = new Blob([contactsFile(this.user.contacts)], { type: 'application/json' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(file)
-    link.download = contactsFileName(this.user.name, new Date())
-    link.click()
-    URL.revokeObjectURL(link.href)
+    offerToDownload(contactsFile(this.user.contacts), contactsFileName(this.user.name, new Date()), 'application/json')
   }
 
   truncate(pk: string): string {
@@ -57,11 +57,11 @@ export class Contacts {
 }
 
 function contactsFileName(userName: string, day: Date): string {
-  return `contacts-${slug(userName)}-${isoDay(day)}.json`
+  return ['contacts', ...wordsOf(userName), isoDay(day)].join('-') + '.json'
 }
 
-function slug(text: string): string {
-  return comparable(text).replace(/[^a-z0-9]+/g, '-')
+function wordsOf(text: string): string[] {
+  return comparable(text).split(/[^\p{L}\p{N}]+/u).filter(Boolean)
 }
 
 function isoDay(day: Date): string {

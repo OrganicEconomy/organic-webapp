@@ -119,9 +119,9 @@ test.describe('contacts file', () => {
 
     const download = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Exporter mes contacts' }).click();
-    const file = await (await download).path();
+    const filePath = await (await download).path();
 
-    expect(JSON.parse(readFileSync(file, 'utf-8')).contacts).toEqual([
+    expect(JSON.parse(readFileSync(filePath, 'utf-8')).contacts).toEqual([
       { name: 'Gardien', pk: guardian.publickey, url: SERVER_URL, type: 'citizen' },
     ]);
   });

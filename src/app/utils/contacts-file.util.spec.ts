@@ -1,3 +1,4 @@
+import type { Contact } from '../models/account';
 import { contactsFile } from './contacts-file.util';
 
 describe('contactsFile', () => {
@@ -12,5 +13,11 @@ describe('contactsFile', () => {
       version: 1,
       contacts,
     });
+  });
+
+  it('should leave out any other field of the contacts', () => {
+    const contact = { name: 'Zoé', pk: 'pk-zoe', url: 'https://trifouillis.fr', type: 'citizen', balance: 3 };
+
+    expect(JSON.parse(contactsFile([contact as Contact])).contacts[0].balance).toBeUndefined();
   });
 });
