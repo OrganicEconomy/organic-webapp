@@ -11,10 +11,10 @@ function contactNamed(name: string) {
 describe('Contacts', () => {
   let component: Contacts;
   let fixture: ComponentFixture<Contacts>;
-  let account: { contacts: ReturnType<typeof contactNamed>[] };
+  let account: { name: string; contacts: ReturnType<typeof contactNamed>[] };
 
   beforeEach(async () => {
-    account = { contacts: [] };
+    account = { name: 'Hugo Ménard', contacts: [] };
     await TestBed.configureTestingModule({
       imports: [Contacts],
       providers: [
@@ -63,6 +63,25 @@ describe('Contacts', () => {
     });
   });
 
+  describe('exportContacts', () => {
+    afterEach(() => jasmine.clock().uninstall());
+
+    it('should download a file named after the user and the day', () => {
+      account.contacts = ['fanny'].map(contactNamed);
+      createComponent();
+      jasmine.clock().install();
+      jasmine.clock().mockDate(new Date(2026, 10, 6, 23, 30));
+      let downloadedFileName = '';
+      spyOn(HTMLAnchorElement.prototype, 'click').and.callFake(function (this: HTMLAnchorElement) {
+        downloadedFileName = this.download;
+      });
+
+      component.exportContacts();
+
+      expect(downloadedFileName).toBe('contacts-hugo-menard-2026-11-06.json');
+    });
+  });
+
   describe('template', () => {
     it('should say that no contact matches the search', () => {
       account.contacts = ['fanny'].map(contactNamed);
@@ -74,6 +93,12 @@ describe('Contacts', () => {
       expect(fixture.nativeElement.querySelector('.no-match').textContent).toContain(
         'Aucun contact ne correspond à « zoé ».',
       );
+    });
+
+    it('should not offer to export an empty contact list', () => {
+      createComponent();
+
+      expect(fixture.nativeElement.querySelector('.export-contacts').disabled).toBeTrue();
     });
   });
 });
