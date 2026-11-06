@@ -214,6 +214,17 @@ describe('CashPapers', () => {
     expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/déjà été encaissé/));
   });
 
+  it('cashPapers() should explain that the account is active on another device', () => {
+    serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'DEVICE_REVOKED' } })));
+    spyOn(component, 'displayMessage');
+    const qr = encodePaperQr({ tx: makePaperTxWire() });
+    component.scanSuccessHandler(qr);
+
+    component.cashPapers();
+
+    expect(component.displayMessage).toHaveBeenCalledWith("Ce compte est actif sur un autre appareil : rien n'a été encaissé.");
+  });
+
   it('cashPapers() should explain that cashing needs the server when it cannot be reached', () => {
     serverDBSpy.signLastBlock.and.returnValue(throwError(() => ({ status: 0 })));
     spyOn(component, 'displayMessage');
