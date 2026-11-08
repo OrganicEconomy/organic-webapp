@@ -51,6 +51,7 @@ describe('Home', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => 'the-real-decrypted-sk',
       isReadOnlySession: () => false,
+      readOnlyReason: () => null,
     };
     pendingSpy = jasmine.createSpyObj('PendingPaymentsService', ['refresh', 'cash']);
     pendingSpy.dataSource = [];
@@ -147,12 +148,22 @@ describe('Home', () => {
     expect(fakeBlockchain.createMoneyAndInvests).not.toHaveBeenCalled();
   });
 
-  it('should show a banner explaining the read-only state', () => {
+  it('should show a banner explaining that another device took the account over', () => {
     stubConnectedUserService.isReadOnlySession = () => true;
+    stubConnectedUserService.readOnlyReason = () => 'other-device';
 
     createComponent();
 
-    expect(fixture.nativeElement.textContent).toContain('lecture seule');
+    expect(fixture.nativeElement.textContent).toContain('actif sur un autre appareil');
+  });
+
+  it('should leave to the shared banner an account taken over by another tab', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    stubConnectedUserService.readOnlyReason = () => 'other-tab';
+
+    createComponent();
+
+    expect(fixture.nativeElement.textContent).not.toContain('actif sur un autre appareil');
   });
 
   it('should disable the per-row Encaisser button when the session is read-only', () => {

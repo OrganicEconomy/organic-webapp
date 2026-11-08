@@ -2,6 +2,9 @@ import { Injectable, inject } from '@angular/core'
 import { CitizenBlockchain } from 'organic-money/src/index.js';
 import { ServerConnexionService } from './server-connection.service';
 import { LocalDatabaseService } from './local-database.service';
+import { AccountTabsService } from './account-tabs.service';
+
+export type ReadOnlyReason = 'other-device' | 'other-tab'
 
 @Injectable({
     providedIn: 'root',
@@ -9,6 +12,7 @@ import { LocalDatabaseService } from './local-database.service';
 export class ConnectedUserService {
     private server = inject(ServerConnexionService)
     private localDB = inject(LocalDatabaseService)
+    private tabs = inject(AccountTabsService)
 
     private connectedUser = null
     /** Decrypted secret key, in memory for the session only — never persisted. */
@@ -72,7 +76,32 @@ export class ConnectedUserService {
         this.readOnly = true
     }
 
+    private isTakenOverByAnotherTab(): boolean {
+        const user = this.connectedUser as any
+        return user !== null && this.tabs.isStale(user.publickey)
+    }
+
+    public readOnlyReason(): ReadOnlyReason | null {
+        if (this.readOnly) {
+            return 'other-device'
+        }
+        if (this.isTakenOverByAnotherTab()) {
+            return 'other-tab'
+        }
+        return null
+    }
+
+    public async useThisTab(): Promise<void> {
+        const publickey = (this.connectedUser as any).publickey
+        this.tabs.takeBack(publickey)
+        const storedAccount = await this.localDB.getUser(publickey)
+        if (storedAccount === null) {
+            throw new Error('The account to take back is no longer on this device.')
+        }
+        this.setConnectedUser(storedAccount, this.secretKey)
+    }
+
     public isReadOnlySession(): boolean {
-        return this.readOnly
+        return this.readOnlyReason() !== null
     }
 }

@@ -4,6 +4,8 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 
 import { ConnectedUserService } from './connected-user.service';
 import { makeDefaultAccount } from '../models/account';
+import { AccountTabsService } from './account-tabs.service';
+import { LocalDatabaseService } from './local-database.service';
 
 const SERVER_URL = 'https://trifouillis.fr';
 const MINE_URL = `${SERVER_URL}/api/v1/ecosystems/mine`;
@@ -12,10 +14,23 @@ const INFO_URL = `${SERVER_URL}/api/v1/info`;
 describe('ConnectedUserService', () => {
   let service: ConnectedUserService;
   let httpMock: HttpTestingController;
+  let staleAccounts: Set<string>;
 
   beforeEach(() => {
+    staleAccounts = new Set();
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: AccountTabsService,
+          useValue: {
+            isStale: (pk: string) => staleAccounts.has(pk),
+            announceChange: () => {},
+            takeBack: (pk: string) => staleAccounts.delete(pk),
+          },
+        },
+      ],
     });
     service = TestBed.inject(ConnectedUserService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -67,6 +82,44 @@ describe('ConnectedUserService', () => {
   it('should become read-only after setReadOnly()', () => {
     service.setReadOnly();
     expect(service.isReadOnlySession()).toBeTrue();
+  });
+
+  describe('readOnlyReason', () => {
+    it('should say that another tab took the account over', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-tabs') as any, 'sk');
+      staleAccounts.add('pk-tabs');
+
+      expect(service.isReadOnlySession()).toBeTrue();
+      expect(service.readOnlyReason()).toBe('other-tab');
+    });
+
+    it('should say that another device took the account over', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-device') as any, 'sk');
+      service.setReadOnly();
+
+      expect(service.readOnlyReason()).toBe('other-device');
+    });
+
+    it('should give no reason for a session that can write', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-free') as any, 'sk');
+
+      expect(service.readOnlyReason()).toBeNull();
+    });
+  });
+
+  describe('useThisTab', () => {
+    it('should take the account back with what the other tab stored, keeping the unlocked key', async () => {
+      const pk = `pk-${Date.now()}-take-back`;
+      await TestBed.inject(LocalDatabaseService).saveUser({ ...makeDefaultAccount(pk), name: 'Stored by the other tab' });
+      service.setConnectedUser({ ...makeDefaultAccount(pk), name: 'Stale' } as any, 'unlocked-sk');
+      staleAccounts.add(pk);
+
+      await service.useThisTab();
+
+      expect(service.isReadOnlySession()).toBeFalse();
+      expect(service.getConnectedUser().name).toBe('Stored by the other tab');
+      expect(service.getSecretKey()).toBe('unlocked-sk');
+    });
   });
 
   describe('refreshing myEcosystems on connect', () => {

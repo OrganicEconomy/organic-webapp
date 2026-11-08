@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { ConnectedUserService } from '../../services/connected-user.service';
 
 /**
  * Shell for the four permanent tabs (Accueil · Paiement · Contacts · Mon
@@ -11,8 +13,26 @@ import { MatIconModule } from '@angular/material/icon';
  */
 @Component({
   selector: 'app-main-layout',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatIconModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule],
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.css',
 })
-export class MainLayout { }
+export class MainLayout {
+  userService = inject(ConnectedUserService);
+  private router = inject(Router);
+
+  isTakenOverByAnotherTab(): boolean {
+    return this.userService.readOnlyReason() === 'other-tab';
+  }
+
+  private async reopenCurrentPage(): Promise<void> {
+    const currentPage = this.router.url;
+    await this.router.navigateByUrl('/user-selection', { skipLocationChange: true });
+    await this.router.navigateByUrl(currentPage);
+  }
+
+  async useThisTab(): Promise<void> {
+    await this.userService.useThisTab();
+    await this.reopenCurrentPage();
+  }
+}

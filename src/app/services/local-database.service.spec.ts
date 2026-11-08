@@ -1,18 +1,27 @@
 import { TestBed } from '@angular/core/testing';
 import localforage from 'localforage';
 
-import { LocalDatabaseService, LocalReadError, LocalSaveError } from './local-database.service';
+import { LocalDatabaseService, LocalReadError, LocalSaveError, StaleTabError } from './local-database.service';
 import { makeDefaultAccount } from '../models/account';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { AccountTabsService } from './account-tabs.service';
 
 describe('LocalDatabaseService', () => {
   let service: LocalDatabaseService;
 
   let snackBarSpy: jasmine.SpyObj<Pick<MatSnackBar, 'open'>>;
+  let tabsSpy: jasmine.SpyObj<Pick<AccountTabsService, 'announceChange' | 'isStale'>>;
 
   beforeEach(() => {
     snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
-    TestBed.configureTestingModule({ providers: [{ provide: MatSnackBar, useValue: snackBarSpy }] });
+    tabsSpy = jasmine.createSpyObj('AccountTabsService', ['announceChange', 'isStale']);
+    tabsSpy.isStale.and.returnValue(false);
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: MatSnackBar, useValue: snackBarSpy },
+        { provide: AccountTabsService, useValue: tabsSpy },
+      ],
+    });
     service = TestBed.inject(LocalDatabaseService);
   });
 
@@ -141,6 +150,22 @@ describe('LocalDatabaseService', () => {
   });
 
   describe('saveUser', () => {
+    it('should tell the other tabs that the account changed', async () => {
+      const account = makeDefaultAccount(uniquePk('announced'));
+
+      await service.saveUser(account);
+
+      expect(tabsSpy.announceChange).toHaveBeenCalledWith(account.publickey);
+    });
+
+    it('should refuse to write over an account another tab changed since', async () => {
+      tabsSpy.isStale.and.returnValue(true);
+      const setItem = spyOn(localforage, 'setItem');
+
+      await expectAsync(service.saveUser(makeDefaultAccount(uniquePk('stale')))).toBeRejectedWithError(StaleTabError);
+      expect(setItem).not.toHaveBeenCalled();
+    });
+
     it('should fail with a LocalSaveError when the device cannot store the account', async () => {
       spyOn(localforage, 'setItem').and.rejectWith(new DOMException('full', 'QuotaExceededError'));
 
@@ -159,6 +184,13 @@ describe('LocalDatabaseService', () => {
         "Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée.",
         'Fermer',
       );
+    });
+
+    it('should leave alone an account another tab took over, which the banner already tells', async () => {
+      tabsSpy.isStale.and.returnValue(true);
+
+      await expectAsync(service.saveUserInBackground(makeDefaultAccount(uniquePk('stale')))).toBeResolved();
+      expect(snackBarSpy.open).not.toHaveBeenCalled();
     });
 
     it('should let an error that is not a storage failure through, without blaming the storage', async () => {
