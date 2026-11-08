@@ -1,11 +1,10 @@
-import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, ActivatedRoute, convertToParamMap } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { RestoreAccount } from './restore-account';
-import { LocalDatabaseService } from '../../services/local-database.service';
+import { LocalDatabaseService, LocalSaveError } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { encryptSecretKey } from '../../services/secret-key-crypto.util';
 

@@ -111,6 +111,21 @@ export class AccountDetails {
     })
   }
 
+  private async keepNewKeyOnThisDevice(newEncryptedKey: string): Promise<void> {
+    try {
+      await this.localDB.saveUser({ ...this.user, secretkey: newEncryptedKey })
+    } catch (error) {
+      console.error(error)
+      this.displayMessage("Mot de passe changé sur le serveur, mais cet appareil n'a pas pu l'enregistrer : ici, l'ancien mot de passe reste valable.")
+      return
+    }
+    this.user.secretkey = newEncryptedKey
+    this.oldPassword = ""
+    this.newPassword = ""
+    this.newPasswordConfirm = ""
+    this.displayMessage("Mot de passe changé avec succès.")
+  }
+
   async changePassword(): Promise<void> {
     if (this.newPassword !== this.newPasswordConfirm) {
       this.displayMessage("Les deux mots de passe ne correspondent pas.")
@@ -127,14 +142,7 @@ export class AccountDetails {
 
     const newEncrypted = await encryptSecretKey(sk, this.newPassword)
     this.serverDB.changePassword(this.user.serverUrl, this.user.publickey, this.newPassword, newEncrypted, sk).subscribe({
-      next: () => {
-        this.user.secretkey = newEncrypted
-        this.localDB.saveUserInBackground(this.user)
-        this.oldPassword = ""
-        this.newPassword = ""
-        this.newPasswordConfirm = ""
-        this.displayMessage("Mot de passe changé avec succès.")
-      },
+      next: () => this.keepNewKeyOnThisDevice(newEncrypted),
       error: (err: any) => {
         console.log(err)
         this.displayMessage("Erreur lors du changement de mot de passe.")

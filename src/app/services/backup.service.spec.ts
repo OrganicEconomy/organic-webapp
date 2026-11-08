@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Observable, firstValueFrom, of, throwError } from 'rxjs';
 
-import { BackupService } from './backup.service';
+import { BackupService, UndoNotStoredError } from './backup.service';
 import { LocalDatabaseService, LocalSaveError } from './local-database.service';
 import { ServerConnexionService } from './server-connection.service';
 import { ConnectedUserService } from './connected-user.service';
@@ -61,7 +61,7 @@ describe('BackupService', () => {
     service = TestBed.inject(BackupService);
   });
 
-  it('recordAutomatic should always save locally, warning the citizen if the device cannot', () => {
+  it('recordAutomatic should save locally in the background', () => {
     service.recordAutomatic(fakeUser, 'sk');
     expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
   });
@@ -173,19 +173,32 @@ describe('BackupService', () => {
       expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(account, sk, account.blockchain.blocks[0]);
     });
 
-    it('should undo the change and save the undone chain locally when the server save fails', async () => {
+    it('should undo the change and store the undone chain on this device when the server save fails', async () => {
       serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 0 })));
       const { account, sk } = makeAccountWithMoney();
-      const moneyBefore = account.blockchain.getAvailableMoneyAmount();
-      const experienceBefore = account.blockchain.experience;
+      const chainBefore = account.blockchain.export();
+      const storedChains: unknown[] = [];
+      localDBSpy.saveUser.and.callFake(async (saved: any) => {
+        storedChains.push(saved.blockchain.export());
+        return saved;
+      });
 
       const saving = firstValueFrom(service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1)));
 
       await expectAsync(saving).toBeRejected();
-      expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
-      expect(account.blockchain.experience).toBe(experienceBefore);
-      const savedAccount: any = localDBSpy.saveUserInBackground.calls.mostRecent().args[0];
-      expect(savedAccount.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
+      expect(account.blockchain.export()).toEqual(chainBefore);
+      expect(storedChains.length).toBe(2);
+      expect(storedChains[1]).toEqual(chainBefore);
+    });
+
+    it('should say so when this device could not store the undo of a change the server refused', async () => {
+      serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 0 })));
+      localDBSpy.saveUser.and.returnValues(Promise.resolve({} as any), Promise.reject(new LocalSaveError('device full')));
+      const { account, sk } = makeAccountWithMoney();
+
+      const saving = firstValueFrom(service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1)));
+
+      await expectAsync(saving).toBeRejectedWithError(UndoNotStoredError);
     });
 
     it('should not save anything when the change itself fails', () => {
@@ -222,6 +235,50 @@ describe('BackupService', () => {
       }).subscribe({ error: () => {} });
 
       expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
+    });
+  });
+
+  describe('applyAndRecord', () => {
+    it('should apply the change, store it on this device and return its result', async () => {
+      const { account, sk } = makeAccountWithMoney();
+
+      const tx: any = await service.applyAndRecord(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1));
+
+      expect(tx.target).toBe(RECIPIENT_PK);
+      expect(localDBSpy.saveUser).toHaveBeenCalledWith(account);
+    });
+
+    it('should undo the change, offline lists included, when this device cannot store it', async () => {
+      localDBSpy.saveUser.and.rejectWith(new LocalSaveError('device full'));
+      const { account, sk } = makeAccountWithMoney();
+      account.sentOfflineTx = [];
+      const moneyBefore = account.blockchain.getAvailableMoneyAmount();
+
+      const recording = service.applyAndRecord(account, sk, () => {
+        const tx = account.blockchain.pay(sk, RECIPIENT_PK, 1);
+        account.sentOfflineTx.push(tx.export());
+      });
+
+      await expectAsync(recording).toBeRejectedWithError(LocalSaveError);
+      expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
+      expect(account.sentOfflineTx).toEqual([]);
+    });
+
+    it('should then push to the server under every-tx', async () => {
+      const { account, sk } = makeAccountWithMoney();
+      account.backupPolicy = 'every-tx';
+
+      await service.applyAndRecord(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1));
+
+      expect(serverDBSpy.saveBlock).toHaveBeenCalled();
+    });
+
+    it('should not push to the server under manual', async () => {
+      const { account, sk } = makeAccountWithMoney();
+
+      await service.applyAndRecord(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1));
+
+      expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
     });
   });
 });

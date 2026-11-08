@@ -1,4 +1,3 @@
-import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { provideRouter } from '@angular/router';
@@ -9,7 +8,8 @@ import { defer, of, throwError, Subject } from 'rxjs';
 import { EcosystemInvest } from './ecosystem-invest';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
-import { BackupService } from '../../services/backup.service';
+import { BackupService, UndoNotStoredError } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 
 const ECO_PK = 'eco-pk';
 const SERVER_URL = 'https://trifouillis.fr';
@@ -165,6 +165,17 @@ describe('EcosystemInvest', () => {
 
       expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
       expect(router.navigate).not.toHaveBeenCalledWith(['/ecosystems', ECO_PK]);
+    });
+
+    it('should say how to recover when this device could not store the undo of a refused engagement', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new UndoNotStoredError('Opération refusée par le serveur, mais cet appareil n’a pas pu enregistrer son annulation.')));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/n’a pas pu enregistrer son annulation/));
     });
 
     it('should cancel the engagement when this device could not store it', () => {

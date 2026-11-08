@@ -1,4 +1,3 @@
-import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { Location } from '@angular/common';
@@ -10,7 +9,8 @@ import { EcosystemRoles } from './ecosystem-roles';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
-import { BackupService } from '../../services/backup.service';
+import { BackupService, UndoNotStoredError } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 
 const SERVER_URL = 'https://trifouillis.fr';
 const ECO_PK = 'eco-pk';
@@ -166,6 +166,15 @@ describe('EcosystemRoles', () => {
       component.removeRole('admin', 'admin-pk');
 
       expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
+    });
+
+    it('should say how to recover when this device could not store the undo of a refused action', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new UndoNotStoredError('Opération refusée par le serveur, mais cet appareil n’a pas pu enregistrer son annulation.')));
+
+      component.removeRole('admin', 'admin-pk');
+
+      expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/n’a pas pu enregistrer son annulation/));
     });
 
     it('should cancel the action when this device could not store it', () => {

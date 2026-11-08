@@ -5,17 +5,17 @@ import { decodeQr } from 'organic-protocol';
 
 import { AccountDetails } from './account-details';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { LocalDatabaseService } from '../../services/local-database.service';
+import { LocalDatabaseService, LocalSaveError } from '../../services/local-database.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { BackupService } from '../../services/backup.service';
-import { encryptSecretKey } from '../../services/secret-key-crypto.util';
+import { decryptSecretKey, encryptSecretKey } from '../../services/secret-key-crypto.util';
 import { contactLink } from '../../utils/contact-link.util';
 
 const REAL_SK_HEX = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f';
 
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUserInBackground'>>;
+let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser' | 'saveUserInBackground'>>;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getServerInfo' | 'changePassword'>>;
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'saveNow'>>;
 
@@ -43,7 +43,8 @@ describe('AccountDetails', () => {
       getSecretKey: () => REAL_SK_HEX,
       isReadOnlySession: () => false,
     };
-    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUserInBackground']);
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveUserInBackground']);
+    localDBSpy.saveUser.and.callFake(async (account) => account);
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['getServerInfo', 'changePassword']);
     serverDBSpy.getServerInfo.and.returnValue(of({
       protocolVersion: 1, apiVersion: '1', name: 'Serveur de Trifouillis',
@@ -132,14 +133,34 @@ describe('AccountDetails', () => {
     expect(args[4]).toBe(REAL_SK_HEX);
   });
 
-  it('changePassword() should keep the newly encrypted key on this device', async () => {
+  it('changePassword() should store the newly encrypted key on this device', async () => {
     component.oldPassword = 'old-password';
     component.newPassword = 'new-password';
     component.newPasswordConfirm = 'new-password';
 
     await component.changePassword();
+    await fixture.whenStable();
 
-    expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeAccount);
+    const storedKey = localDBSpy.saveUser.calls.mostRecent().args[0].secretkey;
+    expect(await decryptSecretKey(storedKey, 'new-password')).toBe(REAL_SK_HEX);
+  });
+
+  it('changePassword() should say that this device keeps the old password when it could not store the new one', async () => {
+    localDBSpy.saveUser.and.rejectWith(new LocalSaveError('device full'));
+    spyOn(component, 'displayMessage');
+    spyOn(console, 'error');
+    const keyBefore = fakeAccount.secretkey;
+    component.oldPassword = 'old-password';
+    component.newPassword = 'new-password';
+    component.newPasswordConfirm = 'new-password';
+
+    await component.changePassword();
+    await fixture.whenStable();
+
+    expect(fakeAccount.secretkey).toBe(keyBefore);
+    expect(component.displayMessage).toHaveBeenCalledWith(
+      "Mot de passe changé sur le serveur, mais cet appareil n'a pas pu l'enregistrer : ici, l'ancien mot de passe reste valable.",
+    );
   });
 
   it('changePassword() should not call the server when the confirmation does not match', async () => {

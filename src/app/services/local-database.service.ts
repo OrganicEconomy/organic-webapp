@@ -8,8 +8,12 @@ export class LocalSaveError extends Error {}
 
 export class LocalReadError extends Error {}
 
-const LOCAL_SAVE_FAILED_MESSAGE =
+export const ACCOUNT_NOT_STORED_MESSAGE =
     "Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée."
+
+export const CONTACT_NOT_STORED_MESSAGE = "Cet appareil n'a pas pu enregistrer ce contact."
+
+export type StorableAccount = Account & { blockchain?: { export(): unknown } }
 
 @Injectable({
     providedIn: 'root',
@@ -34,7 +38,7 @@ export class LocalDatabaseService {
                 result.push(value)
             })
         } catch (error) {
-            throw new LocalReadError("Cet appareil n'a pas pu lire ses comptes.", { cause: error })
+            throw new LocalReadError('Could not read the accounts stored on this device.', { cause: error })
         }
         return result
     }
@@ -45,7 +49,7 @@ export class LocalDatabaseService {
      * there is no partial merge, so every field must be present. A `blockchain`
      * instance (as getUser attaches) is accepted in place of `blocks`.
      */
-    public async saveUser(data: Account & { blockchain?: { export(): unknown } }): Promise<Account> {
+    public async saveUser(data: StorableAccount): Promise<Account> {
         const account: Account = {
             publickey: data.publickey,
             name: data.name,
@@ -68,18 +72,27 @@ export class LocalDatabaseService {
         try {
             await localforage.setItem(account.publickey, account)
         } catch (error) {
-            throw new LocalSaveError("Cet appareil n'a pas pu enregistrer le compte.", { cause: error })
+            throw new LocalSaveError('Could not store the account on this device.', { cause: error })
         }
         return account
     }
 
-    public async saveUserInBackground(data: Account & { blockchain?: { export(): unknown } }): Promise<void> {
+    public async saveUserInBackground(data: StorableAccount): Promise<void> {
         try {
             await this.saveUser(data)
         } catch (error) {
+            if (!(error instanceof LocalSaveError)) {
+                throw error
+            }
             console.error(error)
-            this.snackBar.open(LOCAL_SAVE_FAILED_MESSAGE, 'Fermer')
+            this.snackBar.open(ACCOUNT_NOT_STORED_MESSAGE, 'Fermer')
         }
+    }
+
+    public async saveWithNewContacts(user: LoadedAccount, newContacts: Contact[]): Promise<void> {
+        const contacts = [...user.contacts, ...newContacts]
+        await this.saveUser({ ...user, contacts })
+        user.contacts = contacts
     }
 
     public async getUser(pk: string): Promise<LoadedAccount | null> {
@@ -92,7 +105,7 @@ export class LocalDatabaseService {
                 blockchain: new CitizenBlockchain(account.blocks),
             }
         } catch (error) {
-            throw new LocalReadError("Cet appareil n'a pas pu lire le compte.", { cause: error })
+            throw new LocalReadError('Could not read the account stored on this device.', { cause: error })
         }
     }
 

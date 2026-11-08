@@ -1,4 +1,3 @@
-import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -12,7 +11,7 @@ import { EcosystemDetail } from './ecosystem-detail';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
-import { LocalDatabaseService } from '../../services/local-database.service';
+import { LocalDatabaseService, LocalSaveError } from '../../services/local-database.service';
 import { expectAuthenticated } from '../../../testing/request-auth.testing';
 import { REQUEST_AUTH_HEADERS } from 'organic-protocol';
 
@@ -27,7 +26,7 @@ let stubConnectedUserService: any;
 let stubViewedEcosystemService: any;
 let fakeBlockchain: any;
 let dialogSpy: jasmine.SpyObj<MatDialog>;
-let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
+let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser' | 'saveWithNewContacts'>>;
 
 describe('EcosystemDetail', () => {
   let component: EcosystemDetail;
@@ -68,7 +67,10 @@ describe('EcosystemDetail', () => {
     dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
     dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
 
-    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveWithNewContacts']);
+    localDBSpy.saveWithNewContacts.and.callFake((user, contacts) =>
+      LocalDatabaseService.prototype.saveWithNewContacts.call(localDBSpy as any, user, contacts),
+    );
     localDBSpy.saveUser.and.resolveTo(fakeAccount);
 
     await TestBed.configureTestingModule({

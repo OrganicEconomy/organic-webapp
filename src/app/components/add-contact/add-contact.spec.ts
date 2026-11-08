@@ -1,4 +1,3 @@
-import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -7,14 +6,14 @@ import { encodeContactQr, encodePaperQr } from 'organic-protocol';
 
 import { AddContact } from './add-contact';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { LocalDatabaseService } from '../../services/local-database.service';
+import { LocalDatabaseService, LocalSaveError } from '../../services/local-database.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 
 const basilePk = '02' + 'b5'.repeat(32);
 
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
+let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser' | 'saveWithNewContacts'>>;
 let linkParams: Record<string, string>;
 let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getValidationStatus' | 'getEcosystemInfo' | 'getKnownServers'>>;
 
@@ -26,7 +25,10 @@ describe('AddContact', () => {
     fakeAccount = { contacts: [], serverUrl: 'https://mon-serveur.fr' };
     linkParams = {};
     stubConnectedUserService = { getConnectedUser: () => fakeAccount, getSecretKey: () => '' };
-    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveWithNewContacts']);
+    localDBSpy.saveWithNewContacts.and.callFake((user, contacts) =>
+      LocalDatabaseService.prototype.saveWithNewContacts.call(localDBSpy as any, user, contacts),
+    );
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getValidationStatus', 'getEcosystemInfo', 'getKnownServers']);
     serverSpy.getKnownServers.and.returnValue(of([]));
     serverSpy.getValidationStatus.and.returnValue(of({ status: 'active' }));
@@ -111,12 +113,15 @@ describe('AddContact', () => {
   });
 
   it('should leave the contacts as they were when this device could not store them', async () => {
-    localDBSpy.saveUser.and.rejectWith(new LocalSaveError('full'));
+    localDBSpy.saveUser.and.rejectWith(new LocalSaveError('device full'));
+    spyOn(console, 'error');
+    const navigate = spyOn(TestBed.inject(Router), 'navigate');
     component.addcontactForm.setValue({ name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr' });
 
     await component.addContact();
 
     expect(fakeAccount.contacts).toEqual([]);
+    expect(navigate).not.toHaveBeenCalled();
     expect(component.formError).toBe("Cet appareil n'a pas pu enregistrer ce contact.");
   });
 

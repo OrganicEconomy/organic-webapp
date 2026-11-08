@@ -1,4 +1,3 @@
-import { LocalReadError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -12,7 +11,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { of } from 'rxjs';
 
 import { UserSelection } from './user-selection';
-import { LocalDatabaseService } from '../../services/local-database.service';
+import { LocalDatabaseService, LocalReadError } from '../../services/local-database.service';
 import { encryptSecretKey } from '../../services/secret-key-crypto.util';
 
 describe('UserSelection', () => {
@@ -92,6 +91,17 @@ describe('UserSelection', () => {
       "Cet appareil n'a pas pu lire ses comptes. Quittez la navigation privée, ou vérifiez que le site peut enregistrer des données.",
     );
     expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should not claim that this device has no account when it could not read them', async () => {
+    getUserListSpy.and.rejectWith(new LocalReadError('blocked'));
+    spyOn(console, 'error');
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain("Il n'y a personne ici");
   });
 
   it('should redirect to /server-selection when there are no local accounts (first launch)', async () => {

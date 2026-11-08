@@ -160,6 +160,13 @@ describe('LocalDatabaseService', () => {
         'Fermer',
       );
     });
+
+    it('should let an error that is not a storage failure through, without blaming the storage', async () => {
+      const brokenAccount: any = { ...makeDefaultAccount(uniquePk('broken')), blockchain: { export: () => { throw new TypeError('boom'); } } };
+
+      await expectAsync(service.saveUserInBackground(brokenAccount)).toBeRejectedWithError(TypeError);
+      expect(snackBarSpy.open).not.toHaveBeenCalled();
+    });
   });
 
   describe('getUserList', () => {
@@ -175,6 +182,25 @@ describe('LocalDatabaseService', () => {
       spyOn(localforage, 'getItem').and.rejectWith(new DOMException('blocked', 'SecurityError'));
 
       await expectAsync(service.getUser(uniquePk('blocked'))).toBeRejectedWithError(LocalReadError);
+    });
+  });
+
+  describe('saveWithNewContacts', () => {
+    it('should store the account with the new contacts added to the known ones', async () => {
+      const account: any = { ...makeDefaultAccount(uniquePk('contacts')), contacts: [{ name: 'Zoé' }] };
+
+      await service.saveWithNewContacts(account, [{ name: 'Denis' } as any]);
+
+      expect((await service.getUser(account.publickey))?.contacts).toEqual([{ name: 'Zoé' }, { name: 'Denis' }] as any);
+      expect(account.contacts).toEqual([{ name: 'Zoé' }, { name: 'Denis' }]);
+    });
+
+    it('should leave the contacts as they were when the device cannot store them', async () => {
+      spyOn(localforage, 'setItem').and.rejectWith(new DOMException('full', 'QuotaExceededError'));
+      const account: any = { ...makeDefaultAccount(uniquePk('contacts-full')), contacts: [{ name: 'Zoé' }] };
+
+      await expectAsync(service.saveWithNewContacts(account, [{ name: 'Denis' } as any])).toBeRejectedWithError(LocalSaveError);
+      expect(account.contacts).toEqual([{ name: 'Zoé' }]);
     });
   });
 });

@@ -6,11 +6,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { QrScanner } from '../qr-scanner/qr-scanner';
 import { decodeQr } from 'organic-protocol';
-import type { TxVerifyStatus } from 'organic-protocol';
+import type { TxVerifyStatus, TxWire } from 'organic-protocol';
 import { TransactionMaker } from 'organic-money/src/index.js';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { BackupService } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 import { getContactName } from '../../utils/transaction-display.util';
 
 @Component({
@@ -59,7 +60,22 @@ export class ReceiveOffline {
     })
   }
 
-  scanSuccessHandler(result: string) {
+  private receiveAndKeepForVerification(payload: { tx: TxWire, url: string }): any {
+    const tx = TransactionMaker.make(payload.tx)
+    this.user.blockchain.receivePay(tx)
+    this.user.pendingOfflineTx.push({ tx: payload.tx, url: payload.url })
+    return tx
+  }
+
+  private refusedPaymentMessage(err: unknown): string {
+    if (err instanceof LocalSaveError) {
+      console.error(err)
+      return "Paiement non reçu : cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis scannez le QR à nouveau."
+    }
+    return "Ce paiement n'est pas valide (signature ou destinataire incorrect)."
+  }
+
+  async scanSuccessHandler(result: string) {
     this.scanError = ''
     let decoded
     try {
@@ -79,16 +95,13 @@ export class ReceiveOffline {
 
     let tx: any
     try {
-      tx = TransactionMaker.make(decoded.payload.tx)
-      this.user.blockchain.receivePay(tx)
-    } catch {
-      this.scanError = "Ce paiement n'est pas valide (signature ou destinataire incorrect)."
+      tx = await this.backupService.applyAndRecord(this.user, this.userService.getSecretKey(), () =>
+        this.receiveAndKeepForVerification(decoded.payload),
+      )
+    } catch (err) {
+      this.scanError = this.refusedPaymentMessage(err)
       return
     }
-
-    const sk = this.userService.getSecretKey()
-    this.user.pendingOfflineTx.push({ tx: decoded.payload.tx, url: decoded.payload.url })
-    this.backupService.recordAutomatic(this.user, sk)
     this._snackBar.open(`${tx.money.length} unité(s) reçue(s) — en attente de vérification.`, 'OK', { duration: 3000 })
   }
 

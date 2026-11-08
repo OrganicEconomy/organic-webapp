@@ -126,10 +126,8 @@ export class Contacts {
   }
 
   private async saveWith(accepted: Contact[]): Promise<void> {
-    const contacts = [...this.contacts(), ...accepted]
-    await this.localDB.saveUser({ ...this.user, contacts })
-    this.user.contacts = contacts
-    this.contacts.set(contacts)
+    await this.localDB.saveWithNewContacts(this.user, accepted)
+    this.contacts.set(this.user.contacts)
   }
 
   private reportFailedSave(error: unknown): void {

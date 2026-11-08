@@ -8,7 +8,7 @@ import { lookupFailure } from '../../utils/lookup-failure.util';
 import { decodeQr } from 'organic-protocol';
 import type { ServerListEntry } from 'organic-protocol';
 import type { Contact } from '../../models/account';
-import { LocalDatabaseService } from '../../services/local-database.service';
+import { CONTACT_NOT_STORED_MESSAGE, LocalDatabaseService } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -110,15 +110,13 @@ export class AddContact {
       this.formError = refusal
       return
     }
-    const contacts = [...this.user.contacts, contact]
     try {
-      await this.localDB.saveUser({ ...this.user, contacts })
+      await this.localDB.saveWithNewContacts(this.user, [contact])
     } catch (error) {
       console.error(error)
-      this.formError = "Cet appareil n'a pas pu enregistrer ce contact."
+      this.formError = CONTACT_NOT_STORED_MESSAGE
       return
     }
-    this.user.contacts = contacts
     this.router.navigate(['/contacts']);
   }
 

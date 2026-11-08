@@ -1,11 +1,10 @@
-import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, ActivatedRoute, convertToParamMap } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 
 import { SignupPage } from './signup-page';
-import { LocalDatabaseService } from '../../services/local-database.service';
+import { LocalDatabaseService, LocalSaveError } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
 
 const SERVER_URL = 'https://trifouillis.fr'
@@ -88,22 +87,22 @@ describe('SignupPage', () => {
     expect(() => httpMock.expectNone(`${SERVER_URL}/api/v1/users/register`)).not.toThrow()
   });
 
-  it('should say that the account was created but this device could not store it', async () => {
+  it('should send to the restore page an account created on the server that this device could not store', async () => {
     spyOn(localDB, 'saveUser').and.rejectWith(new LocalSaveError('full'))
     spyOn(console, 'error')
-    const alert = spyOn(window, 'alert')
+    const alertSpy = spyOn(window, 'alert')
 
     component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
     await component.signup()
 
     const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
     req.flush({ publickey: req.request.body.publickey, status: 'pending-validation', blocks: [], devicetoken: 'dt-1' })
-    await waitUntil(() => alert.calls.count() > 0)
+    await waitUntil(() => alertSpy.calls.count() > 0)
 
-    expect(alert).toHaveBeenCalledWith(
-      "Votre compte est créé, mais cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis utilisez « Restaurer un compte ».",
+    expect(alertSpy).toHaveBeenCalledWith(
+      "Votre compte est créé, mais cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis restaurez-le.",
     )
-    expect(router.navigate).not.toHaveBeenCalled()
+    expect(router.navigate).toHaveBeenCalledWith(['/restore-account'], { queryParams: { server: SERVER_URL } })
   });
 
   it('should store the membership status returned by the server on the local account', async () => {
