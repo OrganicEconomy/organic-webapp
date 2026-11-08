@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
 
 /**
@@ -18,8 +19,9 @@ import { ConnectedUserService } from '../../services/connected-user.service';
   styleUrl: './main-layout.css',
 })
 export class MainLayout {
-  userService = inject(ConnectedUserService);
+  private userService = inject(ConnectedUserService);
   private router = inject(Router);
+  private snackBar = inject(MatSnackBar);
 
   isTakenOverByAnotherTab(): boolean {
     return this.userService.readOnlyReason() === 'other-tab';
@@ -32,7 +34,13 @@ export class MainLayout {
   }
 
   async useThisTab(): Promise<void> {
-    await this.userService.useThisTab();
+    try {
+      await this.userService.useThisTab();
+    } catch (error) {
+      console.error(error);
+      this.snackBar.open("Impossible de reprendre le compte dans cet onglet : reconnectez-vous depuis l'écran de connexion.", 'Fermer');
+      return;
+    }
     await this.reopenCurrentPage();
   }
 }

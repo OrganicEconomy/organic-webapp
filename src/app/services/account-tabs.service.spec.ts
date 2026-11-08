@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 
-import { AccountTabsService } from './account-tabs.service';
+import { ACCOUNTS_CHANNEL, AccountTabsService } from './account-tabs.service';
 
 const ALICE_PK = '02' + 'a1'.repeat(32);
 
@@ -15,7 +15,7 @@ describe('AccountTabsService', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({});
     service = TestBed.inject(AccountTabsService);
-    otherTab = new BroadcastChannel('organic-accounts');
+    otherTab = new BroadcastChannel(ACCOUNTS_CHANNEL);
   });
 
   afterEach(() => otherTab.close());
@@ -40,7 +40,7 @@ describe('AccountTabsService', () => {
       expect(service.isStale(ALICE_PK)).toBeTrue();
     });
 
-    it('should not call stale an account nobody changed elsewhere', () => {
+    it('should not consider stale an account no other tab changed', () => {
       expect(service.isStale(ALICE_PK)).toBeFalse();
     });
   });
@@ -57,6 +57,32 @@ describe('AccountTabsService', () => {
 
       expect(service.isStale(ALICE_PK)).toBeFalse();
       expect(received).toEqual([{ changedAccount: ALICE_PK }]);
+    });
+  });
+
+  describe('ngOnDestroy', () => {
+    it('should stop listening to the other tabs', async () => {
+      service.ngOnDestroy();
+      otherTab.postMessage({ changedAccount: ALICE_PK });
+      await untilMessagesAreDelivered();
+
+      expect(service.isStale(ALICE_PK)).toBeFalse();
+    });
+  });
+
+  describe('constructor', () => {
+    it('should keep the app working, and say so, in a browser that cannot talk to other tabs', () => {
+      const realBroadcastChannel = window.BroadcastChannel;
+      (window as any).BroadcastChannel = undefined;
+      spyOn(console, 'error');
+      try {
+        const withoutChannel = new AccountTabsService();
+
+        expect(() => withoutChannel.announceChange(ALICE_PK)).not.toThrow();
+        expect(console.error).toHaveBeenCalled();
+      } finally {
+        window.BroadcastChannel = realBroadcastChannel;
+      }
     });
   });
 });

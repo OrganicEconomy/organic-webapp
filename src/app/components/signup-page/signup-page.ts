@@ -6,6 +6,7 @@ import type { RegisterBody } from 'organic-protocol'
 import { ServerConnexionService } from '../../services/server-connection.service'
 import { LocalDatabaseService } from '../../services/local-database.service'
 import { ConnectedUserService } from '../../services/connected-user.service'
+import { AccountTabsService } from '../../services/account-tabs.service'
 import { encryptSecretKey } from '../../services/secret-key-crypto.util'
 import { makeDefaultAccount, type Account } from '../../models/account'
 import { environment } from '../../../environments/environment'
@@ -44,6 +45,7 @@ export class SignupPage {
   server = inject(ServerConnexionService)
   localDB = inject(LocalDatabaseService)
   userService = inject(ConnectedUserService)
+  private tabs = inject(AccountTabsService)
 
   constructor(private formBuilder: FormBuilder, private router: Router, private route: ActivatedRoute) { }
 
@@ -104,6 +106,7 @@ export class SignupPage {
         account.devicetoken = res.devicetoken
         account.status = res.status
 
+        this.tabs.takeBack(account.publickey)
         const user = await this.trySaveOnDevice(account)
         if (user === null) {
           alert("Votre compte est créé, mais cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis restaurez-le.")

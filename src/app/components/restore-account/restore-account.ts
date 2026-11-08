@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { ACCOUNT_NOT_STORED_MESSAGE, LocalDatabaseService } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
+import { AccountTabsService } from '../../services/account-tabs.service';
 import { decryptSecretKey } from '../../services/secret-key-crypto.util';
 import { makeDefaultAccount, type Account } from '../../models/account';
 import { environment } from '../../../environments/environment';
@@ -35,6 +36,7 @@ export class RestoreAccount {
   private server = inject(ServerConnexionService)
   private localDB = inject(LocalDatabaseService)
   private userService = inject(ConnectedUserService)
+  private tabs = inject(AccountTabsService)
   private route = inject(ActivatedRoute)
   private router = inject(Router)
 
@@ -75,6 +77,7 @@ export class RestoreAccount {
         account.status = res.status
         account.isuptodate = true
 
+        this.tabs.takeBack(account.publickey)
         const user = await this.trySaveOnDevice(account)
         if (user === null) {
           this.error = ACCOUNT_NOT_STORED_MESSAGE

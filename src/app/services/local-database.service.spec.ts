@@ -158,7 +158,7 @@ describe('LocalDatabaseService', () => {
       expect(tabsSpy.announceChange).toHaveBeenCalledWith(account.publickey);
     });
 
-    it('should refuse to write over an account another tab changed since', async () => {
+    it('should refuse to write over an account another tab changed since this tab loaded it', async () => {
       tabsSpy.isStale.and.returnValue(true);
       const setItem = spyOn(localforage, 'setItem');
 
@@ -186,11 +186,13 @@ describe('LocalDatabaseService', () => {
       );
     });
 
-    it('should leave alone an account another tab took over, which the banner already tells', async () => {
+    it('should only note in the console an account another tab took over, since the banner already reports it', async () => {
       tabsSpy.isStale.and.returnValue(true);
+      spyOn(console, 'warn');
 
       await expectAsync(service.saveUserInBackground(makeDefaultAccount(uniquePk('stale')))).toBeResolved();
       expect(snackBarSpy.open).not.toHaveBeenCalled();
+      expect(console.warn).toHaveBeenCalled();
     });
 
     it('should let an error that is not a storage failure through, without blaming the storage', async () => {

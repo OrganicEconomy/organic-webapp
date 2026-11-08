@@ -92,6 +92,10 @@ export class AccountDetails {
   }
 
   updateBackupPolicy(policy: BackupPolicy): void {
+    if (this.userService.isReadOnlySession()) {
+      this.displayMessage(this.userService.readOnlyMessage())
+      return
+    }
     this.backupPolicy = policy
     this.user.backupPolicy = policy
     this.localDB.saveUserInBackground(this.user)
@@ -127,6 +131,10 @@ export class AccountDetails {
   }
 
   async changePassword(): Promise<void> {
+    if (this.userService.isReadOnlySession()) {
+      this.displayMessage(this.userService.readOnlyMessage())
+      return
+    }
     if (this.newPassword !== this.newPasswordConfirm) {
       this.displayMessage("Les deux mots de passe ne correspondent pas.")
       return

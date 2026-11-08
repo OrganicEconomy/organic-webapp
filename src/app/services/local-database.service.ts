@@ -90,6 +90,7 @@ export class LocalDatabaseService {
             await this.saveUser(data)
         } catch (error) {
             if (error instanceof StaleTabError) {
+                console.warn(error)
                 return
             }
             if (!(error instanceof LocalSaveError)) {

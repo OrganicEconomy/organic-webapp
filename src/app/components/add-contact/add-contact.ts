@@ -104,6 +104,10 @@ export class AddContact {
   }
 
   async addContact() {
+    if (this.userService.isReadOnlySession()) {
+      this.formError = this.userService.readOnlyMessage()
+      return
+    }
     const contact = this.contactFromForm()
     const refusal = localRefusal(contact, this.user.contacts) ?? await this.serverRefusal(contact)
     if (refusal) {

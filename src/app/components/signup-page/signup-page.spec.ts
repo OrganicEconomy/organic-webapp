@@ -6,6 +6,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { SignupPage } from './signup-page';
 import { LocalDatabaseService, LocalSaveError } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
+import { AccountTabsService } from '../../services/account-tabs.service';
 
 const SERVER_URL = 'https://trifouillis.fr'
 
@@ -103,6 +104,25 @@ describe('SignupPage', () => {
       "Votre compte est créé, mais cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis restaurez-le.",
     )
     expect(router.navigate).toHaveBeenCalledWith(['/restore-account'], { queryParams: { server: SERVER_URL } })
+  });
+
+  it('should store the new account even if another tab announced that key', async () => {
+    const tabs = TestBed.inject(AccountTabsService)
+    let takenBack = false
+    spyOn(tabs, 'isStale').and.callFake(() => !takenBack)
+    spyOn(tabs, 'takeBack').and.callFake(() => { takenBack = true })
+    const alertSpy = spyOn(window, 'alert')
+
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+    await component.signup()
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
+    req.flush({ publickey: req.request.body.publickey, status: 'pending-validation', blocks: [], devicetoken: 'dt-1' })
+    await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0)
+    httpMock.expectOne((r) => r.url.includes('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
+
+    expect(alertSpy).not.toHaveBeenCalled()
+    expect(router.navigate).toHaveBeenCalledWith(['/pending-validation'])
   });
 
   it('should store the membership status returned by the server on the local account', async () => {

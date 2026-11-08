@@ -84,12 +84,46 @@ describe('ConnectedUserService', () => {
     expect(service.isReadOnlySession()).toBeTrue();
   });
 
+  describe('setConnectedUser', () => {
+    it('should take the account back from any other tab, since connecting loads it afresh', () => {
+      staleAccounts.add('pk-reconnected');
+
+      service.setConnectedUser(makeDefaultAccount('pk-reconnected') as any, 'sk');
+
+      expect(service.isReadOnlySession()).toBeFalse();
+    });
+  });
+
+  describe('isReadOnlySession', () => {
+    it('should be read-only while another tab holds the account', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-held') as any, 'sk');
+      staleAccounts.add('pk-held');
+
+      expect(service.isReadOnlySession()).toBeTrue();
+    });
+  });
+
+  describe('readOnlyMessage', () => {
+    it('should name the other tab when another tab holds the account', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-tab-message') as any, 'sk');
+      staleAccounts.add('pk-tab-message');
+
+      expect(service.readOnlyMessage()).toBe("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
+    });
+
+    it('should name the other device when another device holds the account', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-device-message') as any, 'sk');
+      service.setReadOnly();
+
+      expect(service.readOnlyMessage()).toBe('Ce compte est actif sur un autre appareil — lecture seule.');
+    });
+  });
+
   describe('readOnlyReason', () => {
     it('should say that another tab took the account over', () => {
       service.setConnectedUser(makeDefaultAccount('pk-tabs') as any, 'sk');
       staleAccounts.add('pk-tabs');
 
-      expect(service.isReadOnlySession()).toBeTrue();
       expect(service.readOnlyReason()).toBe('other-tab');
     });
 
@@ -119,6 +153,15 @@ describe('ConnectedUserService', () => {
       expect(service.isReadOnlySession()).toBeFalse();
       expect(service.getConnectedUser().name).toBe('Stored by the other tab');
       expect(service.getSecretKey()).toBe('unlocked-sk');
+    });
+
+    it('should leave this tab read-only when the account can no longer be read from this device', async () => {
+      const pk = `pk-${Date.now()}-gone`;
+      service.setConnectedUser(makeDefaultAccount(pk) as any, 'unlocked-sk');
+      staleAccounts.add(pk);
+
+      await expectAsync(service.useThisTab()).toBeRejected();
+      expect(service.isReadOnlySession()).toBeTrue();
     });
   });
 
