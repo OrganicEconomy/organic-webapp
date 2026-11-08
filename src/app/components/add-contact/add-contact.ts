@@ -16,7 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { QrScanner } from '../qr-scanner/qr-scanner';
-import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
+import { localRefusal } from '../../utils/contact-refusal.util';
 
 @Component({
   selector: 'app-add-contact',
@@ -105,7 +105,7 @@ export class AddContact {
 
   async addContact() {
     const contact = this.contactFromForm()
-    const refusal = this.formRefusal(contact) ?? await this.serverRefusal(contact)
+    const refusal = localRefusal(contact, this.user.contacts) ?? await this.serverRefusal(contact)
     if (refusal) {
       this.formError = refusal
       return
@@ -122,20 +122,6 @@ export class AddContact {
       url: this.addcontactForm.value.url,
       type: this.scannedIsEcosystem ? 'ecosystem' : 'citizen',
     }
-  }
-
-  private formRefusal(contact: Contact): string | null {
-    if (!contact.name) {
-      return 'Le nom du contact est obligatoire.'
-    }
-    if (!isWellFormedPublicKey(contact.pk)) {
-      return MALFORMED_PUBLIC_KEY_MESSAGE
-    }
-    const existing = this.existingContactWithKey(contact.pk)
-    if (existing) {
-      return `Cette clé est déjà dans vos contacts, sous le nom ${existing.name}.`
-    }
-    return null
   }
 
   private serverRefusal(contact: Contact): Promise<string | null> {
@@ -165,9 +151,5 @@ export class AddContact {
       case 'server-error':
         return 'Impossible de vérifier ce contact : le serveur ne répond pas correctement.'
     }
-  }
-
-  private existingContactWithKey(pk: string): Contact | undefined {
-    return this.user.contacts.find((contact: Contact) => contact.pk === pk)
   }
 }

@@ -92,7 +92,9 @@ test.describe('contact server', () => {
 });
 
 test.describe('contact link', () => {
-  test('should let a citizen add a contact from the link that contact shared', async ({ browser }) => {
+  test('should let a citizen add a contact from the link that contact shared', async ({
+    browser,
+  }) => {
     const hugo = await newCitizenPage(browser, 'Hugo Lambert');
     await hugo.getByRole('link', { name: 'Mon compte' }).click();
     await hugo.getByRole('button', { name: 'Copier mon lien de contact' }).click();
@@ -111,18 +113,45 @@ test.describe('contact link', () => {
   });
 });
 
+async function contactsExportedBy(page: Page): Promise<any> {
+  const download = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Exporter mes contacts' }).click();
+  const filePath = await (await download).path();
+  return JSON.parse(readFileSync(filePath, 'utf-8'));
+}
+
 test.describe('contacts file', () => {
   test('should export the contacts in a file', async ({ page }) => {
     const guardian = await ensureCoreGuardian();
     await signUpApprovedCitizen(page, 'Jade Lambert');
     await addContact(page, 'Gardien', guardian.publickey);
 
-    const download = page.waitForEvent('download');
-    await page.getByRole('button', { name: 'Exporter mes contacts' }).click();
-    const filePath = await (await download).path();
+    const exported = await contactsExportedBy(page);
 
-    expect(JSON.parse(readFileSync(filePath, 'utf-8')).contacts).toEqual([
+    expect(exported.contacts).toEqual([
       { name: 'Gardien', pk: guardian.publickey, url: SERVER_URL, type: 'citizen' },
     ]);
+  });
+
+  test('should import on a new device the contacts exported on the old one', async ({
+    browser,
+  }) => {
+    const guardian = await ensureCoreGuardian();
+    const kevin = await newCitizenPage(browser, 'Kévin Morel');
+    await addContact(kevin, 'Gardien', guardian.publickey);
+    const exported = await contactsExportedBy(kevin);
+    exported.contacts.push({ name: 'Clé abîmée', pk: 'abcdef', url: SERVER_URL, type: 'citizen' });
+
+    const lea = await newCitizenPage(browser, 'Léa Morel');
+    await lea.getByRole('link', { name: 'Contacts' }).click();
+    await lea.locator('.import-file-picker').setInputFiles({
+      name: 'contacts.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(exported)),
+    });
+
+    await expect(lea.getByText('1 contact ajouté.')).toBeVisible();
+    await expect(lea.getByText("Clé abîmée : Cette clé publique n'est pas valide")).toBeVisible();
+    await expect(lea.getByRole('cell', { name: 'Gardien' })).toBeVisible();
   });
 });
