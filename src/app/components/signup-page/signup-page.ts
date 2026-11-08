@@ -7,7 +7,7 @@ import { ServerConnexionService } from '../../services/server-connection.service
 import { LocalDatabaseService } from '../../services/local-database.service'
 import { ConnectedUserService } from '../../services/connected-user.service'
 import { encryptSecretKey } from '../../services/secret-key-crypto.util'
-import { makeDefaultAccount } from '../../models/account'
+import { makeDefaultAccount, type Account } from '../../models/account'
 import { environment } from '../../../environments/environment'
 import { formatDateInput, parseDateInput } from '../../utils/date-input.util'
 
@@ -61,6 +61,15 @@ export class SignupPage {
     })
   }
 
+  private async trySaveOnDevice(account: Account): Promise<Account | null> {
+    try {
+      return await this.localDB.saveUser(account)
+    } catch (error) {
+      console.error(error)
+      return null
+    }
+  }
+
   async signup() {
     if (this.signupForm.invalid) return
 
@@ -95,7 +104,12 @@ export class SignupPage {
         account.devicetoken = res.devicetoken
         account.status = res.status
 
-        const user = await this.localDB.saveUser(account)
+        const user = await this.trySaveOnDevice(account)
+        if (user === null) {
+          alert("Votre compte est créé, mais cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis restaurez-le.")
+          this.router.navigate(['/restore-account'], { queryParams: { server: serverUrl } })
+          return
+        }
         this.userService.setConnectedUser(user, sk)
         if (res.status !== 'active') {
           this.router.navigate(['/pending-validation']);

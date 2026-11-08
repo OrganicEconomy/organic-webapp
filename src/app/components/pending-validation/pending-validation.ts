@@ -62,7 +62,7 @@ export class PendingValidation implements OnDestroy {
           this.user.blocks = res.blocks;
           this.user.blockchain = new CitizenBlockchain(res.blocks);
           this.user.lastSavedBlockSignature = this.user.blockchain.lastblock.signature;
-          this.localDB.saveUser(this.user);
+          this.localDB.saveUserInBackground(this.user);
         }
         if (res.status === 'active') {
           this.router.navigate(['/home']);

@@ -14,7 +14,8 @@ import { FormsModule } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
-import { BackupService } from '../../services/backup.service';
+import { BackupService, UndoNotStoredError } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 import { isDeviceRevoked } from '../../services/server-error.util';
 import { toDisplayRow, getContactName } from '../../utils/transaction-display.util';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
@@ -189,16 +190,16 @@ export class Pay {
     }
   }
 
-  private payMyself(sk: string, oldLevel: number): void {
+  private async payMyself(sk: string, oldLevel: number): Promise<void> {
     try {
-      this.user.blockchain.pay(sk, this.target, this.amount)
-      this.backupService.recordAutomatic(this.user, sk)
-      this.displayMessage("Paiement enregistré avec succès.")
-      this.finishPayment(oldLevel)
+      await this.backupService.applyAndRecord(this.user, sk, () => this.user.blockchain.pay(sk, this.target, this.amount))
     } catch (err) {
-      console.log(err)
-      this.displayMessage("Une erreur est survenue oO")
+      console.error(err)
+      this.displayMessage(this.cancelledPaymentMessage(err))
+      return
     }
+    this.displayMessage("Paiement enregistré avec succès.")
+    this.finishPayment(oldLevel)
   }
 
   private paySomeoneElse(sk: string, oldLevel: number): void {
@@ -215,6 +216,12 @@ export class Pay {
   }
 
   private cancelledPaymentMessage(err: any): string {
+    if (err instanceof UndoNotStoredError) {
+      return err.message
+    }
+    if (err instanceof LocalSaveError) {
+      return "Paiement annulé : cet appareil n'a pas pu l'enregistrer. Rien n'a été débité."
+    }
     if (!(err instanceof HttpErrorResponse)) {
       return "Une erreur est survenue oO"
     }

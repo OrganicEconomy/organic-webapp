@@ -10,7 +10,8 @@ import { TransactionMaker } from 'organic-money/src/index.js';
 
 import { PrintPapers } from './print-papers';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { BackupService } from '../../services/backup.service';
+import { BackupService, UndoNotStoredError } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 
 const MY_PK = '02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3';
@@ -112,6 +113,25 @@ describe('PrintPapers', () => {
 
       expect(snackBarSpy.open).toHaveBeenCalledWith(
         "Billets annulés : ils n'ont pas pu être enregistrés sur le serveur. Rien n'a été débité.", 'Fermer', jasmine.anything());
+    });
+
+    it('should say how to recover when this device could not store the undo of refused papers', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new UndoNotStoredError('Opération refusée par le serveur, mais cet appareil n’a pas pu enregistrer son annulation.')));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(jasmine.stringMatching(/n’a pas pu enregistrer son annulation/), 'Fermer', jasmine.anything());
+    });
+
+    it('should cancel the papers when this device could not store them', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new LocalSaveError('full')));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        "Billets annulés : cet appareil n'a pas pu les enregistrer. Rien n'a été débité.", 'Fermer', jasmine.anything());
     });
 
     it('should not offer the PDF when the mandatory save fails', () => {

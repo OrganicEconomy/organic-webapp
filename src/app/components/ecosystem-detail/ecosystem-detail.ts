@@ -9,7 +9,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
-import { LocalDatabaseService } from '../../services/local-database.service';
+import { CONTACT_NOT_STORED_MESSAGE, LocalDatabaseService } from '../../services/local-database.service';
 import { resolveContactName } from '../../services/resolve-contact-name.util';
 import { extractServerErrorMessage } from '../../services/server-error.util';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
@@ -120,8 +120,13 @@ export class EcosystemDetail {
   async addToContacts(): Promise<void> {
     if (this.isContact) return;
     const contact: Contact = { name: this.name, pk: this.ecosystemPk, url: this.user.serverUrl, type: 'ecosystem' };
-    this.user.contacts.push(contact);
-    await this.localDB.saveUser(this.user);
+    try {
+      await this.localDB.saveWithNewContacts(this.user, [contact]);
+    } catch (error) {
+      console.error(error);
+      this.displayMessage(CONTACT_NOT_STORED_MESSAGE);
+      return;
+    }
     this.isContact = true;
   }
 

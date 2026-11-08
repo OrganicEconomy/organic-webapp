@@ -43,7 +43,7 @@ export class ConnectedUserService {
         this.server.getMyEcosystems(user.serverUrl, user.publickey).subscribe({
             next: (myEcosystems) => {
                 user.myEcosystems = myEcosystems
-                this.localDB.saveUser(user)
+                this.localDB.saveUserInBackground(user)
             },
             error: () => { /* keep whatever was already cached */ },
         })
@@ -54,7 +54,7 @@ export class ConnectedUserService {
         this.server.getServerInfo(user.serverUrl).subscribe({
             next: (info) => {
                 user.corePk = info.corePk
-                this.localDB.saveUser(user)
+                this.localDB.saveUserInBackground(user)
             },
             error: () => { /* keep whatever was already cached */ },
         })

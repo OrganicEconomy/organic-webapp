@@ -9,7 +9,8 @@ import { Pay } from './pay';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
-import { BackupService } from '../../services/backup.service';
+import { BackupService, UndoNotStoredError } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { MALFORMED_PUBLIC_KEY_MESSAGE } from '../../utils/public-key.util';
 
@@ -27,7 +28,7 @@ let serverDBSpy: jasmine.SpyObj<
   Pick<ServerConnexionService, 'sendTransaction' | 'sendEcosystemTx' | 'getValidationStatus' | 'getEcosystemInfo'>
 >;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic' | 'applyAndSave'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'applyAndRecord' | 'applyAndSave'>>;
 let dialogSpy: jasmine.SpyObj<MatDialog>;
 
 describe('Pay', () => {
@@ -68,7 +69,8 @@ describe('Pay', () => {
     serverDBSpy.sendTransaction.and.returnValue(of({}));
     serverDBSpy.sendEcosystemTx.and.returnValue(of({}));
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic', 'applyAndSave']);
+    backupSpy = jasmine.createSpyObj('BackupService', ['applyAndRecord', 'applyAndSave']);
+    backupSpy.applyAndRecord.and.callFake(async (_account, _sk, change) => change());
     backupSpy.applyAndSave.and.callFake((user: any, sk: string, change: () => any) => of(change()));
     dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
     dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
@@ -97,13 +99,14 @@ describe('Pay', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should use recordAutomatic (policy-respecting), not applyAndSave, on a self-pay', () => {
+  it('should store a self-pay on this device, not through the mandatory server save', async () => {
     component.target = MY_PK;
     component.amount = 5;
 
     component.pay();
+    await fixture.whenStable();
 
-    expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+    expect(backupSpy.applyAndRecord).toHaveBeenCalledWith(fakeAccount, 'the-real-sk', jasmine.any(Function));
     expect(backupSpy.applyAndSave).not.toHaveBeenCalled();
     expect(serverDBSpy.sendTransaction).not.toHaveBeenCalled();
   });
@@ -180,6 +183,19 @@ describe('Pay', () => {
     expect(serverDBSpy.sendTransaction).not.toHaveBeenCalled();
   });
 
+  it('should cancel the payment when this device could not store it', () => {
+    backupSpy.applyAndSave.and.returnValue(throwError(() => new LocalSaveError('full')));
+    spyOn(component, 'displayMessage');
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(
+      "Paiement annulé : cet appareil n'a pas pu l'enregistrer. Rien n'a été débité.",
+    );
+  });
+
   it('should cancel the payment when the server could not save it', () => {
     backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
     spyOn(component, 'displayMessage');
@@ -204,11 +220,39 @@ describe('Pay', () => {
     expect(component.displayMessage).toHaveBeenCalledWith('Une erreur est survenue oO');
   });
 
-  it('should navigate back to home after a successful self-pay', () => {
+  it('should say how to recover when this device could not store the undo of a refused payment', () => {
+    backupSpy.applyAndSave.and.returnValue(throwError(() => new UndoNotStoredError('Opération refusée par le serveur, mais cet appareil n’a pas pu enregistrer son annulation.')));
+    spyOn(component, 'displayMessage');
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/n’a pas pu enregistrer son annulation/));
+  });
+
+  it('should cancel a self-pay that this device could not store', async () => {
+    backupSpy.applyAndRecord.and.rejectWith(new LocalSaveError('device full'));
+    spyOn(component, 'displayMessage');
+    spyOn(console, 'error');
     component.target = MY_PK;
     component.amount = 5;
 
     component.pay();
+    await fixture.whenStable();
+
+    expect(component.displayMessage).toHaveBeenCalledOnceWith(
+      "Paiement annulé : cet appareil n'a pas pu l'enregistrer. Rien n'a été débité.",
+    );
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should navigate back to home after a successful self-pay', async () => {
+    component.target = MY_PK;
+    component.amount = 5;
+
+    component.pay();
+    await fixture.whenStable();
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
@@ -476,12 +520,13 @@ describe('Pay', () => {
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
   });
 
-  it('should ask LevelUpService to celebrate using the level captured before and after paying', () => {
+  it('should ask LevelUpService to celebrate using the level captured before and after paying', async () => {
     fakeBlockchain.getLevel = jasmine.createSpy('getLevel').and.returnValues(2, 3);
     component.target = MY_PK;
     component.amount = 5;
 
     component.pay();
+    await fixture.whenStable();
 
     expect(levelUpSpy.celebrateIfLevelUp).toHaveBeenCalledWith(2, 3);
   });

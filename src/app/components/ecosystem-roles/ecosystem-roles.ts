@@ -14,7 +14,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { ViewedEcosystemService } from '../../services/viewed-ecosystem.service';
-import { BackupService } from '../../services/backup.service';
+import { BackupService, UndoNotStoredError } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 import { resolveContactName } from '../../services/resolve-contact-name.util';
 import { extractServerErrorMessage, duplicateTransactionMessage, isDeviceRevoked } from '../../services/server-error.util';
 
@@ -174,6 +175,12 @@ export class EcosystemRoles {
   }
 
   private cancelledActionMessage(err: unknown): string {
+    if (err instanceof UndoNotStoredError) {
+      return err.message;
+    }
+    if (err instanceof LocalSaveError) {
+      return "Action annulée : cet appareil n'a pas pu l'enregistrer.";
+    }
     if (!(err instanceof HttpErrorResponse)) {
       return duplicateTransactionMessage(err) ?? "Une erreur est survenue oO";
     }

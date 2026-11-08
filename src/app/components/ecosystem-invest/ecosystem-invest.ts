@@ -11,7 +11,8 @@ import { MatSliderModule } from '@angular/material/slider';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
-import { BackupService } from '../../services/backup.service';
+import { BackupService, UndoNotStoredError } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 import { extractServerErrorMessage, isDeviceRevoked } from '../../services/server-error.util';
 
 @Component({
@@ -84,6 +85,12 @@ export class EcosystemInvest {
   }
 
   private cancelledEngagementMessage(err: unknown): string {
+    if (err instanceof UndoNotStoredError) {
+      return err.message;
+    }
+    if (err instanceof LocalSaveError) {
+      return "Engagement annulé : cet appareil n'a pas pu l'enregistrer.";
+    }
     if (!(err instanceof HttpErrorResponse)) {
       return "Une erreur est survenue oO";
     }

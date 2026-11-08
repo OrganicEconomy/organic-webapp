@@ -1,10 +1,36 @@
 import { Injectable, inject } from '@angular/core';
-import { concatMap, defer, from, last, map, Observable, tap } from 'rxjs';
+import { catchError, concatMap, defer, from, last, map, Observable, tap, throwError } from 'rxjs';
 import { LocalDatabaseService } from './local-database.service';
 import { ServerConnexionService } from './server-connection.service';
 import { ConnectedUserService } from './connected-user.service';
-import type { LoadedAccount } from '../models/account';
+import type { LoadedAccount, PendingOfflineTx } from '../models/account';
+import type { TxWire } from 'organic-protocol';
 import { CitizenBlockchain } from 'organic-money/src/index.js';
+
+export class UndoNotStoredError extends Error {}
+
+const UNDO_NOT_STORED_MESSAGE =
+  "Opération refusée par le serveur, mais cet appareil n'a pas pu enregistrer son annulation : déconnectez-vous, puis reconnectez-vous pour reprendre la copie du serveur."
+
+interface AccountSnapshot {
+  chain: unknown
+  sentOfflineTx: TxWire[]
+  pendingOfflineTx: PendingOfflineTx[]
+}
+
+function snapshotOf(user: LoadedAccount): AccountSnapshot {
+  return {
+    chain: user.blockchain.export(),
+    sentOfflineTx: user.sentOfflineTx?.slice(),
+    pendingOfflineTx: user.pendingOfflineTx?.slice(),
+  }
+}
+
+function restore(user: LoadedAccount, before: AccountSnapshot): void {
+  user.blockchain = new CitizenBlockchain(before.chain)
+  user.sentOfflineTx = before.sentOfflineTx
+  user.pendingOfflineTx = before.pendingOfflineTx
+}
 
 @Injectable({ providedIn: 'root' })
 export class BackupService {
@@ -17,42 +43,73 @@ export class BackupService {
    * paper…): always saved locally, pushed to the server only if the account's
    * policy allows it.
    */
-  recordAutomatic(user: LoadedAccount, sk: string): void {
-    this.localDB.saveUser(user)
+  private pushToServerIfThePolicyAsks(user: LoadedAccount, sk: string): void {
     if (user.backupPolicy === 'every-tx') {
       this.pushToServer(user, sk).subscribe()
     }
   }
 
-  applyAndSave<T>(user: LoadedAccount, sk: string, change: () => T): Observable<T> {
-    return defer(() => {
-      const chainBeforeChange = user.blockchain.export()
-      const result = this.applyOrUndo(user, chainBeforeChange, change)
-      this.localDB.saveUser(user)
-      return this.pushToServer(user, sk).pipe(
-        map(() => result),
-        tap({ error: () => this.restoreChain(user, chainBeforeChange) }),
-      )
-    })
+  recordAutomatic(user: LoadedAccount, sk: string): void {
+    this.localDB.saveUserInBackground(user)
+    this.pushToServerIfThePolicyAsks(user, sk)
   }
 
-  private applyOrUndo<T>(user: LoadedAccount, chainBeforeChange: unknown, change: () => T): T {
+  private applyOrUndo<T>(user: LoadedAccount, before: AccountSnapshot, change: () => T): T {
     try {
       return change()
     } catch (err) {
-      this.undoChange(user, chainBeforeChange)
+      restore(user, before)
       throw err
     }
   }
 
-  private restoreChain(user: LoadedAccount, chain: unknown): void {
-    this.undoChange(user, chain)
-    this.localDB.saveUser(user)
+  async applyAndRecord<T>(user: LoadedAccount, sk: string, change: () => T): Promise<T> {
+    const before = snapshotOf(user)
+    const result = this.applyOrUndo(user, before, change)
+    try {
+      await this.localDB.saveUser(user)
+    } catch (error) {
+      restore(user, before)
+      throw error
+    }
+    this.pushToServerIfThePolicyAsks(user, sk)
+    return result
   }
 
-  private undoChange(user: LoadedAccount, chain: unknown): void {
-    user.blockchain = new CitizenBlockchain(chain)
+  private storeOnDeviceOrUndo(user: LoadedAccount, before: AccountSnapshot): Observable<unknown> {
+    return from(this.localDB.saveUser(user)).pipe(
+      tap({ error: () => restore(user, before) }),
+    )
   }
+
+  private async undoOnDevice(user: LoadedAccount, before: AccountSnapshot): Promise<void> {
+    restore(user, before)
+    try {
+      await this.localDB.saveUser(user)
+    } catch (error) {
+      throw new UndoNotStoredError(UNDO_NOT_STORED_MESSAGE, { cause: error })
+    }
+  }
+
+  private pushToServerOrUndo(user: LoadedAccount, sk: string, before: AccountSnapshot): Observable<unknown> {
+    return this.pushToServer(user, sk).pipe(
+      catchError((serverError) => from(this.undoOnDevice(user, before)).pipe(
+        concatMap(() => throwError(() => serverError)),
+      )),
+    )
+  }
+
+  applyAndSave<T>(user: LoadedAccount, sk: string, change: () => T): Observable<T> {
+    return defer(() => {
+      const before = snapshotOf(user)
+      const result = this.applyOrUndo(user, before, change)
+      return this.storeOnDeviceOrUndo(user, before).pipe(
+        concatMap(() => this.pushToServerOrUndo(user, sk, before)),
+        map(() => result),
+      )
+    })
+  }
+
 
   /** "Sauvegarder maintenant" button (manual policy). */
   saveNow(user: LoadedAccount, sk: string): Observable<unknown> {
@@ -94,7 +151,7 @@ export class BackupService {
         next: () => {
           user.lastBackupAt = new Date().toISOString()
           user.isuptodate = true
-          this.localDB.saveUser(user)
+          this.localDB.saveUserInBackground(user)
         },
         error: (err: any) => {
           if (err.status === 409) {
