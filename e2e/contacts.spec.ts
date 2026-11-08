@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { Browser, expect, Page, test } from '@playwright/test';
 import { SERVER_URL } from '../playwright.config';
 import { ensureCoreGuardian, registerPendingCitizen } from './support/core-guardian';
@@ -107,5 +108,21 @@ test.describe('contact link', () => {
     await expect(ines.getByLabel('Nom')).toHaveValue('Hugo Lambert');
     await ines.getByRole('button', { name: 'Enregistrer' }).click();
     await expect(ines.getByRole('cell', { name: 'Hugo Lambert' })).toBeVisible();
+  });
+});
+
+test.describe('contacts file', () => {
+  test('should export the contacts in a file', async ({ page }) => {
+    const guardian = await ensureCoreGuardian();
+    await signUpApprovedCitizen(page, 'Jade Lambert');
+    await addContact(page, 'Gardien', guardian.publickey);
+
+    const download = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Exporter mes contacts' }).click();
+    const filePath = await (await download).path();
+
+    expect(JSON.parse(readFileSync(filePath, 'utf-8')).contacts).toEqual([
+      { name: 'Gardien', pk: guardian.publickey, url: SERVER_URL, type: 'citizen' },
+    ]);
   });
 });

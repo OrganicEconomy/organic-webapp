@@ -8,6 +8,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import type { Contact } from '../../models/account';
+import { contactsFile } from '../../utils/contacts-file.util';
+import { offerToDownload } from '../../utils/download.util';
 
 @Component({
   selector: 'app-contacts',
@@ -40,10 +42,32 @@ export class Contacts {
     this.user.contacts.filter((contact: Contact) => nameContains(contact, this.search())).sort(byName),
   )
 
+  hasNoContacts(): boolean {
+    return this.user.contacts.length === 0
+  }
+
+  exportContacts(): void {
+    offerToDownload(contactsFile(this.user.contacts), contactsFileName(this.user.name, new Date()), 'application/json')
+  }
+
   truncate(pk: string): string {
     if (!pk || pk.length <= 12) return pk;
     return `${pk.slice(0, 5)}…${pk.slice(-5)}`;
   }
+}
+
+function contactsFileName(userName: string, day: Date): string {
+  return ['contacts', ...wordsOf(userName), isoDay(day)].join('-') + '.json'
+}
+
+function wordsOf(text: string): string[] {
+  return comparable(text).split(/[^\p{L}\p{N}]+/u).filter(Boolean)
+}
+
+function isoDay(day: Date): string {
+  const month = String(day.getMonth() + 1).padStart(2, '0')
+  const dayOfMonth = String(day.getDate()).padStart(2, '0')
+  return `${day.getFullYear()}-${month}-${dayOfMonth}`
 }
 
 function byName(first: Contact, second: Contact): number {

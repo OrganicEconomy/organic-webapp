@@ -52,10 +52,13 @@ table {
 
 .actions {
     display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     justify-content: flex-start;
 }
 
-.actions a {
+.actions a,
+.actions button {
     display: flex !important;
     align-items: center;
     gap: 8px;
@@ -73,7 +76,8 @@ table {
         border-radius: 12px !important;
     }
 
-    .actions a {
+    .actions a,
+    .actions button {
         width: 100%;
         justify-content: center;
         height: 48px;
