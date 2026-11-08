@@ -8,10 +8,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
-import { ContactCheckService, contactWithKey } from '../../services/contact-check.service';
+import { hasContactWithKey, localRefusal } from '../../utils/contact-refusal.util';
 import type { Contact } from '../../models/account';
 import { ContactsFileError, contactsFile, contactsFromFile } from '../../utils/contacts-file.util';
 import { offerToDownload } from '../../utils/download.util';
+
+const MAX_CONTACTS_FILE_SIZE = 1_000_000
 
 export interface RefusedContact {
   name: string
@@ -40,7 +42,6 @@ export interface ImportReport {
 })
 export class Contacts {
   userService = inject(ConnectedUserService)
-  contactCheck = inject(ContactCheckService)
   localDB = inject(LocalDatabaseService)
   user = this.userService.getConnectedUser()
 
@@ -63,20 +64,34 @@ export class Contacts {
   }
 
   exportContacts(): void {
-    offerToDownload(contactsFile(this.user.contacts), contactsFileName(this.user.name, new Date()), 'application/json')
+    offerToDownload(contactsFile(this.contacts()), contactsFileName(this.user.name, new Date()), 'application/json')
   }
 
   importReport = signal<ImportReport | null>(null)
   importError = signal('')
-  importing = signal(false)
-  importSummary = computed(() => {
-    const report = this.importReport()
-    return report ? summaryOf(report) : ''
-  })
 
-  private async readContactsFile(file: File): Promise<Contact[] | null> {
+  private forgetPreviousImport(): void {
+    this.importError.set('')
+    this.importReport.set(null)
+  }
+
+  private async textOf(file: File): Promise<string | null> {
+    if (file.size > MAX_CONTACTS_FILE_SIZE) {
+      this.importError.set('Ce fichier est trop gros pour être un fichier de contacts.')
+      return null
+    }
     try {
-      return contactsFromFile(await file.text())
+      return await file.text()
+    } catch (error) {
+      console.error(error)
+      this.importError.set('Impossible de lire ce fichier.')
+      return null
+    }
+  }
+
+  private contactsReadFrom(text: string): Contact[] | null {
+    try {
+      return contactsFromFile(text)
     } catch (error) {
       if (error instanceof ContactsFileError) {
         this.importError.set(error.message)
@@ -86,66 +101,59 @@ export class Contacts {
     }
   }
 
-  private isAlreadyKnown(contact: Contact, knownContacts: Contact[]): boolean {
-    return contact.pk === this.user.publickey || contactWithKey(contact.pk, knownContacts) !== undefined
+  private isMyOwnKey(pk: string): boolean {
+    return pk === this.user.publickey
   }
 
-  private async sortOut(contacts: Contact[]): Promise<{ accepted: Contact[], report: ImportReport }> {
+  private triage(contacts: Contact[]): { accepted: Contact[], report: ImportReport } {
     const accepted: Contact[] = []
-    const report: ImportReport = { added: 0, alreadyKnown: 0, refused: [] }
+    const refused: RefusedContact[] = []
+    let alreadyKnown = 0
     for (const contact of contacts) {
-      const knownContacts = [...this.user.contacts, ...accepted]
-      if (this.isAlreadyKnown(contact, knownContacts)) {
-        report.alreadyKnown++
+      const knownContacts = [...this.contacts(), ...accepted]
+      if (this.isMyOwnKey(contact.pk) || hasContactWithKey(contact.pk, knownContacts)) {
+        alreadyKnown++
         continue
       }
-      const refusal = await this.contactCheck.refusal(contact, { contacts: knownContacts, serverUrl: this.user.serverUrl })
+      const refusal = localRefusal(contact, knownContacts)
       if (refusal) {
-        report.refused.push({ name: contact.name, reason: refusal })
+        refused.push({ name: contact.name || this.truncate(contact.pk), reason: refusal })
         continue
       }
       accepted.push(contact)
     }
-    report.added = accepted.length
-    return { accepted, report }
+    return { accepted, report: { added: accepted.length, alreadyKnown, refused } }
   }
 
-  private async isSavedWith(accepted: Contact[]): Promise<boolean> {
-    const previousContacts = this.user.contacts
-    this.user.contacts = [...previousContacts, ...accepted]
-    try {
-      await this.localDB.saveUser(this.user)
-      this.contacts.set(this.user.contacts)
-      return true
-    } catch (error) {
-      console.error(error)
-      this.user.contacts = previousContacts
-      this.importError.set("Les contacts n'ont pas pu être enregistrés sur cet appareil : rien n'a été importé.")
-      return false
-    }
+  private async saveWith(accepted: Contact[]): Promise<void> {
+    const contacts = [...this.contacts(), ...accepted]
+    await this.localDB.saveUser({ ...this.user, contacts })
+    this.user.contacts = contacts
+    this.contacts.set(contacts)
   }
 
-  private async importContactsOf(file: File): Promise<void> {
-    this.importError.set('')
-    this.importReport.set(null)
-    const contacts = await this.readContactsFile(file)
-    if (contacts === null) {
-      return
-    }
-    const { accepted, report } = await this.sortOut(contacts)
-    if (accepted.length > 0 && !(await this.isSavedWith(accepted))) {
-      return
-    }
-    this.importReport.set(report)
+  private reportFailedSave(error: unknown): void {
+    console.error(error)
+    this.importError.set("Les contacts n'ont pas pu être enregistrés sur cet appareil : rien n'a été importé.")
   }
 
   async importContacts(file: File): Promise<void> {
-    this.importing.set(true)
-    try {
-      await this.importContactsOf(file)
-    } finally {
-      this.importing.set(false)
+    this.forgetPreviousImport()
+    const text = await this.textOf(file)
+    const contacts = text === null ? null : this.contactsReadFrom(text)
+    if (contacts === null) {
+      return
     }
+    const { accepted, report } = this.triage(contacts)
+    if (accepted.length > 0) {
+      try {
+        await this.saveWith(accepted)
+      } catch (error) {
+        this.reportFailedSave(error)
+        return
+      }
+    }
+    this.importReport.set(report)
   }
 
   async importChosenFile(filePicker: HTMLInputElement): Promise<void> {
@@ -156,6 +164,14 @@ export class Contacts {
     }
   }
 
+  summaryOf(report: ImportReport): string {
+    const parts = [counted(report.added, 'contact ajouté', 'contacts ajoutés')]
+    if (report.alreadyKnown > 0) {
+      parts.push(counted(report.alreadyKnown, 'déjà présent', 'déjà présents'))
+    }
+    return parts.join(', ') + '.'
+  }
+
   truncate(pk: string): string {
     if (!pk || pk.length <= 12) return pk;
     return `${pk.slice(0, 5)}…${pk.slice(-5)}`;
@@ -164,14 +180,6 @@ export class Contacts {
 
 function counted(count: number, singular: string, plural: string): string {
   return `${count} ${count > 1 ? plural : singular}`
-}
-
-function summaryOf(report: ImportReport): string {
-  const parts = [counted(report.added, 'contact ajouté', 'contacts ajoutés')]
-  if (report.alreadyKnown > 0) {
-    parts.push(counted(report.alreadyKnown, 'déjà présent', 'déjà présents'))
-  }
-  return parts.join(', ') + '.'
 }
 
 function contactsFileName(userName: string, day: Date): string {

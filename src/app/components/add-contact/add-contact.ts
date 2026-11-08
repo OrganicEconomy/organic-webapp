@@ -1,8 +1,10 @@
 import { Component, inject } from '@angular/core';
 import { FormGroup, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Observable, catchError, firstValueFrom, map, of } from 'rxjs';
 import { ServerConnexionService } from '../../services/server-connection.service';
-import { ContactCheckService } from '../../services/contact-check.service';
+import { lookupFailure } from '../../utils/lookup-failure.util';
 import { decodeQr } from 'organic-protocol';
 import type { ServerListEntry } from 'organic-protocol';
 import type { Contact } from '../../models/account';
@@ -14,6 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { QrScanner } from '../qr-scanner/qr-scanner';
+import { localRefusal } from '../../utils/contact-refusal.util';
 
 @Component({
   selector: 'app-add-contact',
@@ -38,7 +41,6 @@ export class AddContact {
   userService = inject(ConnectedUserService)
   localDB = inject(LocalDatabaseService)
   server = inject(ServerConnexionService)
-  contactCheck = inject(ContactCheckService)
 
   user = this.userService.getConnectedUser()
   private scannedIsEcosystem = false
@@ -103,7 +105,7 @@ export class AddContact {
 
   async addContact() {
     const contact = this.contactFromForm()
-    const refusal = await this.contactCheck.refusal(contact, this.user)
+    const refusal = localRefusal(contact, this.user.contacts) ?? await this.serverRefusal(contact)
     if (refusal) {
       this.formError = refusal
       return
@@ -119,6 +121,35 @@ export class AddContact {
       pk: this.addcontactForm.value.pk.trim(),
       url: this.addcontactForm.value.url,
       type: this.scannedIsEcosystem ? 'ecosystem' : 'citizen',
+    }
+  }
+
+  private serverRefusal(contact: Contact): Promise<string | null> {
+    return firstValueFrom(
+      this.lookUp(contact).pipe(
+        map(() => null),
+        catchError((error) => of(this.lookupRefusal(error, contact))),
+      ),
+    )
+  }
+
+  private lookUp(contact: Contact): Observable<unknown> {
+    const serverUrl = contact.url || this.user.serverUrl
+    return contact.type === 'ecosystem'
+      ? this.server.getEcosystemInfo(serverUrl, contact.pk)
+      : this.server.getValidationStatus(serverUrl, contact.pk)
+  }
+
+  private lookupRefusal(error: HttpErrorResponse, contact: Contact): string {
+    switch (lookupFailure(error)) {
+      case 'unknown':
+        return contact.type === 'ecosystem'
+          ? "Aucun écosystème n'a cette clé sur ce serveur."
+          : "Aucun citoyen n'a cette clé sur ce serveur."
+      case 'unreachable':
+        return 'Impossible de vérifier ce contact : pas de connexion au serveur.'
+      case 'server-error':
+        return 'Impossible de vérifier ce contact : le serveur ne répond pas correctement.'
     }
   }
 }

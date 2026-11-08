@@ -28,7 +28,11 @@ function parsedJson(text: string): any {
 }
 
 function isContactsFile(file: any): boolean {
-  return file?.format === CONTACTS_FILE_FORMAT && Array.isArray(file.contacts);
+  return (
+    file?.format === CONTACTS_FILE_FORMAT &&
+    Number.isInteger(file.version) &&
+    Array.isArray(file.contacts)
+  );
 }
 
 function isWrittenByNewerVersion(file: any): boolean {
@@ -36,14 +40,22 @@ function isWrittenByNewerVersion(file: any): boolean {
 }
 
 function isContact(contact: any): contact is Contact {
-  return ['name', 'pk', 'url'].every((field) => typeof contact?.[field] === 'string')
-    && CONTACT_TYPES.includes(contact.type);
+  return (
+    ['name', 'pk', 'url'].every((field) => typeof contact?.[field] === 'string') &&
+    CONTACT_TYPES.includes(contact.type)
+  );
 }
 
 function assertIsReadable(contact: any, index: number): void {
   if (!isContact(contact)) {
-    throw new ContactsFileError(`Ce fichier de contacts est abîmé : le contact n° ${index + 1} est illisible.`);
+    throw new ContactsFileError(
+      `Ce fichier de contacts est abîmé : le contact n° ${index + 1} est illisible.`,
+    );
   }
+}
+
+function withTrimmedName(contact: Contact): Contact {
+  return { ...contact, name: contact.name.trim() };
 }
 
 export function contactsFromFile(text: string): Contact[] {
@@ -52,8 +64,10 @@ export function contactsFromFile(text: string): Contact[] {
     throw new ContactsFileError(NOT_A_CONTACTS_FILE);
   }
   if (isWrittenByNewerVersion(file)) {
-    throw new ContactsFileError("Ce fichier de contacts vient d'une version plus récente de l'application : mettez-la à jour.");
+    throw new ContactsFileError(
+      "Ce fichier de contacts vient d'une version plus récente de l'application : mettez-la à jour.",
+    );
   }
   file.contacts.forEach(assertIsReadable);
-  return file.contacts.map(onlyContactFields);
+  return file.contacts.map(onlyContactFields).map(withTrimmedName);
 }

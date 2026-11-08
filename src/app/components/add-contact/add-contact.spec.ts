@@ -128,6 +128,17 @@ describe('AddContact', () => {
     expect(component.formError).toBe('Le nom du contact est obligatoire.');
   });
 
+  it('should refuse to add a key already among the contacts', async () => {
+    const basile = { name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr', type: 'citizen' };
+    fakeAccount.contacts = [basile];
+    component.addcontactForm.setValue({ name: 'Basile bis', pk: basilePk, url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([basile]);
+    expect(component.formError).toBe('Cette clé est déjà dans vos contacts, sous le nom Basile.');
+  });
+
   it('should refuse a citizen key unknown to the contact server', async () => {
     serverSpy.getValidationStatus.and.returnValue(throwError(() => new HttpErrorResponse({ status: 404 })));
     component.addcontactForm.setValue({ name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr' });
@@ -148,6 +159,28 @@ describe('AddContact', () => {
     expect(serverSpy.getEcosystemInfo).toHaveBeenCalledWith('https://trifouillis.fr', basilePk);
     expect(fakeAccount.contacts).toEqual([]);
     expect(component.formError).toBe("Aucun écosystème n'a cette clé sur ce serveur.");
+  });
+
+  it('should not add a contact that could not be checked because the server is unreachable', async () => {
+    serverSpy.getValidationStatus.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+    component.addcontactForm.setValue({ name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([]);
+    expect(component.formError).toBe('Impossible de vérifier ce contact : pas de connexion au serveur.');
+  });
+
+  it('should refuse to add a contact whose public key is malformed', async () => {
+    component.addcontactForm.setValue({ name: 'Basile', pk: 'abcdef123456', url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([]);
+    expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+    expect(component.formError).toBe(
+      "Cette clé publique n'est pas valide : elle doit faire 66 caractères (0-9, a-f) et commencer par 02 ou 03.",
+    );
   });
 
   describe('scanSuccessHandler', () => {

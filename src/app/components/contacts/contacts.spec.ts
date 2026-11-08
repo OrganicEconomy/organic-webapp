@@ -1,15 +1,26 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 
 import { Contacts } from './contacts';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { ContactCheckService } from '../../services/contact-check.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
 import { contactsFile } from '../../utils/contacts-file.util';
 import type { Contact } from '../../models/account';
+import { MALFORMED_PUBLIC_KEY_MESSAGE } from '../../utils/public-key.util';
+
+const HUGO_PK = '02' + 'aa'.repeat(32);
+
+function keyFor(name: string): string {
+  const nameInHex = Array.from(name, (letter) => letter.codePointAt(0)!.toString(16).padStart(4, '0')).join('');
+  return '03' + nameInHex.padEnd(64, '0').slice(0, 64);
+}
 
 function contactNamed(name: string): Contact {
-  return { name, pk: `pk-${name}`, url: 'https://trifouillis.fr', type: 'citizen' };
+  return { name, pk: keyFor(name), url: 'https://trifouillis.fr', type: 'citizen' };
+}
+
+function notAContactsFile(): File {
+  return new File(['pas du JSON'], 'photo.jpg');
 }
 
 function fileOf(contacts: Contact[]): File {
@@ -20,13 +31,12 @@ describe('Contacts', () => {
   let component: Contacts;
   let fixture: ComponentFixture<Contacts>;
   let account: { name: string; publickey: string; contacts: Contact[] };
-  let contactCheckSpy: jasmine.SpyObj<Pick<ContactCheckService, 'refusal'>>;
+  let connectedAccount: typeof account | null;
   let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
 
   beforeEach(async () => {
-    account = { name: 'Hugo Ménard', publickey: 'pk-hugo', contacts: [] };
-    contactCheckSpy = jasmine.createSpyObj('ContactCheckService', ['refusal']);
-    contactCheckSpy.refusal.and.resolveTo(null);
+    account = { name: 'Hugo Ménard', publickey: HUGO_PK, contacts: [] };
+    connectedAccount = account;
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
     localDBSpy.saveUser.and.resolveTo();
     await TestBed.configureTestingModule({
@@ -35,9 +45,8 @@ describe('Contacts', () => {
         provideRouter([]),
         {
           provide: ConnectedUserService,
-          useValue: { getConnectedUser: () => account, getSecretKey: () => '' },
+          useValue: { getConnectedUser: () => connectedAccount, getSecretKey: () => '' },
         },
-        { provide: ContactCheckService, useValue: contactCheckSpy },
         { provide: LocalDatabaseService, useValue: localDBSpy },
       ],
     })
@@ -49,6 +58,17 @@ describe('Contacts', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
   }
+
+  describe('constructor', () => {
+    it('should send a visitor with no open account to the account choice', () => {
+      connectedAccount = null;
+      const navigate = spyOn(TestBed.inject(Router), 'navigate');
+
+      createComponent();
+
+      expect(navigate).toHaveBeenCalledWith(['/user-selection']);
+    });
+  });
 
   it('should create', () => {
     createComponent();
@@ -128,7 +148,7 @@ describe('Contacts', () => {
   });
 
   describe('importContacts', () => {
-    it('should add the contacts accepted by the check', async () => {
+    it('should add the contacts that pass the checks of the contact form', async () => {
       createComponent();
 
       await component.importContacts(fileOf([contactNamed('Zoé')]));
@@ -137,14 +157,12 @@ describe('Contacts', () => {
     });
 
     it('should name each refused contact with its reason', async () => {
-      const unknown = "Aucun citoyen n'a cette clé sur ce serveur.";
-      contactCheckSpy.refusal.and.callFake(async (contact) => (contact.name === 'Zoé' ? unknown : null));
       createComponent();
 
-      await component.importContacts(fileOf([contactNamed('Zoé'), contactNamed('Denis')]));
+      await component.importContacts(fileOf([{ ...contactNamed('Zoé'), pk: 'abc' }, contactNamed('Denis')]));
 
       expect(account.contacts).toEqual([contactNamed('Denis')]);
-      expect(component.importReport()?.refused).toEqual([{ name: 'Zoé', reason: unknown }]);
+      expect(component.importReport()?.refused).toEqual([{ name: 'Zoé', reason: MALFORMED_PUBLIC_KEY_MESSAGE }]);
     });
 
     it('should skip the contacts already known by their key, and count them', async () => {
@@ -169,7 +187,7 @@ describe('Contacts', () => {
     it('should skip my own key', async () => {
       createComponent();
 
-      await component.importContacts(fileOf([{ ...contactNamed('Moi'), pk: 'pk-hugo' }]));
+      await component.importContacts(fileOf([{ ...contactNamed('Moi'), pk: HUGO_PK }]));
 
       expect(account.contacts).toEqual([]);
       expect(component.importReport()).toEqual({ added: 0, alreadyKnown: 1, refused: [] });
@@ -180,7 +198,8 @@ describe('Contacts', () => {
 
       await component.importContacts(fileOf([contactNamed('Zoé'), contactNamed('Denis')]));
 
-      expect(localDBSpy.saveUser).toHaveBeenCalledOnceWith(account as any);
+      expect(localDBSpy.saveUser).toHaveBeenCalledTimes(1);
+      expect(localDBSpy.saveUser.calls.mostRecent().args[0].contacts).toEqual([contactNamed('Zoé'), contactNamed('Denis')]);
     });
 
     it('should not save the account when no contact was added', async () => {
@@ -195,10 +214,58 @@ describe('Contacts', () => {
     it('should say that the file is not a contacts file', async () => {
       createComponent();
 
-      await component.importContacts(new File(['pas du JSON'], 'photo.jpg'));
+      await component.importContacts(notAContactsFile());
 
       expect(component.importError()).toBe("Ce fichier n'est pas un fichier de contacts.");
       expect(component.importReport()).toBeNull();
+    });
+
+    it('should refuse a file too big to be a contacts file, without reading it', async () => {
+      createComponent();
+      const hugeFile = new File(['x'.repeat(1_000_001)], 'video.mp4');
+      const text = spyOn(hugeFile, 'text').and.callThrough();
+
+      await component.importContacts(hugeFile);
+
+      expect(text).not.toHaveBeenCalled();
+      expect(component.importError()).toBe('Ce fichier est trop gros pour être un fichier de contacts.');
+    });
+
+    it('should say that the file could not be read', async () => {
+      createComponent();
+      const unreadableFile = fileOf([contactNamed('Zoé')]);
+      spyOn(unreadableFile, 'text').and.rejectWith(new DOMException('moved', 'NotReadableError'));
+      spyOn(console, 'error');
+
+      await component.importContacts(unreadableFile);
+
+      expect(component.importError()).toBe('Impossible de lire ce fichier.');
+    });
+
+    it('should clear the previous error once a valid file is imported', async () => {
+      createComponent();
+      await component.importContacts(notAContactsFile());
+
+      await component.importContacts(fileOf([contactNamed('Zoé')]));
+
+      expect(component.importError()).toBe('');
+    });
+
+    it('should clear the previous report when the next file is unreadable', async () => {
+      createComponent();
+      await component.importContacts(fileOf([contactNamed('Zoé')]));
+
+      await component.importContacts(notAContactsFile());
+
+      expect(component.importReport()).toBeNull();
+    });
+
+    it('should name a refused contact without a name by its shortened key', async () => {
+      createComponent();
+
+      await component.importContacts(fileOf([{ ...contactNamed('Zoé'), name: '' }]));
+
+      expect(component.importReport()?.refused[0].name).toBe(component.truncate(keyFor('Zoé')));
     });
 
     it('should keep the contacts as they were when they could not be saved', async () => {
@@ -228,6 +295,16 @@ describe('Contacts', () => {
       await component.importChosenFile(filePickerHolding(fileOf([contactNamed('Zoé')])));
 
       expect(account.contacts).toEqual([contactNamed('Zoé')]);
+    });
+
+    it('should do nothing when the choice of a file was cancelled', async () => {
+      createComponent();
+      const filePicker = fixture.nativeElement.querySelector('.import-file-picker') as HTMLInputElement;
+
+      await component.importChosenFile(filePicker);
+
+      expect(component.importReport()).toBeNull();
+      expect(component.importError()).toBe('');
     });
 
     it('should let the same file be chosen again', async () => {
@@ -280,44 +357,47 @@ describe('Contacts', () => {
       );
     });
 
-    it('should list each refused contact with its reason', async () => {
-      contactCheckSpy.refusal.and.resolveTo("Aucun citoyen n'a cette clé sur ce serveur.");
+    it('should count the contacts already present in the plural', async () => {
+      account.contacts = ['Zoé', 'Denis'].map(contactNamed);
+      createComponent();
+
+      await component.importContacts(fileOf(['Zoé', 'Denis'].map(contactNamed)));
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.import-summary').textContent).toContain(
+        '0 contact ajouté, 2 déjà présents.',
+      );
+    });
+
+    it('should not mention refused contacts when there is none', async () => {
       createComponent();
 
       await component.importContacts(fileOf([contactNamed('Zoé')]));
       fixture.detectChanges();
 
+      expect(fixture.nativeElement.querySelector('.import-refused')).toBeNull();
+    });
+
+    it('should list each refused contact with its reason', async () => {
+      createComponent();
+
+      await component.importContacts(fileOf([{ ...contactNamed('Zoé'), pk: 'abc' }]));
+      fixture.detectChanges();
+
       expect(fixture.nativeElement.querySelector('.import-refused li').textContent).toContain(
-        "Zoé : Aucun citoyen n'a cette clé sur ce serveur.",
+        `Zoé : ${MALFORMED_PUBLIC_KEY_MESSAGE}`,
       );
     });
 
     it('should say why the file could not be imported', async () => {
       createComponent();
 
-      await component.importContacts(new File(['pas du JSON'], 'photo.jpg'));
+      await component.importContacts(notAContactsFile());
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('.import-error').textContent).toContain(
         "Ce fichier n'est pas un fichier de contacts.",
       );
-    });
-
-    it('should not offer a second import while one is running', async () => {
-      let finishCheck = (_refusal: string | null) => {};
-      contactCheckSpy.refusal.and.returnValue(new Promise((resolve) => (finishCheck = resolve)));
-      createComponent();
-
-      const importing = component.importContacts(fileOf([contactNamed('Zoé')]));
-      await new Promise((resolve) => setTimeout(resolve));
-      fixture.detectChanges();
-      const importButton = fixture.nativeElement.querySelector('.import-contacts');
-      expect(importButton.disabled).toBeTrue();
-
-      finishCheck(null);
-      await importing;
-      fixture.detectChanges();
-      expect(importButton.disabled).toBeFalse();
     });
 
     it('should offer to export the contacts once there is one', () => {
