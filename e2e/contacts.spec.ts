@@ -125,4 +125,26 @@ test.describe('contacts file', () => {
       { name: 'Gardien', pk: guardian.publickey, url: SERVER_URL, type: 'citizen' },
     ]);
   });
+
+  test('should import on a new device the contacts exported on the old one', async ({ browser }) => {
+    const guardian = await ensureCoreGuardian();
+    const kevin = await newCitizenPage(browser, 'Kévin Morel');
+    await addContact(kevin, 'Gardien', guardian.publickey);
+    const download = kevin.waitForEvent('download');
+    await kevin.getByRole('button', { name: 'Exporter mes contacts' }).click();
+    const exported = JSON.parse(readFileSync(await (await download).path(), 'utf-8'));
+    exported.contacts.push({ name: 'Inconnu', pk: '02' + 'ab'.repeat(32), url: SERVER_URL, type: 'citizen' });
+
+    const lea = await newCitizenPage(browser, 'Léa Morel');
+    await lea.getByRole('link', { name: 'Contacts' }).click();
+    await lea.locator('.import-file-picker').setInputFiles({
+      name: 'contacts.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(exported)),
+    });
+
+    await expect(lea.getByText('1 contact ajouté.')).toBeVisible();
+    await expect(lea.getByText("Inconnu : Aucun citoyen n'a cette clé sur ce serveur.")).toBeVisible();
+    await expect(lea.getByRole('cell', { name: 'Gardien' })).toBeVisible();
+  });
 });

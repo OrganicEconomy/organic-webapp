@@ -36,6 +36,28 @@
             <button mat-stroked-button type="button" class="export-contacts" (click)="exportContacts()" [disabled]="hasNoContacts()">
                 <i class="bi bi-download"></i> Exporter mes contacts
             </button>
+            <button mat-stroked-button type="button" class="import-contacts" (click)="filePicker.click()" [disabled]="importing()">
+                <i class="bi bi-upload"></i> Importer des contacts
+            </button>
+            <input #filePicker type="file" accept=".json,application/json" class="import-file-picker" hidden (change)="importChosenFile(filePicker)">
         </div>
+
+        @if (importError()) {
+            <p class="import-error">{{ importError() }}</p>
+        }
+
+        @if (importReport(); as report) {
+            <div class="import-report">
+                <p class="import-summary">{{ importSummary() }}</p>
+                @if (report.refused.length > 0) {
+                    <p>Non importés :</p>
+                    <ul class="import-refused">
+                        @for (refused of report.refused; track $index) {
+                            <li>{{ refused.name }} : {{ refused.reason }}</li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
     </mat-card-content>
 </mat-card>
