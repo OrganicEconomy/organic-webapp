@@ -1,3 +1,4 @@
+import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
@@ -178,6 +179,19 @@ describe('Pay', () => {
     );
     expect(levelUpSpy.celebrateIfLevelUp).not.toHaveBeenCalled();
     expect(serverDBSpy.sendTransaction).not.toHaveBeenCalled();
+  });
+
+  it('should cancel the payment when this device could not store it', () => {
+    backupSpy.applyAndSave.and.returnValue(throwError(() => new LocalSaveError('full')));
+    spyOn(component, 'displayMessage');
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(
+      "Paiement annulé : cet appareil n'a pas pu l'enregistrer. Rien n'a été débité.",
+    );
   });
 
   it('should cancel the payment when the server could not save it', () => {

@@ -1,3 +1,4 @@
+import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { Location } from '@angular/common';
@@ -187,6 +188,17 @@ describe('EcosystemOrder', () => {
       component.submitOrder();
 
       expect(component.displayMessage).toHaveBeenCalledWith("Ordre annulé : rien n'a été enregistré.");
+    });
+
+    it('should cancel the order when this device could not store it', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new LocalSaveError('full')));
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+
+      component.submitOrder();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Ordre annulé : cet appareil n'a pas pu l'enregistrer.");
     });
 
     it('should cancel the order when this device was revoked by a newer login', () => {

@@ -120,8 +120,15 @@ export class EcosystemDetail {
   async addToContacts(): Promise<void> {
     if (this.isContact) return;
     const contact: Contact = { name: this.name, pk: this.ecosystemPk, url: this.user.serverUrl, type: 'ecosystem' };
-    this.user.contacts.push(contact);
-    await this.localDB.saveUser(this.user);
+    const contacts = [...this.user.contacts, contact];
+    try {
+      await this.localDB.saveUser({ ...this.user, contacts });
+    } catch (error) {
+      console.error(error);
+      this.displayMessage("Cet appareil n'a pas pu enregistrer ce contact.");
+      return;
+    }
+    this.user.contacts = contacts;
     this.isContact = true;
   }
 

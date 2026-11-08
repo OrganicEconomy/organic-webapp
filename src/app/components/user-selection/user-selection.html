@@ -4,6 +4,9 @@
   </mat-card-header>
 
   <mat-card-content>
+    @if (loadError) {
+      <p class="load-error">{{ loadError }}</p>
+    }
     <mat-list>
       @for (user of users; track user.name) {
         <mat-list-item>

@@ -18,7 +18,7 @@ export class BackupService {
    * policy allows it.
    */
   recordAutomatic(user: LoadedAccount, sk: string): void {
-    this.localDB.saveUser(user)
+    this.localDB.saveUserInBackground(user)
     if (user.backupPolicy === 'every-tx') {
       this.pushToServer(user, sk).subscribe()
     }
@@ -28,10 +28,12 @@ export class BackupService {
     return defer(() => {
       const chainBeforeChange = user.blockchain.export()
       const result = this.applyOrUndo(user, chainBeforeChange, change)
-      this.localDB.saveUser(user)
-      return this.pushToServer(user, sk).pipe(
+      return from(this.localDB.saveUser(user)).pipe(
+        tap({ error: () => this.undoChange(user, chainBeforeChange) }),
+        concatMap(() => this.pushToServer(user, sk).pipe(
+          tap({ error: () => this.restoreChain(user, chainBeforeChange) }),
+        )),
         map(() => result),
-        tap({ error: () => this.restoreChain(user, chainBeforeChange) }),
       )
     })
   }
@@ -47,7 +49,7 @@ export class BackupService {
 
   private restoreChain(user: LoadedAccount, chain: unknown): void {
     this.undoChange(user, chain)
-    this.localDB.saveUser(user)
+    this.localDB.saveUserInBackground(user)
   }
 
   private undoChange(user: LoadedAccount, chain: unknown): void {
@@ -94,7 +96,7 @@ export class BackupService {
         next: () => {
           user.lastBackupAt = new Date().toISOString()
           user.isuptodate = true
-          this.localDB.saveUser(user)
+          this.localDB.saveUserInBackground(user)
         },
         error: (err: any) => {
           if (err.status === 409) {

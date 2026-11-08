@@ -8,6 +8,7 @@ import { LocalDatabaseService } from '../../services/local-database.service'
 import { ConnectedUserService } from '../../services/connected-user.service'
 import { encryptSecretKey } from '../../services/secret-key-crypto.util'
 import { makeDefaultAccount } from '../../models/account'
+import type { Account } from '../../models/account'
 import { environment } from '../../../environments/environment'
 import { formatDateInput, parseDateInput } from '../../utils/date-input.util'
 
@@ -95,7 +96,14 @@ export class SignupPage {
         account.devicetoken = res.devicetoken
         account.status = res.status
 
-        const user = await this.localDB.saveUser(account)
+        let user: Account
+        try {
+          user = await this.localDB.saveUser(account)
+        } catch (error) {
+          console.error(error)
+          alert("Votre compte est créé, mais cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis utilisez « Restaurer un compte ».")
+          return
+        }
         this.userService.setConnectedUser(user, sk)
         if (res.status !== 'active') {
           this.router.navigate(['/pending-validation']);

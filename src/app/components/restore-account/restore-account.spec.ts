@@ -1,3 +1,4 @@
+import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, ActivatedRoute, convertToParamMap } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
@@ -68,6 +69,21 @@ describe('RestoreAccount', () => {
       check()
     })
   }
+
+  it('should say that this device could not store the restored account', async () => {
+    spyOn(localDB, 'saveUser').and.rejectWith(new LocalSaveError('full'))
+    spyOn(console, 'error')
+
+    component.restoreForm.setValue({ serverUrl: SERVER_URL, email: 'alice@ex.fr', password: 'correct-password' })
+    component.restore()
+
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/login`).flush({ publickey: TEST_PK, name: 'Alice', mail: 'alice@ex.fr', secretkey: secretkeyForCorrectPassword, status: 'active', blocks: [], devicetoken: 'dt-1' })
+    await waitUntil(() => component.error !== '')
+
+    expect(component.error).toBe("Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée.")
+    expect(component.restoring).toBeFalse()
+    expect(router.navigate).not.toHaveBeenCalled()
+  });
 
   it('should restore the account when the password decrypts the fetched secretkey', async () => {
     const saveSpy = spyOn(localDB, 'saveUser').and.callThrough()

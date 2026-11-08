@@ -94,7 +94,7 @@ export class AccountDetails {
   updateBackupPolicy(policy: BackupPolicy): void {
     this.backupPolicy = policy
     this.user.backupPolicy = policy
-    this.localDB.saveUser(this.user)
+    this.localDB.saveUserInBackground(this.user)
   }
 
   saveNow(): void {
@@ -129,7 +129,7 @@ export class AccountDetails {
     this.serverDB.changePassword(this.user.serverUrl, this.user.publickey, this.newPassword, newEncrypted, sk).subscribe({
       next: () => {
         this.user.secretkey = newEncrypted
-        this.localDB.saveUser(this.user)
+        this.localDB.saveUserInBackground(this.user)
         this.oldPassword = ""
         this.newPassword = ""
         this.newPasswordConfirm = ""

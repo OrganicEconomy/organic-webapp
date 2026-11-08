@@ -1,3 +1,4 @@
+import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -107,6 +108,16 @@ describe('AddContact', () => {
       { name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr', type: 'citizen' },
     ]);
     expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
+  });
+
+  it('should leave the contacts as they were when this device could not store them', async () => {
+    localDBSpy.saveUser.and.rejectWith(new LocalSaveError('full'));
+    component.addcontactForm.setValue({ name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(fakeAccount.contacts).toEqual([]);
+    expect(component.formError).toBe("Cet appareil n'a pas pu enregistrer ce contact.");
   });
 
   it('should add a contact whose pasted key has surrounding spaces', async () => {

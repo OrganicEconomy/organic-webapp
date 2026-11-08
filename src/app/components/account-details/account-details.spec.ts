@@ -15,7 +15,7 @@ const REAL_SK_HEX = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c39
 
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
+let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUserInBackground'>>;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getServerInfo' | 'changePassword'>>;
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'saveNow'>>;
 
@@ -43,7 +43,7 @@ describe('AccountDetails', () => {
       getSecretKey: () => REAL_SK_HEX,
       isReadOnlySession: () => false,
     };
-    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUserInBackground']);
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['getServerInfo', 'changePassword']);
     serverDBSpy.getServerInfo.and.returnValue(of({
       protocolVersion: 1, apiVersion: '1', name: 'Serveur de Trifouillis',
@@ -98,7 +98,7 @@ describe('AccountDetails', () => {
 
     expect(component.backupPolicy).toBe('manual');
     expect(fakeAccount.backupPolicy).toBe('manual');
-    expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
+    expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeAccount);
   });
 
   it('saveNow() should call backupService.saveNow', () => {
@@ -130,6 +130,16 @@ describe('AccountDetails', () => {
     expect(args[1]).toBe('alice-pk');
     expect(args[2]).toBe('new-password');
     expect(args[4]).toBe(REAL_SK_HEX);
+  });
+
+  it('changePassword() should keep the newly encrypted key on this device', async () => {
+    component.oldPassword = 'old-password';
+    component.newPassword = 'new-password';
+    component.newPasswordConfirm = 'new-password';
+
+    await component.changePassword();
+
+    expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeAccount);
   });
 
   it('changePassword() should not call the server when the confirmation does not match', async () => {

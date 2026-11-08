@@ -1,14 +1,18 @@
 import { TestBed } from '@angular/core/testing';
 import localforage from 'localforage';
 
-import { LocalDatabaseService } from './local-database.service';
+import { LocalDatabaseService, LocalReadError, LocalSaveError } from './local-database.service';
 import { makeDefaultAccount } from '../models/account';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 describe('LocalDatabaseService', () => {
   let service: LocalDatabaseService;
 
+  let snackBarSpy: jasmine.SpyObj<Pick<MatSnackBar, 'open'>>;
+
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+    TestBed.configureTestingModule({ providers: [{ provide: MatSnackBar, useValue: snackBarSpy }] });
     service = TestBed.inject(LocalDatabaseService);
   });
 
@@ -134,5 +138,43 @@ describe('LocalDatabaseService', () => {
     const loaded = await service.getUser('does-not-exist')
 
     expect(loaded).toBeNull()
+  });
+
+  describe('saveUser', () => {
+    it('should fail with a LocalSaveError when the device cannot store the account', async () => {
+      spyOn(localforage, 'setItem').and.rejectWith(new DOMException('full', 'QuotaExceededError'));
+
+      await expectAsync(service.saveUser(makeDefaultAccount(uniquePk('full')))).toBeRejectedWithError(LocalSaveError);
+    });
+  });
+
+  describe('saveUserInBackground', () => {
+    it('should warn the citizen when the device cannot store the account', async () => {
+      spyOn(localforage, 'setItem').and.rejectWith(new DOMException('full', 'QuotaExceededError'));
+      spyOn(console, 'error');
+
+      await service.saveUserInBackground(makeDefaultAccount(uniquePk('full')));
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        "Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée.",
+        'Fermer',
+      );
+    });
+  });
+
+  describe('getUserList', () => {
+    it('should fail with a LocalReadError when the device cannot read its accounts', async () => {
+      spyOn(localforage, 'iterate').and.rejectWith(new DOMException('blocked', 'SecurityError'));
+
+      await expectAsync(service.getUserList()).toBeRejectedWithError(LocalReadError);
+    });
+  });
+
+  describe('getUser', () => {
+    it('should fail with a LocalReadError when the device cannot read the account', async () => {
+      spyOn(localforage, 'getItem').and.rejectWith(new DOMException('blocked', 'SecurityError'));
+
+      await expectAsync(service.getUser(uniquePk('blocked'))).toBeRejectedWithError(LocalReadError);
+    });
   });
 });

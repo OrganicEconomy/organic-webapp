@@ -1,8 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, firstValueFrom, of, throwError } from 'rxjs';
 
 import { BackupService } from './backup.service';
-import { LocalDatabaseService } from './local-database.service';
+import { LocalDatabaseService, LocalSaveError } from './local-database.service';
 import { ServerConnexionService } from './server-connection.service';
 import { ConnectedUserService } from './connected-user.service';
 import { CitizenBlockchain } from 'organic-money/src/index.js';
@@ -17,7 +17,7 @@ function makeAccountWithMoney(): { account: any; sk: string } {
   return { account: { backupPolicy: 'manual', lastSavedBlockSignature: null, blockchain }, sk };
 }
 
-let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
+let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser' | 'saveUserInBackground'>>;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveBlock'>>;
 let userServiceSpy: jasmine.SpyObj<Pick<ConnectedUserService, 'setReadOnly'>>;
 let fakeUser: any;
@@ -43,7 +43,8 @@ describe('BackupService', () => {
         getMyPublicKey: () => 'pk',
       },
     };
-    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveUserInBackground']);
+    localDBSpy.saveUser.and.callFake(async (account) => account);
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveBlock']);
     serverDBSpy.saveBlock.and.returnValue(of({}));
     userServiceSpy = jasmine.createSpyObj('ConnectedUserService', ['setReadOnly']);
@@ -60,9 +61,9 @@ describe('BackupService', () => {
     service = TestBed.inject(BackupService);
   });
 
-  it('recordAutomatic should always save locally', () => {
+  it('recordAutomatic should always save locally, warning the citizen if the device cannot', () => {
     service.recordAutomatic(fakeUser, 'sk');
-    expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeUser);
+    expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
   });
 
   it('recordAutomatic should push to the server under every-tx', () => {
@@ -85,7 +86,7 @@ describe('BackupService', () => {
     service.saveNow(fakeUser, 'sk').subscribe();
     expect(fakeUser.isuptodate).toBeTrue();
     expect(fakeUser.lastBackupAt).not.toBeNull();
-    expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeUser);
+    expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
   });
 
   it('should mark the session read-only on a 409', () => {
@@ -161,30 +162,29 @@ describe('BackupService', () => {
   });
 
   describe('applyAndSave', () => {
-    it('should apply the change, save it on the server and return its result', () => {
+    it('should apply the change, save it on the server and return its result', async () => {
       const { account, sk } = makeAccountWithMoney();
-      let result: any;
 
-      service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1))
-        .subscribe((tx) => (result = tx));
+      const result: any = await firstValueFrom(
+        service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1)),
+      );
 
       expect(result.target).toBe(RECIPIENT_PK);
       expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(account, sk, account.blockchain.blocks[0]);
     });
 
-    it('should undo the change and save the undone chain locally when the server save fails', () => {
+    it('should undo the change and save the undone chain locally when the server save fails', async () => {
       serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 0 })));
       const { account, sk } = makeAccountWithMoney();
       const moneyBefore = account.blockchain.getAvailableMoneyAmount();
       const experienceBefore = account.blockchain.experience;
 
-      service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1))
-        .subscribe({ error: () => {} });
+      const saving = firstValueFrom(service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1)));
 
+      await expectAsync(saving).toBeRejected();
       expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
       expect(account.blockchain.experience).toBe(experienceBefore);
-      expect(localDBSpy.saveUser).toHaveBeenCalledTimes(2);
-      const savedAccount: any = localDBSpy.saveUser.calls.mostRecent().args[0];
+      const savedAccount: any = localDBSpy.saveUserInBackground.calls.mostRecent().args[0];
       expect(savedAccount.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
     });
 
@@ -198,6 +198,18 @@ describe('BackupService', () => {
       expect(failure).toBeTruthy();
       expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
       expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+    });
+
+    it('should cancel the change without asking the server when the device cannot store it', async () => {
+      localDBSpy.saveUser.and.rejectWith(new LocalSaveError('full'));
+      const { account, sk } = makeAccountWithMoney();
+      const moneyBefore = account.blockchain.getAvailableMoneyAmount();
+
+      const saving = firstValueFrom(service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1)));
+
+      await expectAsync(saving).toBeRejectedWithError(LocalSaveError);
+      expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
+      expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
     });
 
     it('should undo what the change already did when it fails halfway', () => {

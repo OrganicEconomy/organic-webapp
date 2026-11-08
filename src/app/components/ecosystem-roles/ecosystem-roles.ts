@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
+import { LocalSaveError } from '../../services/local-database.service';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
@@ -174,6 +175,9 @@ export class EcosystemRoles {
   }
 
   private cancelledActionMessage(err: unknown): string {
+    if (err instanceof LocalSaveError) {
+      return "Action annulée : cet appareil n'a pas pu l'enregistrer.";
+    }
     if (!(err instanceof HttpErrorResponse)) {
       return duplicateTransactionMessage(err) ?? "Une erreur est survenue oO";
     }

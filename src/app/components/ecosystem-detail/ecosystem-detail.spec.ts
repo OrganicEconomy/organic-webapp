@@ -1,3 +1,4 @@
+import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -410,6 +411,18 @@ describe('EcosystemDetail', () => {
       await component.addToContacts();
 
       expect(component.isContact).toBeTrue();
+    });
+
+    it('should leave the contacts as they were when this device could not store them', async () => {
+      localDBSpy.saveUser.and.rejectWith(new LocalSaveError('full'));
+      spyOn(component, 'displayMessage');
+      const contactsBefore = [...fakeAccount.contacts];
+
+      await component.addToContacts();
+
+      expect(fakeAccount.contacts).toEqual(contactsBefore);
+      expect(component.isContact).toBeFalse();
+      expect(component.displayMessage).toHaveBeenCalledWith("Cet appareil n'a pas pu enregistrer ce contact.");
     });
 
     it('should not add a duplicate contact when already added', async () => {

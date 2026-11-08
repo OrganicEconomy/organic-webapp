@@ -1,3 +1,4 @@
+import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { provideRouter } from '@angular/router';
@@ -164,6 +165,17 @@ describe('EcosystemInvest', () => {
 
       expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
       expect(router.navigate).not.toHaveBeenCalledWith(['/ecosystems', ECO_PK]);
+    });
+
+    it('should cancel the engagement when this device could not store it', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new LocalSaveError('full')));
+      component.dailyAmount = 3;
+      component.days = 5;
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Engagement annulé : cet appareil n'a pas pu l'enregistrer.");
     });
 
     it('should cancel the engagement when the server could not save it', () => {

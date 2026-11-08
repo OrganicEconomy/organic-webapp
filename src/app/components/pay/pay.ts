@@ -20,6 +20,7 @@ import { toDisplayRow, getContactName } from '../../utils/transaction-display.ut
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { Observable, catchError, finalize, map, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
+import { LocalSaveError } from '../../services/local-database.service';
 import { lookupFailure } from '../../utils/lookup-failure.util';
 import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
 
@@ -215,6 +216,9 @@ export class Pay {
   }
 
   private cancelledPaymentMessage(err: any): string {
+    if (err instanceof LocalSaveError) {
+      return "Paiement annulé : cet appareil n'a pas pu l'enregistrer. Rien n'a été débité."
+    }
     if (!(err instanceof HttpErrorResponse)) {
       return "Une erreur est survenue oO"
     }

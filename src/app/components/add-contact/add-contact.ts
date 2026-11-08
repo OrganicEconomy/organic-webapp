@@ -110,8 +110,15 @@ export class AddContact {
       this.formError = refusal
       return
     }
-    this.user.contacts.push(contact)
-    await this.localDB.saveUser(this.user)
+    const contacts = [...this.user.contacts, contact]
+    try {
+      await this.localDB.saveUser({ ...this.user, contacts })
+    } catch (error) {
+      console.error(error)
+      this.formError = "Cet appareil n'a pas pu enregistrer ce contact."
+      return
+    }
+    this.user.contacts = contacts
     this.router.navigate(['/contacts']);
   }
 

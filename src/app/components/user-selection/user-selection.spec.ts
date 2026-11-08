@@ -1,3 +1,4 @@
+import { LocalReadError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -44,7 +45,11 @@ describe('UserSelection', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: LocalDatabaseService, useValue: { getUserList: getUserListSpy, saveUser: jasmine.createSpy('saveUser') } },
+        { provide: LocalDatabaseService, useValue: {
+          getUserList: getUserListSpy,
+          saveUser: jasmine.createSpy('saveUser'),
+          saveUserInBackground: jasmine.createSpy('saveUserInBackground'),
+        } },
         { provide: ActivatedRoute, useValue: { snapshot: { get queryParamMap() { return convertToParamMap(queryParams); } } } },
       ],
     })
@@ -72,6 +77,20 @@ describe('UserSelection', () => {
     await fixture.whenStable();
 
     expect(component.users.length).toBe(1);
+    expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  it('should say that this device could not read its accounts, instead of starting over', async () => {
+    getUserListSpy.and.rejectWith(new LocalReadError('blocked'));
+    spyOn(console, 'error');
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.load-error').textContent).toContain(
+      "Cet appareil n'a pas pu lire ses comptes. Quittez la navigation privée, ou vérifiez que le site peut enregistrer des données.",
+    );
     expect(router.navigate).not.toHaveBeenCalled();
   });
 

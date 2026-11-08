@@ -1,12 +1,21 @@
-import { Injectable } from '@angular/core'
+import { Injectable, inject } from '@angular/core'
+import { MatSnackBar } from '@angular/material/snack-bar'
 import localforage from 'localforage'
 import { CitizenBlockchain } from 'organic-money/src/index.js'
 import type { Account, Contact, LoadedAccount } from '../models/account'
+
+export class LocalSaveError extends Error {}
+
+export class LocalReadError extends Error {}
+
+const LOCAL_SAVE_FAILED_MESSAGE =
+    "Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée."
 
 @Injectable({
     providedIn: 'root',
 })
 export class LocalDatabaseService {
+    private snackBar = inject(MatSnackBar)
     private dbName = 'OrganicMoney'
     constructor() {
         this.initDB()
@@ -24,8 +33,8 @@ export class LocalDatabaseService {
             await localforage.iterate((value: Account) => {
                 result.push(value)
             })
-        } catch (err) {
-            console.log(err)
+        } catch (error) {
+            throw new LocalReadError("Cet appareil n'a pas pu lire ses comptes.", { cause: error })
         }
         return result
     }
@@ -58,10 +67,19 @@ export class LocalDatabaseService {
 
         try {
             await localforage.setItem(account.publickey, account)
-        } catch (err) {
-            console.log(err)
+        } catch (error) {
+            throw new LocalSaveError("Cet appareil n'a pas pu enregistrer le compte.", { cause: error })
         }
         return account
+    }
+
+    public async saveUserInBackground(data: Account & { blockchain?: { export(): unknown } }): Promise<void> {
+        try {
+            await this.saveUser(data)
+        } catch (error) {
+            console.error(error)
+            this.snackBar.open(LOCAL_SAVE_FAILED_MESSAGE, 'Fermer')
+        }
     }
 
     public async getUser(pk: string): Promise<LoadedAccount | null> {
@@ -73,9 +91,8 @@ export class LocalDatabaseService {
                 contacts: this.withoutOwnContact(account),
                 blockchain: new CitizenBlockchain(account.blocks),
             }
-        } catch (err) {
-            console.log(err)
-            return null
+        } catch (error) {
+            throw new LocalReadError("Cet appareil n'a pas pu lire le compte.", { cause: error })
         }
     }
 

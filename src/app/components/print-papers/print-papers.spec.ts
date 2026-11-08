@@ -1,3 +1,4 @@
+import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Dialog } from '@angular/cdk/dialog';
@@ -112,6 +113,16 @@ describe('PrintPapers', () => {
 
       expect(snackBarSpy.open).toHaveBeenCalledWith(
         "Billets annulés : ils n'ont pas pu être enregistrés sur le serveur. Rien n'a été débité.", 'Fermer', jasmine.anything());
+    });
+
+    it('should cancel the papers when this device could not store them', () => {
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new LocalSaveError('full')));
+      component.papercounts[5] = 1;
+
+      component.generatePapers();
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        "Billets annulés : cet appareil n'a pas pu les enregistrer. Rien n'a été débité.", 'Fermer', jasmine.anything());
     });
 
     it('should not offer the PDF when the mandatory save fails', () => {

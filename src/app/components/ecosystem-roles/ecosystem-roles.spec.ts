@@ -1,3 +1,4 @@
+import { LocalSaveError } from '../../services/local-database.service';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap, provideRouter } from '@angular/router';
 import { Location } from '@angular/common';
@@ -165,6 +166,15 @@ describe('EcosystemRoles', () => {
       component.removeRole('admin', 'admin-pk');
 
       expect(serverSpy.sendEcosystemTx).not.toHaveBeenCalled();
+    });
+
+    it('should cancel the action when this device could not store it', () => {
+      spyOn(component, 'displayMessage');
+      backupSpy.applyAndSave.and.returnValue(throwError(() => new LocalSaveError('full')));
+
+      component.removeRole('admin', 'admin-pk');
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Action annulée : cet appareil n'a pas pu l'enregistrer.");
     });
 
     it('should cancel the action when the server could not save it', () => {
