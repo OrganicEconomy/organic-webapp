@@ -42,6 +42,7 @@ describe('AccountDetails', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => REAL_SK_HEX,
       isReadOnlySession: () => false,
+      readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
     };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveUserInBackground']);
     localDBSpy.saveUser.and.callFake(async (account) => account);
@@ -92,6 +93,30 @@ describe('AccountDetails', () => {
   it('should display the server info once fetched', () => {
     expect(component.serverInfo?.name).toBe('Serveur de Trifouillis');
     expect(component.serverInfo?.stats.users).toBe(42);
+  });
+
+  it('updateBackupPolicy() should keep the policy and say why in a read-only session', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    spyOn(component, 'displayMessage');
+
+    component.updateBackupPolicy('manual');
+
+    expect(fakeAccount.backupPolicy).toBe('every-tx');
+    expect(localDBSpy.saveUserInBackground).not.toHaveBeenCalled();
+    expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
+  });
+
+  it('changePassword() should not change the password from a read-only session', async () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    spyOn(component, 'displayMessage');
+    component.oldPassword = 'old-password';
+    component.newPassword = 'new-password';
+    component.newPasswordConfirm = 'new-password';
+
+    await component.changePassword();
+
+    expect(serverDBSpy.changePassword).not.toHaveBeenCalled();
+    expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
   });
 
   it('updateBackupPolicy() should persist the new policy locally', () => {

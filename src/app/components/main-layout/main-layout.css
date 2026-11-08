@@ -37,3 +37,15 @@
 .bottom-nav a.active {
   color: var(--mat-sys-primary);
 }
+
+.other-tab-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--mat-sys-error-container, #fdecea);
+  color: var(--mat-sys-on-error-container, var(--mat-sys-error));
+  font-size: 0.85rem;
+}

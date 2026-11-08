@@ -119,6 +119,10 @@ export class EcosystemDetail {
 
   async addToContacts(): Promise<void> {
     if (this.isContact) return;
+    if (this.userService.isReadOnlySession()) {
+      this.displayMessage(this.userService.readOnlyMessage());
+      return;
+    }
     const contact: Contact = { name: this.name, pk: this.ecosystemPk, url: this.user.serverUrl, type: 'ecosystem' };
     try {
       await this.localDB.saveWithNewContacts(this.user, [contact]);

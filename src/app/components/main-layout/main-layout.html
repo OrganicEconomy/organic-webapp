@@ -1,3 +1,10 @@
+@if (isTakenOverByAnotherTab()) {
+  <div class="other-tab-banner">
+    <span>Compte ouvert dans un autre onglet : celui-ci est en lecture seule.</span>
+    <button mat-stroked-button type="button" (click)="useThisTab()">Utiliser cet onglet</button>
+  </div>
+}
+
 <div class="page-content">
   <router-outlet></router-outlet>
 </div>

@@ -3,10 +3,13 @@ import { MatSnackBar } from '@angular/material/snack-bar'
 import localforage from 'localforage'
 import { CitizenBlockchain } from 'organic-money/src/index.js'
 import type { Account, Contact, LoadedAccount } from '../models/account'
+import { AccountTabsService } from './account-tabs.service'
 
 export class LocalSaveError extends Error {}
 
 export class LocalReadError extends Error {}
+
+export class StaleTabError extends Error {}
 
 export const ACCOUNT_NOT_STORED_MESSAGE =
     "Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée."
@@ -20,6 +23,7 @@ export type StorableAccount = Account & { blockchain?: { export(): unknown } }
 })
 export class LocalDatabaseService {
     private snackBar = inject(MatSnackBar)
+    private tabs = inject(AccountTabsService)
     private dbName = 'OrganicMoney'
     constructor() {
         this.initDB()
@@ -50,6 +54,9 @@ export class LocalDatabaseService {
      * instance (as getUser attaches) is accepted in place of `blocks`.
      */
     public async saveUser(data: StorableAccount): Promise<Account> {
+        if (this.tabs.isStale(data.publickey)) {
+            throw new StaleTabError('Another tab changed this account since this one loaded it.')
+        }
         const account: Account = {
             publickey: data.publickey,
             name: data.name,
@@ -74,6 +81,7 @@ export class LocalDatabaseService {
         } catch (error) {
             throw new LocalSaveError('Could not store the account on this device.', { cause: error })
         }
+        this.tabs.announceChange(account.publickey)
         return account
     }
 
@@ -81,6 +89,10 @@ export class LocalDatabaseService {
         try {
             await this.saveUser(data)
         } catch (error) {
+            if (error instanceof StaleTabError) {
+                console.warn(error)
+                return
+            }
             if (!(error instanceof LocalSaveError)) {
                 throw error
             }

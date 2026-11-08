@@ -46,6 +46,7 @@ describe('EcosystemDetail', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => SK,
       isReadOnlySession: () => false,
+      readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
     };
 
     fakeBlockchain = {
@@ -407,6 +408,16 @@ describe('EcosystemDetail', () => {
 
       expect(fakeAccount.contacts).toContain({ pk: ECO_PK, name: 'Boulangerie associative', url: SERVER_URL, type: 'ecosystem' });
       expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
+    });
+
+    it('should not add the ecosystem from a read-only session, and say why', async () => {
+      stubConnectedUserService.isReadOnlySession = () => true;
+      spyOn(component, 'displayMessage');
+
+      await component.addToContacts();
+
+      expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+      expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
     });
 
     it('should flip isContact to true after adding', async () => {

@@ -32,11 +32,13 @@ describe('Contacts', () => {
   let fixture: ComponentFixture<Contacts>;
   let account: { name: string; publickey: string; contacts: Contact[] };
   let connectedAccount: typeof account | null;
+  let readOnly: boolean;
   let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser' | 'saveWithNewContacts'>>;
 
   beforeEach(async () => {
     account = { name: 'Hugo Ménard', publickey: HUGO_PK, contacts: [] };
     connectedAccount = account;
+    readOnly = false;
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveWithNewContacts']);
     localDBSpy.saveWithNewContacts.and.callFake((user, contacts) =>
       LocalDatabaseService.prototype.saveWithNewContacts.call(localDBSpy as any, user, contacts),
@@ -48,7 +50,12 @@ describe('Contacts', () => {
         provideRouter([]),
         {
           provide: ConnectedUserService,
-          useValue: { getConnectedUser: () => connectedAccount, getSecretKey: () => '' },
+          useValue: {
+            getConnectedUser: () => connectedAccount,
+            getSecretKey: () => '',
+            isReadOnlySession: () => readOnly,
+            readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
+          },
         },
         { provide: LocalDatabaseService, useValue: localDBSpy },
       ],
@@ -176,6 +183,16 @@ describe('Contacts', () => {
 
       expect(account.contacts).toEqual([contactNamed('Zoé'), contactNamed('Denis')]);
       expect(component.importReport()).toEqual({ added: 1, alreadyKnown: 1, refused: [] });
+    });
+
+    it('should not import anything from a read-only session, and say why', async () => {
+      readOnly = true;
+      createComponent();
+
+      await component.importContacts(fileOf([contactNamed('Zoé')]));
+
+      expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+      expect(component.importError()).toBe("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
     });
 
     it('should add a contact listed twice in the file only once', async () => {

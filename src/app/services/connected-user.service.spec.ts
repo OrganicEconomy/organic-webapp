@@ -4,6 +4,8 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 
 import { ConnectedUserService } from './connected-user.service';
 import { makeDefaultAccount } from '../models/account';
+import { AccountTabsService } from './account-tabs.service';
+import { LocalDatabaseService } from './local-database.service';
 
 const SERVER_URL = 'https://trifouillis.fr';
 const MINE_URL = `${SERVER_URL}/api/v1/ecosystems/mine`;
@@ -12,10 +14,23 @@ const INFO_URL = `${SERVER_URL}/api/v1/info`;
 describe('ConnectedUserService', () => {
   let service: ConnectedUserService;
   let httpMock: HttpTestingController;
+  let staleAccounts: Set<string>;
 
   beforeEach(() => {
+    staleAccounts = new Set();
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        {
+          provide: AccountTabsService,
+          useValue: {
+            isStale: (pk: string) => staleAccounts.has(pk),
+            announceChange: () => {},
+            takeBack: (pk: string) => staleAccounts.delete(pk),
+          },
+        },
+      ],
     });
     service = TestBed.inject(ConnectedUserService);
     httpMock = TestBed.inject(HttpTestingController);
@@ -67,6 +82,87 @@ describe('ConnectedUserService', () => {
   it('should become read-only after setReadOnly()', () => {
     service.setReadOnly();
     expect(service.isReadOnlySession()).toBeTrue();
+  });
+
+  describe('setConnectedUser', () => {
+    it('should take the account back from any other tab, since connecting loads it afresh', () => {
+      staleAccounts.add('pk-reconnected');
+
+      service.setConnectedUser(makeDefaultAccount('pk-reconnected') as any, 'sk');
+
+      expect(service.isReadOnlySession()).toBeFalse();
+    });
+  });
+
+  describe('isReadOnlySession', () => {
+    it('should be read-only while another tab holds the account', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-held') as any, 'sk');
+      staleAccounts.add('pk-held');
+
+      expect(service.isReadOnlySession()).toBeTrue();
+    });
+  });
+
+  describe('readOnlyMessage', () => {
+    it('should name the other tab when another tab holds the account', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-tab-message') as any, 'sk');
+      staleAccounts.add('pk-tab-message');
+
+      expect(service.readOnlyMessage()).toBe("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
+    });
+
+    it('should name the other device when another device holds the account', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-device-message') as any, 'sk');
+      service.setReadOnly();
+
+      expect(service.readOnlyMessage()).toBe('Ce compte est actif sur un autre appareil — lecture seule.');
+    });
+  });
+
+  describe('readOnlyReason', () => {
+    it('should say that another tab took the account over', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-tabs') as any, 'sk');
+      staleAccounts.add('pk-tabs');
+
+      expect(service.readOnlyReason()).toBe('other-tab');
+    });
+
+    it('should say that another device took the account over', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-device') as any, 'sk');
+      service.setReadOnly();
+
+      expect(service.readOnlyReason()).toBe('other-device');
+    });
+
+    it('should give no reason for a session that can write', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-free') as any, 'sk');
+
+      expect(service.readOnlyReason()).toBeNull();
+    });
+  });
+
+  describe('useThisTab', () => {
+    it('should take the account back with what the other tab stored, keeping the unlocked key', async () => {
+      const pk = `pk-${Date.now()}-take-back`;
+      await TestBed.inject(LocalDatabaseService).saveUser({ ...makeDefaultAccount(pk), name: 'Stored by the other tab' });
+      service.setConnectedUser({ ...makeDefaultAccount(pk), name: 'Stale' } as any, 'unlocked-sk');
+      staleAccounts.add(pk);
+
+      await service.useThisTab();
+
+      expect(service.isReadOnlySession()).toBeFalse();
+      expect(service.getConnectedUser().name).toBe('Stored by the other tab');
+      expect(service.getSecretKey()).toBe('unlocked-sk');
+    });
+
+    it('should leave this tab read-only when the account can no longer be read from this device', async () => {
+      const pk = `pk-${Date.now()}-gone`;
+      service.setConnectedUser(makeDefaultAccount(pk) as any, 'unlocked-sk');
+      staleAccounts.add(pk);
+
+      await expectAsync(service.useThisTab()).toBeRejected();
+      expect(service.isReadOnlySession()).toBeTrue();
+    });
   });
 
   describe('refreshing myEcosystems on connect', () => {

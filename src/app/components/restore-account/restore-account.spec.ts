@@ -6,6 +6,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { RestoreAccount } from './restore-account';
 import { LocalDatabaseService, LocalSaveError } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
+import { AccountTabsService } from '../../services/account-tabs.service';
 import { encryptSecretKey } from '../../services/secret-key-crypto.util';
 
 const SERVER_URL = 'https://trifouillis.fr'
@@ -82,6 +83,22 @@ describe('RestoreAccount', () => {
     expect(component.error).toBe("Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée.")
     expect(component.restoring).toBeFalse()
     expect(router.navigate).not.toHaveBeenCalled()
+  });
+
+  it('should store the restored account even if another tab had it, since the server copy prevails', async () => {
+    const tabs = TestBed.inject(AccountTabsService)
+    let takenBack = false
+    spyOn(tabs, 'isStale').and.callFake(() => !takenBack)
+    spyOn(tabs, 'takeBack').and.callFake(() => { takenBack = true })
+
+    component.restoreForm.setValue({ serverUrl: SERVER_URL, email: 'alice@ex.fr', password: 'correct-password' })
+    component.restore()
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/login`).flush({ publickey: TEST_PK, name: 'Alice', mail: 'alice@ex.fr', secretkey: secretkeyForCorrectPassword, status: 'active', blocks: [], devicetoken: 'dt-1' })
+    await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0 || component.error !== '')
+    httpMock.expectOne((r) => r.url.includes('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
+
+    expect(component.error).toBe('')
   });
 
   it('should restore the account when the password decrypts the fetched secretkey', async () => {
