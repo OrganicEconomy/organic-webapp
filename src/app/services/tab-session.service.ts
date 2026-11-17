@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-const SESSION_KEY = 'organic-session';
+const STORAGE_ENTRY_NAME = 'organic-session';
 
 const SESSION_LIFETIME_MS = 15 * 60_000;
 
@@ -31,7 +31,7 @@ export class TabSessionService {
 
   private keep(session: TabSession): void {
     try {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      sessionStorage.setItem(STORAGE_ENTRY_NAME, JSON.stringify(session));
     } catch (error) {
       this.reportWriteFailure(error);
     }
@@ -62,7 +62,7 @@ export class TabSessionService {
 
   forget(): void {
     try {
-      sessionStorage.removeItem(SESSION_KEY);
+      sessionStorage.removeItem(STORAGE_ENTRY_NAME);
     } catch (error) {
       console.error('This tab cannot forget its session.', error);
     }
@@ -70,7 +70,7 @@ export class TabSessionService {
 
   stored(): TabSession | null {
     try {
-      const session = sessionStorage.getItem(SESSION_KEY);
+      const session = sessionStorage.getItem(STORAGE_ENTRY_NAME);
       return session === null ? null : JSON.parse(session);
     } catch (error) {
       console.error('This tab cannot read its session: the password will be asked again.', error);
