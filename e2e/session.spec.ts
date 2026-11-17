@@ -19,6 +19,7 @@ test.describe('session', () => {
 
     await page.clock.fastForward('15:30');
     await expect(page.getByText('Session verrouillée')).toBeVisible();
+    await page.clock.setSystemTime(new Date());
     await page.goBack();
     await expect(page.getByText('Session verrouillée')).toBeVisible();
 

@@ -209,7 +209,7 @@ describe('BackupService', () => {
 
       const saving = firstValueFrom(service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1)));
 
-      await expectAsync(saving).toBeRejectedWithError(UndoNotStoredError);
+      await expectAsync(saving).toBeRejectedWithError(UndoNotStoredError, /rechargez la page/);
     });
 
     it('should not save anything when the change itself fails', () => {

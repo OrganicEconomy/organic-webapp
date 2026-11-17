@@ -11,6 +11,7 @@ import { provideHttpClientTesting, HttpTestingController } from '@angular/common
 import { of } from 'rxjs';
 
 import { UserSelection } from './user-selection';
+import { ChainSyncService } from '../../services/chain-sync.service';
 import { LocalDatabaseService, LocalReadError } from '../../services/local-database.service';
 import { encryptSecretKey } from '../../services/secret-key-crypto.util';
 
@@ -24,10 +25,12 @@ describe('UserSelection', () => {
   // the real service shares IndexedDB state across every spec in this run.
   let getUserListSpy: jasmine.Spy;
   let getUserSpy: jasmine.Spy;
+  let syncSpy: jasmine.Spy;
   let queryParams: Record<string, string>;
 
   beforeEach(async () => {
     queryParams = {}
+    syncSpy = jasmine.createSpy('syncTheConnectedAccount').and.resolveTo();
     getUserSpy = jasmine.createSpy('getUser').and.callFake(async (pk: string) =>
       (await getUserListSpy()).find((account: any) => account.publickey === pk),
     );
@@ -55,6 +58,7 @@ describe('UserSelection', () => {
           saveUserInBackground: jasmine.createSpy('saveUserInBackground'),
         } },
         { provide: ActivatedRoute, useValue: { snapshot: { get queryParamMap() { return convertToParamMap(queryParams); } } } },
+        { provide: ChainSyncService, useValue: { syncTheConnectedAccount: syncSpy } },
       ],
     })
     .compileComponents();
@@ -161,6 +165,21 @@ describe('UserSelection', () => {
     httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
+  });
+
+  it('should sync with the server before opening the page', async () => {
+    const secretkey = await encryptSecretKey('ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f', 'correct-password')
+    getUserListSpy.and.resolveTo([{ name: 'Alice', publickey: 'pk', secretkey, status: 'active', blocks: [] }])
+    fixture.detectChanges();
+    await fixture.whenStable();
+    spyOn(component.dialog, 'open').and.returnValue({ afterClosed: () => of('correct-password') } as any)
+
+    component.selectUser(0)
+    await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0)
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
+
+    expect(syncSpy).toHaveBeenCalledBefore(router.navigate as jasmine.Spy);
   });
 
   it('should connect the account as stored now, not as listed when the page opened', async () => {

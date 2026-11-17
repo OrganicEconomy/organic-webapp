@@ -1,10 +1,28 @@
-import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners, provideZoneChangeDetection } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+  provideZoneChangeDetection,
+} from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 import { routes } from './app.routes';
 import { provideHttpClient } from '@angular/common/http';
 import { ConnectedUserService } from './services/connected-user.service';
+import { ChainSyncService } from './services/chain-sync.service';
+
+function resumeTheTabSessionThenSync(): Promise<void> {
+  const userService = inject(ConnectedUserService);
+  const chainSync = inject(ChainSyncService);
+  return userService
+    .resumeTabSession()
+    .then(() => chainSync.syncTheConnectedAccount())
+    .catch((error) =>
+      console.error('The session of this tab could not be resumed and synced.', error),
+    );
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -13,6 +31,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(),
     provideAnimationsAsync(),
-    provideAppInitializer(() => inject(ConnectedUserService).resumeTabSession()),
-  ]
+    provideAppInitializer(resumeTheTabSessionThenSync),
+  ],
 };

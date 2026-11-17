@@ -7,6 +7,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { PageReopenerService } from '../../services/page-reopener.service';
+import { ChainSyncService } from '../../services/chain-sync.service';
 
 @Component({
   selector: 'app-lock-dialog',
@@ -18,6 +19,7 @@ export class LockDialog {
   private userService = inject(ConnectedUserService);
   private dialogRef = inject(MatDialogRef<LockDialog>);
   private pageReopener = inject(PageReopenerService);
+  private chainSync = inject(ChainSyncService);
   private router = inject(Router);
 
   password = '';
@@ -31,8 +33,9 @@ export class LockDialog {
       this.unlockError = 'Mot de passe incorrect.';
       return;
     }
-    this.dialogRef.close();
+    await this.chainSync.syncTheConnectedAccount();
     await this.pageReopener.reopenCurrentPage();
+    this.dialogRef.close();
   }
 
   async unlock(): Promise<void> {
