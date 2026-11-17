@@ -133,6 +133,27 @@ test.describe('contacts file', () => {
     ]);
   });
 
+  test('should import exactly the contacts that were exported', async ({ browser }) => {
+    const guardian = await ensureCoreGuardian();
+    const pendingCitizenPk = await registerPendingCitizen('Ophélie Marchand');
+    const paul = await newCitizenPage(browser, 'Paul Rivière');
+    await addContact(paul, 'Gardien', guardian.publickey);
+    await addContact(paul, 'Ophélie', pendingCitizenPk);
+    const exportedByPaul = await contactsExportedBy(paul);
+
+    const rose = await newCitizenPage(browser, 'Rose Rivière');
+    await rose.getByRole('link', { name: 'Contacts' }).click();
+    await rose.locator('.import-file-picker').setInputFiles({
+      name: 'contacts.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(exportedByPaul)),
+    });
+    await expect(rose.getByText('2 contacts ajoutés.')).toBeVisible();
+
+    const exportedByRose = await contactsExportedBy(rose);
+    expect(exportedByRose.contacts).toEqual(exportedByPaul.contacts);
+  });
+
   test('should import on a new device the contacts exported on the old one', async ({
     browser,
   }) => {

@@ -46,8 +46,14 @@ describe('contactsFromFile', () => {
     return JSON.stringify({ format: 'organic-contacts', version: 1, contacts: [zoe], ...fields });
   }
 
-  it('should read back the contacts written by contactsFile', () => {
-    expect(contactsFromFile(contactsFile([zoe]))).toEqual([zoe]);
+  it('should read back exactly every kind of contact written by contactsFile', () => {
+    const contacts: Contact[] = [
+      zoe,
+      { name: 'La Boulange', pk: 'pk-boulange', url: 'https://trifouillis.fr', type: 'ecosystem' },
+      { name: 'Denis', pk: 'pk-denis', url: '', type: 'citizen' },
+    ];
+
+    expect(contactsFromFile(contactsFile(contacts))).toEqual(contacts);
   });
 
   it('should leave out any other field of the contacts', () => {
