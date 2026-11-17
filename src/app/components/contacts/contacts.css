@@ -44,6 +44,21 @@ table {
     color: var(--mat-sys-on-surface-variant);
 }
 
+.import-error {
+    margin: 0;
+    color: var(--mat-sys-error);
+}
+
+.import-report p,
+.import-report ul {
+    margin: 0;
+}
+
+.import-refused {
+    padding-left: 20px;
+    color: var(--mat-sys-on-surface-variant);
+}
+
 .pk-cell {
     font-family: monospace;
     font-size: 0.85rem;
