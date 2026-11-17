@@ -24,7 +24,12 @@ describe('AddContact', () => {
   beforeEach(() => {
     fakeAccount = { contacts: [], serverUrl: 'https://mon-serveur.fr' };
     linkParams = {};
-    stubConnectedUserService = { getConnectedUser: () => fakeAccount, getSecretKey: () => '' };
+    stubConnectedUserService = {
+      getConnectedUser: () => fakeAccount,
+      getSecretKey: () => '',
+      isReadOnlySession: () => false,
+      readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
+    };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveWithNewContacts']);
     localDBSpy.saveWithNewContacts.and.callFake((user, contacts) =>
       LocalDatabaseService.prototype.saveWithNewContacts.call(localDBSpy as any, user, contacts),
@@ -123,6 +128,16 @@ describe('AddContact', () => {
     expect(fakeAccount.contacts).toEqual([]);
     expect(navigate).not.toHaveBeenCalled();
     expect(component.formError).toBe("Cet appareil n'a pas pu enregistrer ce contact.");
+  });
+
+  it('should not add a contact from a read-only session, and say why', async () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    component.addcontactForm.setValue({ name: 'Basile', pk: basilePk, url: 'https://trifouillis.fr' });
+
+    await component.addContact();
+
+    expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+    expect(component.formError).toBe("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
   });
 
   it('should add a contact whose pasted key has surrounding spaces', async () => {

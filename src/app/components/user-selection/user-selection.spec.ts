@@ -23,10 +23,14 @@ describe('UserSelection', () => {
   // result now drives real navigation logic (redirect on first launch), and
   // the real service shares IndexedDB state across every spec in this run.
   let getUserListSpy: jasmine.Spy;
+  let getUserSpy: jasmine.Spy;
   let queryParams: Record<string, string>;
 
   beforeEach(async () => {
     queryParams = {}
+    getUserSpy = jasmine.createSpy('getUser').and.callFake(async (pk: string) =>
+      (await getUserListSpy()).find((account: any) => account.publickey === pk),
+    );
     getUserListSpy = jasmine.createSpy('getUserList').and.resolveTo([
       { name: 'Alice', publickey: 'pk', secretkey: 'encrypted-blob' },
     ])
@@ -46,6 +50,7 @@ describe('UserSelection', () => {
         provideHttpClientTesting(),
         { provide: LocalDatabaseService, useValue: {
           getUserList: getUserListSpy,
+          getUser: getUserSpy,
           saveUser: jasmine.createSpy('saveUser'),
           saveUserInBackground: jasmine.createSpy('saveUserInBackground'),
         } },
@@ -156,6 +161,22 @@ describe('UserSelection', () => {
     httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
 
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
+  });
+
+  it('should connect the account as stored now, not as listed when the page opened', async () => {
+    const secretkey = await encryptSecretKey('ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f', 'correct-password')
+    getUserListSpy.and.resolveTo([{ name: 'Alice', publickey: 'pk', secretkey, status: 'active', blocks: [] }])
+    fixture.detectChanges();
+    await fixture.whenStable();
+    getUserSpy.and.resolveTo({ name: 'Alice, as another tab stored her', publickey: 'pk', secretkey, status: 'active', blocks: [] })
+    spyOn(component.dialog, 'open').and.returnValue({ afterClosed: () => of('correct-password') } as any)
+
+    component.selectUser(0)
+    await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0)
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
+
+    expect(component.userService.getConnectedUser().name).toBe('Alice, as another tab stored her')
   });
 
   it('should navigate to /pending-validation when the locally cached status is pending-validation', async () => {

@@ -50,6 +50,9 @@ export class BackupService {
   }
 
   recordAutomatic(user: LoadedAccount, sk: string): void {
+    if (this.userService.isReadOnlySession()) {
+      return
+    }
     this.localDB.saveUserInBackground(user)
     this.pushToServerIfThePolicyAsks(user, sk)
   }

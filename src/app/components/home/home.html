@@ -1,4 +1,4 @@
-@if (userService.isReadOnlySession()) {
+@if (userService.readOnlyReason() === 'other-device') {
 <div class="read-only-banner">
     ⚠ Ce compte est actif sur un autre appareil — lecture seule.
 </div>

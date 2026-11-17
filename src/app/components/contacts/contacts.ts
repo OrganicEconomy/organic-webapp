@@ -142,6 +142,10 @@ export class Contacts {
 
   async importContacts(file: File): Promise<void> {
     this.clearImportResult()
+    if (this.userService.isReadOnlySession()) {
+      this.importError.set(this.userService.readOnlyMessage())
+      return
+    }
     const text = await this.textOf(file)
     const contacts = text === null ? null : this.contactsOf(text)
     if (contacts === null) {

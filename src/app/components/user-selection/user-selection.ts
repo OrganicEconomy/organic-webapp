@@ -18,6 +18,11 @@ export interface DialogData {
   password: string;
 }
 
+import type { Account } from '../../models/account';
+
+const ACCOUNTS_NOT_READ_MESSAGE =
+  "Cet appareil n'a pas pu lire ses comptes. Quittez la navigation privée, ou vérifiez que le site peut enregistrer des données.";
+
 @Component({
   selector: 'app-user-selection',
   imports: [
@@ -43,13 +48,27 @@ export class UserSelection {
       this.users = await this.localDB.getUserList();
     } catch (error) {
       console.error(error);
-      this.loadError = "Cet appareil n'a pas pu lire ses comptes. Quittez la navigation privée, ou vérifiez que le site peut enregistrer des données.";
+      this.loadError = ACCOUNTS_NOT_READ_MESSAGE;
       return;
     }
     if (this.users.length === 0) {
       // First launch, or every local account was removed — start the entry
       // flow from the top (Phase-1.md §7 navigation card).
       this.router.navigate(['/server-selection']);
+    }
+  }
+
+  private async accountAsStoredNow(publickey: string): Promise<Account | null> {
+    try {
+      const account = await this.localDB.getUser(publickey)
+      if (account === null) {
+        alert("Ce compte n'est plus sur cet appareil.")
+      }
+      return account
+    } catch (error) {
+      console.error(error)
+      this.loadError = ACCOUNTS_NOT_READ_MESSAGE
+      return null
     }
   }
 
@@ -66,8 +85,12 @@ export class UserSelection {
         alert("Mot de passe incorrect.")
         return
       }
-      this.userService.setConnectedUser(this.users[index], secretKey);
-      if (this.users[index].status !== 'active') {
+      const account = await this.accountAsStoredNow(this.users[index].publickey)
+      if (account === null) {
+        return
+      }
+      this.userService.setConnectedUser(account, secretKey);
+      if (account.status !== 'active') {
         this.router.navigate(['/pending-validation']);
       } else {
         this.openRequestedPageOrHome();

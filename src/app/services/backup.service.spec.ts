@@ -19,7 +19,7 @@ function makeAccountWithMoney(): { account: any; sk: string } {
 
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser' | 'saveUserInBackground'>>;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'saveBlock'>>;
-let userServiceSpy: jasmine.SpyObj<Pick<ConnectedUserService, 'setReadOnly'>>;
+let userServiceSpy: jasmine.SpyObj<Pick<ConnectedUserService, 'setReadOnly' | 'isReadOnlySession'>>;
 let fakeUser: any;
 
 // A fake "block": just enough shape for blocksNeedingSync's findIndex/isSigned/signature use.
@@ -47,7 +47,8 @@ describe('BackupService', () => {
     localDBSpy.saveUser.and.callFake(async (account) => account);
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['saveBlock']);
     serverDBSpy.saveBlock.and.returnValue(of({}));
-    userServiceSpy = jasmine.createSpyObj('ConnectedUserService', ['setReadOnly']);
+    userServiceSpy = jasmine.createSpyObj('ConnectedUserService', ['setReadOnly', 'isReadOnlySession']);
+    userServiceSpy.isReadOnlySession.and.returnValue(false);
 
     TestBed.configureTestingModule({
       providers: [
@@ -64,6 +65,16 @@ describe('BackupService', () => {
   it('recordAutomatic should save locally in the background', () => {
     service.recordAutomatic(fakeUser, 'sk');
     expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
+  });
+
+  it('recordAutomatic should neither store nor push anything from a read-only session', () => {
+    userServiceSpy.isReadOnlySession.and.returnValue(true);
+    fakeUser.backupPolicy = 'every-tx';
+
+    service.recordAutomatic(fakeUser, 'sk');
+
+    expect(localDBSpy.saveUserInBackground).not.toHaveBeenCalled();
+    expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
   });
 
   it('recordAutomatic should push to the server under every-tx', () => {
