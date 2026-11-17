@@ -2,10 +2,10 @@ import { Component, inject } from '@angular/core';
 import { FormGroup, FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ServerConnexionService } from '../../services/server-connection.service';
-import { LocalDatabaseService } from '../../services/local-database.service';
+import { ACCOUNT_NOT_STORED_MESSAGE, LocalDatabaseService } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { decryptSecretKey } from '../../services/secret-key-crypto.util';
-import { makeDefaultAccount } from '../../models/account';
+import { makeDefaultAccount, type Account } from '../../models/account';
 import { environment } from '../../../environments/environment';
 
 // Angular Material
@@ -75,7 +75,12 @@ export class RestoreAccount {
         account.status = res.status
         account.isuptodate = true
 
-        const user = await this.localDB.saveUser(account)
+        const user = await this.trySaveOnDevice(account)
+        if (user === null) {
+          this.error = ACCOUNT_NOT_STORED_MESSAGE
+          this.restoring = false
+          return
+        }
         this.userService.setConnectedUser(user, sk)
         this.restoring = false
         if (res.status !== 'active') {
@@ -89,6 +94,15 @@ export class RestoreAccount {
         this.restoring = false
       },
     })
+  }
+
+  private async trySaveOnDevice(account: Account): Promise<Account | null> {
+    try {
+      return await this.localDB.saveUser(account)
+    } catch (error) {
+      console.error(error)
+      return null
+    }
   }
 
   /**

@@ -34,11 +34,18 @@ export class UserSelection {
   userService = inject(ConnectedUserService);
   dialog = inject(MatDialog);
   users: any[] = [];
+  loadError = '';
 
   constructor(private router: Router, private route: ActivatedRoute) { }
 
   async ngOnInit() {
-    this.users = await this.localDB.getUserList();
+    try {
+      this.users = await this.localDB.getUserList();
+    } catch (error) {
+      console.error(error);
+      this.loadError = "Cet appareil n'a pas pu lire ses comptes. Quittez la navigation privée, ou vérifiez que le site peut enregistrer des données.";
+      return;
+    }
     if (this.users.length === 0) {
       // First launch, or every local account was removed — start the entry
       // flow from the top (Phase-1.md §7 navigation card).

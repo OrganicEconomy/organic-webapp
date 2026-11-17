@@ -2,7 +2,8 @@ import { ChangeDetectorRef, Component, inject } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { BackupService } from '../../services/backup.service';
+import { BackupService, UndoNotStoredError } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 import { isDeviceRevoked } from '../../services/server-error.util';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
@@ -224,6 +225,12 @@ export class PrintPapers {
   }
 
   private cancelledPapersMessage(err: unknown): string {
+    if (err instanceof UndoNotStoredError) {
+      return err.message
+    }
+    if (err instanceof LocalSaveError) {
+      return "Billets annulés : cet appareil n'a pas pu les enregistrer. Rien n'a été débité."
+    }
     if (!(err instanceof HttpErrorResponse)) {
       return "Une erreur est survenue oO"
     }

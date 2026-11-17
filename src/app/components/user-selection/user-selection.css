@@ -15,3 +15,7 @@ mat-card-actions {
   gap: 8px;
   padding: 8px 16px;
 }
+
+.load-error {
+  color: var(--mat-sys-error);
+}

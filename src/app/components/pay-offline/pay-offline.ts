@@ -12,9 +12,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { QRCodeComponent } from 'angularx-qrcode';
 import { encodeOfflineTxQr } from 'organic-protocol';
+import type { TxWire } from 'organic-protocol';
 import { TransactionMaker } from 'organic-money/src/index.js';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 import { getContactName } from '../../utils/transaction-display.util';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
@@ -100,20 +102,30 @@ export class PayOffline {
     });
   }
 
-  private executePayOffline(): void {
-    try {
-      const sk = this.userService.getSecretKey()
-      const tx = this.user.blockchain.pay(sk, this.target, this.amount)
-      const wireTx = tx.export()
+  private payAndKeepForLaterSending(sk: string): TxWire {
+    const wireTx = this.user.blockchain.pay(sk, this.target, this.amount).export()
+    this.user.sentOfflineTx.push(wireTx)
+    return wireTx
+  }
 
-      this.user.sentOfflineTx.push(wireTx)
-      this.backupService.recordAutomatic(this.user, sk)
-
-      this.review(wireTx)
-    } catch (err) {
-      console.log(err)
-      this.displayMessage("Une erreur est survenue oO")
+  private cancelledPaymentMessage(err: unknown): string {
+    if (err instanceof LocalSaveError) {
+      return "Paiement annulé : cet appareil n'a pas pu l'enregistrer. Rien n'a été débité."
     }
+    return "Une erreur est survenue oO"
+  }
+
+  private async executePayOffline(): Promise<void> {
+    const sk = this.userService.getSecretKey()
+    let wireTx: TxWire
+    try {
+      wireTx = await this.backupService.applyAndRecord(this.user, sk, () => this.payAndKeepForLaterSending(sk))
+    } catch (err) {
+      console.error(err)
+      this.displayMessage(this.cancelledPaymentMessage(err))
+      return
+    }
+    this.review(wireTx)
   }
 
   review(wireTx: any): void {

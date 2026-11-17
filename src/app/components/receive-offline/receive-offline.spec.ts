@@ -7,6 +7,7 @@ import { ReceiveOffline } from './receive-offline';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { BackupService } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 
 const MY_PK = '02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3';
 const PAYER_PK = '0306ffd8f4fe843f5f7183179dcf36f550326813f56ec824911abca9c9d1cd7834';
@@ -23,7 +24,7 @@ let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'verifyTransaction'>>;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic' | 'applyAndRecord'>>;
 
 describe('ReceiveOffline', () => {
   let component: ReceiveOffline;
@@ -47,7 +48,8 @@ describe('ReceiveOffline', () => {
     };
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['verifyTransaction']);
     serverDBSpy.verifyTransaction.and.returnValue(of({ status: 'pending' }));
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
+    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic', 'applyAndRecord']);
+    backupSpy.applyAndRecord.and.callFake(async (_account, _sk, change) => change());
 
     TestBed.configureTestingModule({
       imports: [ReceiveOffline],
@@ -68,10 +70,10 @@ describe('ReceiveOffline', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should reconstruct a valid TX QR and call receivePay with the instance', () => {
+  it('should reconstruct a valid TX QR and call receivePay with the instance', async () => {
     const qr = encodeOfflineTxQr({ tx: makePayTxWire(), url: PAYER_URL });
 
-    component.scanSuccessHandler(qr);
+    await component.scanSuccessHandler(qr);
 
     expect(fakeBlockchain.receivePay).toHaveBeenCalledTimes(1);
     const receivedArg = fakeBlockchain.receivePay.calls.mostRecent().args[0];
@@ -92,15 +94,27 @@ describe('ReceiveOffline', () => {
     expect(component.scanError).toBeTruthy();
   });
 
-  it('should push the tx (with its payer url) to pendingOfflineTx and record the mutation on a successful scan', () => {
+  it('should push the tx (with its payer url) to pendingOfflineTx and store it on this device', async () => {
     const qr = encodeOfflineTxQr({ tx: makePayTxWire(), url: PAYER_URL });
 
-    component.scanSuccessHandler(qr);
+    await component.scanSuccessHandler(qr);
 
     expect(fakeAccount.pendingOfflineTx.length).toBe(1);
     expect(fakeAccount.pendingOfflineTx[0].url).toBe(PAYER_URL);
     expect(fakeAccount.pendingOfflineTx[0].tx.h).toBe('deadbeef');
-    expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+    expect(backupSpy.applyAndRecord).toHaveBeenCalledWith(fakeAccount, 'the-real-sk', jasmine.any(Function));
+  });
+
+  it('should say that the payment was not received when this device could not store it', async () => {
+    backupSpy.applyAndRecord.and.rejectWith(new LocalSaveError('device full'));
+    spyOn(console, 'error');
+    const qr = encodeOfflineTxQr({ tx: makePayTxWire(), url: PAYER_URL });
+
+    await component.scanSuccessHandler(qr);
+
+    expect(component.scanError).toBe(
+      "Paiement non reçu : cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis scannez le QR à nouveau.",
+    );
   });
 
   it('should not scan (or call receivePay) when the session is read-only', () => {

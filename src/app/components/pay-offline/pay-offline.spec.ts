@@ -8,6 +8,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { PayOffline } from './pay-offline';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
+import { LocalSaveError } from '../../services/local-database.service';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { MALFORMED_PUBLIC_KEY_MESSAGE } from '../../utils/public-key.util';
 
@@ -18,7 +19,7 @@ let fakeTx: any;
 let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'applyAndRecord'>>;
 let dialogSpy: jasmine.SpyObj<MatDialog>;
 
 describe('PayOffline', () => {
@@ -48,7 +49,8 @@ describe('PayOffline', () => {
       getSecretKey: () => 'the-real-sk',
       isReadOnlySession: () => false,
     };
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
+    backupSpy = jasmine.createSpyObj('BackupService', ['applyAndRecord']);
+    backupSpy.applyAndRecord.and.callFake(async (_account, _sk, change) => change());
     dialogSpy = jasmine.createSpyObj('MatDialog', ['open']);
     dialogSpy.open.and.returnValue({ afterClosed: () => of(true) } as any);
 
@@ -127,22 +129,24 @@ describe('PayOffline', () => {
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
   });
 
-  it('should record the mutation (via backup.service) and add the tx to sentOfflineTx after paying', () => {
+  it('should store the payment on this device and add the tx to sentOfflineTx', async () => {
     component.target = CONTACT_PK;
     component.amount = 5;
 
     component.payOffline();
+    await fixture.whenStable();
 
-    expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+    expect(backupSpy.applyAndRecord).toHaveBeenCalledWith(fakeAccount, 'the-real-sk', jasmine.any(Function));
     expect(fakeAccount.sentOfflineTx.length).toBe(1);
     expect(fakeAccount.sentOfflineTx[0].h).toBe('deadbeef');
   });
 
-  it('should display a QR that decodes back to the paid transaction', () => {
+  it('should display a QR that decodes back to the paid transaction', async () => {
     component.target = CONTACT_PK;
     component.amount = 5;
 
     component.payOffline();
+    await fixture.whenStable();
 
     expect(component.currentQr).not.toBeNull();
     const decoded = decodeQr(component.currentQr!);
@@ -151,6 +155,22 @@ describe('PayOffline', () => {
       expect(decoded.payload.tx.h).toBe('deadbeef');
       expect(decoded.payload.url).toBe('https://trifouillis.fr');
     }
+  });
+
+  it('should show no QR and cancel the payment when this device could not store it', async () => {
+    backupSpy.applyAndRecord.and.rejectWith(new LocalSaveError('device full'));
+    spyOn(component, 'displayMessage');
+    spyOn(console, 'error');
+    component.target = CONTACT_PK;
+    component.amount = 5;
+
+    component.payOffline();
+    await fixture.whenStable();
+
+    expect(component.currentQr).toBeNull();
+    expect(component.displayMessage).toHaveBeenCalledWith(
+      "Paiement annulé : cet appareil n'a pas pu l'enregistrer. Rien n'a été débité.",
+    );
   });
 
   it('should not pay when the session is read-only', () => {

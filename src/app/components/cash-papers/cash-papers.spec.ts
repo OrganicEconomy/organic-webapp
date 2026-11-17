@@ -7,7 +7,7 @@ import { CashPapers } from './cash-papers';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
-import { BackupService } from '../../services/backup.service';
+import { LocalDatabaseService, LocalSaveError } from '../../services/local-database.service';
 
 const MY_PK = '02c85e4e448d67a8dc724c620f3fe7d2a3a3cce9fe905b918f712396b4f8effcb3';
 const REFERENT_PK = '0306ffd8f4fe843f5f7183179dcf36f550326813f56ec824911abca9c9d1cd7834';
@@ -28,7 +28,7 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'isPaperAlreadyCashed' | 'signLastBlock'>>;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
+let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
 
 describe('CashPapers', () => {
   let component: CashPapers;
@@ -55,7 +55,8 @@ describe('CashPapers', () => {
     serverDBSpy.isPaperAlreadyCashed.and.returnValue(throwError(() => ({ status: 404 })));
     serverDBSpy.signLastBlock.and.returnValue(of({}));
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
+    localDBSpy.saveUser.and.callFake(async (account) => account);
 
     await TestBed.configureTestingModule({
       imports: [CashPapers],
@@ -64,7 +65,7 @@ describe('CashPapers', () => {
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: ServerConnexionService, useValue: serverDBSpy },
         { provide: LevelUpService, useValue: levelUpSpy },
-        { provide: BackupService, useValue: backupSpy },
+        { provide: LocalDatabaseService, useValue: localDBSpy },
       ],
     })
     .compileComponents();
@@ -141,13 +142,29 @@ describe('CashPapers', () => {
     expect(serverDBSpy.signLastBlock).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
   });
 
-  it('cashPapers() should record the mutation (via backup.service)', () => {
+  it('cashPapers() should store the cashed papers on this device', () => {
     const qr = encodePaperQr({ tx: makePaperTxWire() });
     component.scanSuccessHandler(qr);
 
     component.cashPapers();
 
-    expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+    expect(localDBSpy.saveUser).toHaveBeenCalledWith(fakeAccount);
+  });
+
+  it('cashPapers() should say how to recover when this device could not store the cashed papers', async () => {
+    localDBSpy.saveUser.and.rejectWith(new LocalSaveError('device full'));
+    spyOn(component, 'displayMessage');
+    spyOn(console, 'error');
+    const qr = encodePaperQr({ tx: makePaperTxWire() });
+    component.scanSuccessHandler(qr);
+
+    component.cashPapers();
+    await fixture.whenStable();
+
+    expect(component.displayMessage).toHaveBeenCalledWith(
+      "Billets encaissés sur le serveur, mais cet appareil n'a pas pu les enregistrer : déconnectez-vous, puis reconnectez-vous pour reprendre la copie du serveur.",
+    );
+    expect(component.displayMessage).not.toHaveBeenCalledWith(jasmine.stringMatching(/Paf, j'encaisse/));
   });
 
   it('cashPapers() should not save the cashed papers before the server accepted them', () => {
@@ -157,7 +174,7 @@ describe('CashPapers', () => {
 
     component.cashPapers();
 
-    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+    expect(localDBSpy.saveUser).not.toHaveBeenCalled();
   });
 
   it('cashPapers() should restore the chain as it was before cashing when the server refuses the papers', () => {
@@ -169,7 +186,7 @@ describe('CashPapers', () => {
 
     expect(fakeAccount.blockchain).not.toBe(fakeBlockchain);
     expect(fakeAccount.blockchain.export()).toEqual([]);
-    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+    expect(localDBSpy.saveUser).not.toHaveBeenCalled();
   });
 
   it('cashPapers() should keep the refused papers in the list to try again later', () => {
@@ -193,12 +210,13 @@ describe('CashPapers', () => {
     expect(levelUpSpy.celebrateIfLevelUp).not.toHaveBeenCalled();
   });
 
-  it('cashPapers() should announce each paper once the server cashed it', () => {
+  it('cashPapers() should announce each paper once the server cashed it', async () => {
     spyOn(component, 'displayMessage');
     const qr = encodePaperQr({ tx: makePaperTxWire() });
     component.scanSuccessHandler(qr);
 
     component.cashPapers();
+    await fixture.whenStable();
 
     expect(component.displayMessage).toHaveBeenCalledWith(jasmine.stringMatching(/Paf, j'encaisse/));
   });
@@ -337,12 +355,13 @@ describe('CashPapers', () => {
     expect(serverDBSpy.signLastBlock).not.toHaveBeenCalled();
   });
 
-  it('should ask LevelUpService to celebrate using the level captured before and after cashing the batch', () => {
+  it('should ask LevelUpService to celebrate using the level captured before and after cashing the batch', async () => {
     fakeBlockchain.getLevel = jasmine.createSpy('getLevel').and.returnValues(2, 3);
     const qr = encodePaperQr({ tx: makePaperTxWire() });
     component.scanSuccessHandler(qr);
 
     component.cashPapers();
+    await fixture.whenStable();
 
     expect(levelUpSpy.celebrateIfLevelUp).toHaveBeenCalledWith(2, 3);
   });

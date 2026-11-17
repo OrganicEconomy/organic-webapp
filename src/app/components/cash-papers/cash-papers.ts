@@ -8,7 +8,7 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { Router, RouterLink } from '@angular/router';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
-import { BackupService } from '../../services/backup.service';
+import { LocalDatabaseService } from '../../services/local-database.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { decodeQr } from 'organic-protocol';
 import { CitizenBlockchain, TransactionMaker } from 'organic-money/src/index.js';
@@ -32,7 +32,7 @@ export class CashPapers {
   userService = inject(ConnectedUserService)
   serverDB = inject(ServerConnexionService)
   levelUp = inject(LevelUpService)
-  backupService = inject(BackupService)
+  localDB = inject(LocalDatabaseService)
   private _snackBar = inject(MatSnackBar);
 
   user: any
@@ -124,14 +124,20 @@ export class CashPapers {
     this.paper_list = failedPapers
     if (okPapers.length > 0) {
       this.serverDB.signLastBlock(this.user, sk).subscribe({
-        next: () => this.confirmCashing(okPapers, sk, oldLevel),
+        next: () => this.confirmCashing(okPapers, oldLevel),
         error: (err: any) => this.cancelCashing(okPapers, chainBeforeCashing, err),
       })
     }
   }
 
-  private confirmCashing(papers: any[], sk: string, oldLevel: number) {
-    this.backupService.recordAutomatic(this.user, sk)
+  private async confirmCashing(papers: any[], oldLevel: number) {
+    try {
+      await this.localDB.saveUser(this.user)
+    } catch (error) {
+      console.error(error)
+      this.displayMessage("Billets encaissés sur le serveur, mais cet appareil n'a pas pu les enregistrer : déconnectez-vous, puis reconnectez-vous pour reprendre la copie du serveur.")
+      return
+    }
     for (const paper of papers) {
       this.displayMessage("Paf, j'encaisse " + paper.money.length)
     }

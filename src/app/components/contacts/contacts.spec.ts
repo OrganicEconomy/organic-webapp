@@ -32,12 +32,15 @@ describe('Contacts', () => {
   let fixture: ComponentFixture<Contacts>;
   let account: { name: string; publickey: string; contacts: Contact[] };
   let connectedAccount: typeof account | null;
-  let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
+  let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser' | 'saveWithNewContacts'>>;
 
   beforeEach(async () => {
     account = { name: 'Hugo Ménard', publickey: HUGO_PK, contacts: [] };
     connectedAccount = account;
-    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveWithNewContacts']);
+    localDBSpy.saveWithNewContacts.and.callFake((user, contacts) =>
+      LocalDatabaseService.prototype.saveWithNewContacts.call(localDBSpy as any, user, contacts),
+    );
     localDBSpy.saveUser.and.resolveTo();
     await TestBed.configureTestingModule({
       imports: [Contacts],

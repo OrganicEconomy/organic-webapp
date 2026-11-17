@@ -1,14 +1,18 @@
 import { TestBed } from '@angular/core/testing';
 import localforage from 'localforage';
 
-import { LocalDatabaseService } from './local-database.service';
+import { LocalDatabaseService, LocalReadError, LocalSaveError } from './local-database.service';
 import { makeDefaultAccount } from '../models/account';
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 describe('LocalDatabaseService', () => {
   let service: LocalDatabaseService;
 
+  let snackBarSpy: jasmine.SpyObj<Pick<MatSnackBar, 'open'>>;
+
   beforeEach(() => {
-    TestBed.configureTestingModule({});
+    snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
+    TestBed.configureTestingModule({ providers: [{ provide: MatSnackBar, useValue: snackBarSpy }] });
     service = TestBed.inject(LocalDatabaseService);
   });
 
@@ -134,5 +138,69 @@ describe('LocalDatabaseService', () => {
     const loaded = await service.getUser('does-not-exist')
 
     expect(loaded).toBeNull()
+  });
+
+  describe('saveUser', () => {
+    it('should fail with a LocalSaveError when the device cannot store the account', async () => {
+      spyOn(localforage, 'setItem').and.rejectWith(new DOMException('full', 'QuotaExceededError'));
+
+      await expectAsync(service.saveUser(makeDefaultAccount(uniquePk('full')))).toBeRejectedWithError(LocalSaveError);
+    });
+  });
+
+  describe('saveUserInBackground', () => {
+    it('should warn the citizen when the device cannot store the account', async () => {
+      spyOn(localforage, 'setItem').and.rejectWith(new DOMException('full', 'QuotaExceededError'));
+      spyOn(console, 'error');
+
+      await service.saveUserInBackground(makeDefaultAccount(uniquePk('full')));
+
+      expect(snackBarSpy.open).toHaveBeenCalledWith(
+        "Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée.",
+        'Fermer',
+      );
+    });
+
+    it('should let an error that is not a storage failure through, without blaming the storage', async () => {
+      const brokenAccount: any = { ...makeDefaultAccount(uniquePk('broken')), blockchain: { export: () => { throw new TypeError('boom'); } } };
+
+      await expectAsync(service.saveUserInBackground(brokenAccount)).toBeRejectedWithError(TypeError);
+      expect(snackBarSpy.open).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getUserList', () => {
+    it('should fail with a LocalReadError when the device cannot read its accounts', async () => {
+      spyOn(localforage, 'iterate').and.rejectWith(new DOMException('blocked', 'SecurityError'));
+
+      await expectAsync(service.getUserList()).toBeRejectedWithError(LocalReadError);
+    });
+  });
+
+  describe('getUser', () => {
+    it('should fail with a LocalReadError when the device cannot read the account', async () => {
+      spyOn(localforage, 'getItem').and.rejectWith(new DOMException('blocked', 'SecurityError'));
+
+      await expectAsync(service.getUser(uniquePk('blocked'))).toBeRejectedWithError(LocalReadError);
+    });
+  });
+
+  describe('saveWithNewContacts', () => {
+    it('should store the account with the new contacts added to the known ones', async () => {
+      const account: any = { ...makeDefaultAccount(uniquePk('contacts')), contacts: [{ name: 'Zoé' }] };
+
+      await service.saveWithNewContacts(account, [{ name: 'Denis' } as any]);
+
+      expect((await service.getUser(account.publickey))?.contacts).toEqual([{ name: 'Zoé' }, { name: 'Denis' }] as any);
+      expect(account.contacts).toEqual([{ name: 'Zoé' }, { name: 'Denis' }]);
+    });
+
+    it('should leave the contacts as they were when the device cannot store them', async () => {
+      spyOn(localforage, 'setItem').and.rejectWith(new DOMException('full', 'QuotaExceededError'));
+      const account: any = { ...makeDefaultAccount(uniquePk('contacts-full')), contacts: [{ name: 'Zoé' }] };
+
+      await expectAsync(service.saveWithNewContacts(account, [{ name: 'Denis' } as any])).toBeRejectedWithError(LocalSaveError);
+      expect(account.contacts).toEqual([{ name: 'Zoé' }]);
+    });
   });
 });
