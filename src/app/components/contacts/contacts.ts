@@ -170,9 +170,9 @@ export class Contacts {
   }
 
   summaryOf(report: ImportReport): string {
-    const parts = [counted(report.added, 'contact ajouté', 'contacts ajoutés')]
+    const parts = [pluralized(report.added, 'contact ajouté', 'contacts ajoutés')]
     if (report.alreadyKnown > 0) {
-      parts.push(counted(report.alreadyKnown, 'déjà présent', 'déjà présents'))
+      parts.push(pluralized(report.alreadyKnown, 'déjà présent', 'déjà présents'))
     }
     return parts.join(', ') + '.'
   }
@@ -183,7 +183,7 @@ export class Contacts {
   }
 }
 
-function counted(count: number, singular: string, plural: string): string {
+function pluralized(count: number, singular: string, plural: string): string {
   return `${count} ${count > 1 ? plural : singular}`
 }
 
