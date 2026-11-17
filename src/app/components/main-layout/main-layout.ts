@@ -23,7 +23,7 @@ export class MainLayout {
   private router = inject(Router);
   private snackBar = inject(MatSnackBar);
 
-  isTakenOverByAnotherTab(): boolean {
+  isInUseInAnotherTab(): boolean {
     return this.userService.readOnlyReason() === 'other-tab';
   }
 

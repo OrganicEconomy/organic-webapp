@@ -32,21 +32,21 @@ describe('AccountTabsService', () => {
     });
   });
 
-  describe('isStale', () => {
-    it('should say that an account changed in another tab is stale in this one', async () => {
+  describe('isInUseElsewhere', () => {
+    it('should say that an account changed in another tab is in use elsewhere', async () => {
       otherTab.postMessage({ changedAccount: ALICE_PK });
       await untilMessagesAreDelivered();
 
-      expect(service.isStale(ALICE_PK)).toBeTrue();
+      expect(service.isInUseElsewhere(ALICE_PK)).toBeTrue();
     });
 
-    it('should not consider stale an account no other tab changed', () => {
-      expect(service.isStale(ALICE_PK)).toBeFalse();
+    it('should not consider in use elsewhere an account no other tab changed', () => {
+      expect(service.isInUseElsewhere(ALICE_PK)).toBeFalse();
     });
   });
 
   describe('takeBack', () => {
-    it('should make the account current again in this tab, and stale in the others', async () => {
+    it('should make the account in use here again, and in use elsewhere for the other tabs', async () => {
       const received: unknown[] = [];
       otherTab.onmessage = (event) => received.push(event.data);
       otherTab.postMessage({ changedAccount: ALICE_PK });
@@ -55,7 +55,7 @@ describe('AccountTabsService', () => {
       service.takeBack(ALICE_PK);
       await untilMessagesAreDelivered();
 
-      expect(service.isStale(ALICE_PK)).toBeFalse();
+      expect(service.isInUseElsewhere(ALICE_PK)).toBeFalse();
       expect(received).toEqual([{ changedAccount: ALICE_PK }]);
     });
   });
@@ -66,7 +66,7 @@ describe('AccountTabsService', () => {
       otherTab.postMessage({ changedAccount: ALICE_PK });
       await untilMessagesAreDelivered();
 
-      expect(service.isStale(ALICE_PK)).toBeFalse();
+      expect(service.isInUseElsewhere(ALICE_PK)).toBeFalse();
     });
   });
 

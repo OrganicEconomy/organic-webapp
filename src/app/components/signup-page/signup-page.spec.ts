@@ -109,7 +109,7 @@ describe('SignupPage', () => {
   it('should store the new account even if another tab announced that key', async () => {
     const tabs = TestBed.inject(AccountTabsService)
     let takenBack = false
-    spyOn(tabs, 'isStale').and.callFake(() => !takenBack)
+    spyOn(tabs, 'isInUseElsewhere').and.callFake(() => !takenBack)
     spyOn(tabs, 'takeBack').and.callFake(() => { takenBack = true })
     const alertSpy = spyOn(window, 'alert')
 

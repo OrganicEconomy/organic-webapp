@@ -88,7 +88,7 @@ describe('RestoreAccount', () => {
   it('should store the restored account even if another tab had it, since the server copy prevails', async () => {
     const tabs = TestBed.inject(AccountTabsService)
     let takenBack = false
-    spyOn(tabs, 'isStale').and.callFake(() => !takenBack)
+    spyOn(tabs, 'isInUseElsewhere').and.callFake(() => !takenBack)
     spyOn(tabs, 'takeBack').and.callFake(() => { takenBack = true })
 
     component.restoreForm.setValue({ serverUrl: SERVER_URL, email: 'alice@ex.fr', password: 'correct-password' })

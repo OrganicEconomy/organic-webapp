@@ -17,15 +17,15 @@ function channelToOtherTabs(): BroadcastChannel | null {
 @Injectable({ providedIn: 'root' })
 export class AccountTabsService implements OnDestroy {
   private channel = channelToOtherTabs();
-  private staleAccounts = signal<ReadonlySet<string>>(new Set());
+  private accountsInUseElsewhere = signal<ReadonlySet<string>>(new Set());
 
-  private markStale(publickey: string): void {
-    this.staleAccounts.update((accounts) => new Set(accounts).add(publickey));
+  private markInUseElsewhere(publickey: string): void {
+    this.accountsInUseElsewhere.update((accounts) => new Set(accounts).add(publickey));
   }
 
   private listenToOtherTabs(): void {
     if (this.channel) {
-      this.channel.onmessage = (event: MessageEvent<AccountChange>) => this.markStale(event.data.changedAccount);
+      this.channel.onmessage = (event: MessageEvent<AccountChange>) => this.markInUseElsewhere(event.data.changedAccount);
     }
   }
 
@@ -42,20 +42,20 @@ export class AccountTabsService implements OnDestroy {
     this.channel?.postMessage(change);
   }
 
-  private markCurrent(publickey: string): void {
-    this.staleAccounts.update((accounts) => {
-      const stillStale = new Set(accounts);
-      stillStale.delete(publickey);
-      return stillStale;
+  private markInUseHere(publickey: string): void {
+    this.accountsInUseElsewhere.update((accounts) => {
+      const stillInUseElsewhere = new Set(accounts);
+      stillInUseElsewhere.delete(publickey);
+      return stillInUseElsewhere;
     });
   }
 
   takeBack(publickey: string): void {
-    this.markCurrent(publickey);
+    this.markInUseHere(publickey);
     this.announceChange(publickey);
   }
 
-  isStale(publickey: string): boolean {
-    return this.staleAccounts().has(publickey);
+  isInUseElsewhere(publickey: string): boolean {
+    return this.accountsInUseElsewhere().has(publickey);
   }
 }

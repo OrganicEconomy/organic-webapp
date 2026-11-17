@@ -9,7 +9,7 @@ export class LocalSaveError extends Error {}
 
 export class LocalReadError extends Error {}
 
-export class StaleTabError extends Error {}
+export class InUseElsewhereError extends Error {}
 
 export const ACCOUNT_NOT_STORED_MESSAGE =
     "Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée."
@@ -54,8 +54,8 @@ export class LocalDatabaseService {
      * instance (as getUser attaches) is accepted in place of `blocks`.
      */
     public async saveUser(data: StorableAccount): Promise<Account> {
-        if (this.tabs.isStale(data.publickey)) {
-            throw new StaleTabError('Another tab changed this account since this one loaded it.')
+        if (this.tabs.isInUseElsewhere(data.publickey)) {
+            throw new InUseElsewhereError('This account is in use in another tab.')
         }
         const account: Account = {
             publickey: data.publickey,
@@ -89,7 +89,7 @@ export class LocalDatabaseService {
         try {
             await this.saveUser(data)
         } catch (error) {
-            if (error instanceof StaleTabError) {
+            if (error instanceof InUseElsewhereError) {
                 console.warn(error)
                 return
             }

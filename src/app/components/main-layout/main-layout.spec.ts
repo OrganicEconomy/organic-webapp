@@ -48,7 +48,7 @@ describe('MainLayout', () => {
   });
 
   describe('template', () => {
-    it('should say on every page that another tab took the account over', () => {
+    it('should say on every page that the account is in use in another tab', () => {
       readOnlyReason = 'other-tab';
       fixture.detectChanges();
 

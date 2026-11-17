@@ -14,10 +14,10 @@ const INFO_URL = `${SERVER_URL}/api/v1/info`;
 describe('ConnectedUserService', () => {
   let service: ConnectedUserService;
   let httpMock: HttpTestingController;
-  let staleAccounts: Set<string>;
+  let accountsInUseElsewhere: Set<string>;
 
   beforeEach(() => {
-    staleAccounts = new Set();
+    accountsInUseElsewhere = new Set();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -25,9 +25,9 @@ describe('ConnectedUserService', () => {
         {
           provide: AccountTabsService,
           useValue: {
-            isStale: (pk: string) => staleAccounts.has(pk),
+            isInUseElsewhere: (pk: string) => accountsInUseElsewhere.has(pk),
             announceChange: () => {},
-            takeBack: (pk: string) => staleAccounts.delete(pk),
+            takeBack: (pk: string) => accountsInUseElsewhere.delete(pk),
           },
         },
       ],
@@ -86,7 +86,7 @@ describe('ConnectedUserService', () => {
 
   describe('setConnectedUser', () => {
     it('should take the account back from any other tab, since connecting loads it afresh', () => {
-      staleAccounts.add('pk-reconnected');
+      accountsInUseElsewhere.add('pk-reconnected');
 
       service.setConnectedUser(makeDefaultAccount('pk-reconnected') as any, 'sk');
 
@@ -97,7 +97,7 @@ describe('ConnectedUserService', () => {
   describe('isReadOnlySession', () => {
     it('should be read-only while another tab holds the account', () => {
       service.setConnectedUser(makeDefaultAccount('pk-held') as any, 'sk');
-      staleAccounts.add('pk-held');
+      accountsInUseElsewhere.add('pk-held');
 
       expect(service.isReadOnlySession()).toBeTrue();
     });
@@ -106,7 +106,7 @@ describe('ConnectedUserService', () => {
   describe('readOnlyMessage', () => {
     it('should name the other tab when another tab holds the account', () => {
       service.setConnectedUser(makeDefaultAccount('pk-tab-message') as any, 'sk');
-      staleAccounts.add('pk-tab-message');
+      accountsInUseElsewhere.add('pk-tab-message');
 
       expect(service.readOnlyMessage()).toBe("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
     });
@@ -120,9 +120,9 @@ describe('ConnectedUserService', () => {
   });
 
   describe('readOnlyReason', () => {
-    it('should say that another tab took the account over', () => {
+    it('should say that the account is in use in another tab', () => {
       service.setConnectedUser(makeDefaultAccount('pk-tabs') as any, 'sk');
-      staleAccounts.add('pk-tabs');
+      accountsInUseElsewhere.add('pk-tabs');
 
       expect(service.readOnlyReason()).toBe('other-tab');
     });
@@ -145,8 +145,8 @@ describe('ConnectedUserService', () => {
     it('should take the account back with what the other tab stored, keeping the unlocked key', async () => {
       const pk = `pk-${Date.now()}-take-back`;
       await TestBed.inject(LocalDatabaseService).saveUser({ ...makeDefaultAccount(pk), name: 'Stored by the other tab' });
-      service.setConnectedUser({ ...makeDefaultAccount(pk), name: 'Stale' } as any, 'unlocked-sk');
-      staleAccounts.add(pk);
+      service.setConnectedUser({ ...makeDefaultAccount(pk), name: 'Outdated copy' } as any, 'unlocked-sk');
+      accountsInUseElsewhere.add(pk);
 
       await service.useThisTab();
 
@@ -158,7 +158,7 @@ describe('ConnectedUserService', () => {
     it('should leave this tab read-only when the account can no longer be read from this device', async () => {
       const pk = `pk-${Date.now()}-gone`;
       service.setConnectedUser(makeDefaultAccount(pk) as any, 'unlocked-sk');
-      staleAccounts.add(pk);
+      accountsInUseElsewhere.add(pk);
 
       await expectAsync(service.useThisTab()).toBeRejected();
       expect(service.isReadOnlySession()).toBeTrue();

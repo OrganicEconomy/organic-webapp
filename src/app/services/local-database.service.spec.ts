@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import localforage from 'localforage';
 
-import { LocalDatabaseService, LocalReadError, LocalSaveError, StaleTabError } from './local-database.service';
+import { LocalDatabaseService, LocalReadError, LocalSaveError, InUseElsewhereError } from './local-database.service';
 import { makeDefaultAccount } from '../models/account';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { AccountTabsService } from './account-tabs.service';
@@ -10,12 +10,12 @@ describe('LocalDatabaseService', () => {
   let service: LocalDatabaseService;
 
   let snackBarSpy: jasmine.SpyObj<Pick<MatSnackBar, 'open'>>;
-  let tabsSpy: jasmine.SpyObj<Pick<AccountTabsService, 'announceChange' | 'isStale'>>;
+  let tabsSpy: jasmine.SpyObj<Pick<AccountTabsService, 'announceChange' | 'isInUseElsewhere'>>;
 
   beforeEach(() => {
     snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
-    tabsSpy = jasmine.createSpyObj('AccountTabsService', ['announceChange', 'isStale']);
-    tabsSpy.isStale.and.returnValue(false);
+    tabsSpy = jasmine.createSpyObj('AccountTabsService', ['announceChange', 'isInUseElsewhere']);
+    tabsSpy.isInUseElsewhere.and.returnValue(false);
     TestBed.configureTestingModule({
       providers: [
         { provide: MatSnackBar, useValue: snackBarSpy },
@@ -158,11 +158,11 @@ describe('LocalDatabaseService', () => {
       expect(tabsSpy.announceChange).toHaveBeenCalledWith(account.publickey);
     });
 
-    it('should refuse to write over an account another tab changed since this tab loaded it', async () => {
-      tabsSpy.isStale.and.returnValue(true);
+    it('should refuse to write over an account in use in another tab', async () => {
+      tabsSpy.isInUseElsewhere.and.returnValue(true);
       const setItem = spyOn(localforage, 'setItem');
 
-      await expectAsync(service.saveUser(makeDefaultAccount(uniquePk('stale')))).toBeRejectedWithError(StaleTabError);
+      await expectAsync(service.saveUser(makeDefaultAccount(uniquePk('in-use-elsewhere')))).toBeRejectedWithError(InUseElsewhereError);
       expect(setItem).not.toHaveBeenCalled();
     });
 
@@ -186,11 +186,11 @@ describe('LocalDatabaseService', () => {
       );
     });
 
-    it('should only note in the console an account another tab took over, since the banner already reports it', async () => {
-      tabsSpy.isStale.and.returnValue(true);
+    it('should only note in the console an account in use in another tab, since the banner already reports it', async () => {
+      tabsSpy.isInUseElsewhere.and.returnValue(true);
       spyOn(console, 'warn');
 
-      await expectAsync(service.saveUserInBackground(makeDefaultAccount(uniquePk('stale')))).toBeResolved();
+      await expectAsync(service.saveUserInBackground(makeDefaultAccount(uniquePk('in-use-elsewhere')))).toBeResolved();
       expect(snackBarSpy.open).not.toHaveBeenCalled();
       expect(console.warn).toHaveBeenCalled();
     });

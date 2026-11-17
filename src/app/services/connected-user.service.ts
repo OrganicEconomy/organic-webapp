@@ -78,16 +78,16 @@ export class ConnectedUserService {
         this.revokedByAnotherDevice = true
     }
 
-    private isTakenOverByAnotherTab(): boolean {
+    private isInUseInAnotherTab(): boolean {
         const user = this.connectedUser as any
-        return user !== null && this.tabs.isStale(user.publickey)
+        return user !== null && this.tabs.isInUseElsewhere(user.publickey)
     }
 
     public readOnlyReason(): ReadOnlyReason | null {
         if (this.revokedByAnotherDevice) {
             return 'other-device'
         }
-        if (this.isTakenOverByAnotherTab()) {
+        if (this.isInUseInAnotherTab()) {
             return 'other-tab'
         }
         return null

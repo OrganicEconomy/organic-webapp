@@ -157,7 +157,7 @@ describe('Home', () => {
     expect(fixture.nativeElement.textContent).toContain('actif sur un autre appareil');
   });
 
-  it('should leave to the shared banner an account taken over by another tab', () => {
+  it('should leave to the shared banner an account in use in another tab', () => {
     stubConnectedUserService.isReadOnlySession = () => true;
     stubConnectedUserService.readOnlyReason = () => 'other-tab';
 
