@@ -8,7 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
-import { hasContactWithKey, localRefusal } from '../../utils/contact-refusal.util';
+import { hasContactWithKey, offlineRefusal } from '../../utils/contact-refusal.util';
 import type { Contact } from '../../models/account';
 import { ContactsFileError, contactsFile, contactsFromFile } from '../../utils/contacts-file.util';
 import { offerToDownload } from '../../utils/download.util';
@@ -75,7 +75,7 @@ export class Contacts {
   importReport = signal<ImportReport | null>(null)
   importError = signal('')
 
-  private forgetPreviousImport(): void {
+  private clearImportResult(): void {
     this.importError.set('')
     this.importReport.set(null)
   }
@@ -94,7 +94,7 @@ export class Contacts {
     }
   }
 
-  private contactsReadFrom(text: string): Contact[] | null {
+  private contactsOf(text: string): Contact[] | null {
     try {
       return contactsFromFile(text)
     } catch (error) {
@@ -120,7 +120,7 @@ export class Contacts {
         alreadyKnown++
         continue
       }
-      const refusal = localRefusal(contact, knownContacts)
+      const refusal = offlineRefusal(contact, knownContacts)
       if (refusal) {
         refused.push({ name: contact.name || this.truncate(contact.pk), reason: refusal })
         continue
@@ -130,7 +130,7 @@ export class Contacts {
     return { accepted, report: { added: accepted.length, alreadyKnown, refused } }
   }
 
-  private async saveWith(accepted: Contact[]): Promise<void> {
+  private async addAndSave(accepted: Contact[]): Promise<void> {
     const contacts = [...this.contacts(), ...accepted]
     await this.localDB.saveUser({ ...this.user, contacts })
     this.user.contacts = contacts
@@ -143,16 +143,16 @@ export class Contacts {
   }
 
   async importContacts(file: File): Promise<void> {
-    this.forgetPreviousImport()
+    this.clearImportResult()
     const text = await this.textOf(file)
-    const contacts = text === null ? null : this.contactsReadFrom(text)
+    const contacts = text === null ? null : this.contactsOf(text)
     if (contacts === null) {
       return
     }
     const { accepted, report } = this.triage(contacts)
     if (accepted.length > 0) {
       try {
-        await this.saveWith(accepted)
+        await this.addAndSave(accepted)
       } catch (error) {
         this.reportFailedSave(error)
         return
