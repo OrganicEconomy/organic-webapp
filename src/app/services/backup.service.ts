@@ -3,6 +3,7 @@ import { catchError, concatMap, defer, from, last, map, Observable, tap, throwEr
 import { LocalDatabaseService } from './local-database.service';
 import { ServerConnexionService } from './server-connection.service';
 import { ConnectedUserService } from './connected-user.service';
+import { isDeviceRevoked } from './server-error.util';
 import type { LoadedAccount, PendingOfflineTx } from '../models/account';
 import type { TxWire } from 'organic-protocol';
 import { CitizenBlockchain } from 'organic-money/src/index.js';
@@ -157,7 +158,7 @@ export class BackupService {
           this.localDB.saveUserInBackground(user)
         },
         error: (err: any) => {
-          if (err.status === 409) {
+          if (isDeviceRevoked(err)) {
             this.userService.setReadOnly()
           }
         },

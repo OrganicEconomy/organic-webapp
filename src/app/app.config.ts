@@ -13,15 +13,15 @@ import { provideHttpClient } from '@angular/common/http';
 import { ConnectedUserService } from './services/connected-user.service';
 import { ChainSyncService } from './services/chain-sync.service';
 
-function resumeTheTabSessionThenSync(): Promise<void> {
+async function resumeTheTabSessionThenSync(): Promise<void> {
   const userService = inject(ConnectedUserService);
   const chainSync = inject(ChainSyncService);
-  return userService
-    .resumeTabSession()
-    .then(() => chainSync.syncTheConnectedAccount())
-    .catch((error) =>
-      console.error('The session of this tab could not be resumed and synced.', error),
-    );
+  try {
+    await userService.resumeTabSession();
+    await chainSync.syncTheConnectedAccount();
+  } catch (error) {
+    console.error('The session of this tab could not be resumed and synced.', error);
+  }
 }
 
 export const appConfig: ApplicationConfig = {

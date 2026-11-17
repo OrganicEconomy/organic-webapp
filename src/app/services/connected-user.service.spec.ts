@@ -349,6 +349,19 @@ describe('ConnectedUserService', () => {
     });
   });
 
+  describe('markOutOfSync', () => {
+    it('should keep this device from changing an account it no longer agrees on with the server', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-out-of-sync') as any, 'sk');
+
+      service.markOutOfSync();
+
+      expect(service.readOnlyReason()).toBe('out-of-sync');
+      expect(service.readOnlyMessage()).toBe(
+        "Ce téléphone et le serveur ne sont plus d'accord sur des paiements : lecture seule, rien n'a été effacé. Contactez l'administrateur de votre serveur.",
+      );
+    });
+  });
+
   describe('readOnlyReason', () => {
     it('should say that the account is in use in another tab', () => {
       service.setConnectedUser(makeDefaultAccount('pk-tabs') as any, 'sk');

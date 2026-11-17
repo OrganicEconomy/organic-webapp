@@ -23,6 +23,8 @@ test.describe('sync with the server', () => {
 
     await expect(page).toHaveURL(/\/home$/);
     await expect.poll(async () => (await storedAccounts(page))[0].status).toBe('active');
-    expect((await storedAccounts(page))[0].blocks).toEqual(validatedAccount.blocks);
+    await expect
+      .poll(async () => (await storedAccounts(page))[0].blocks)
+      .toEqual(validatedAccount.blocks);
   });
 });

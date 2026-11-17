@@ -54,12 +54,18 @@ describe('LockDialog', () => {
       expect(reopenSpy).toHaveBeenCalledBefore(dialogRefSpy.close);
     });
 
-    it('should sync with the server before reopening the page', async () => {
+    it('should wait for the sync with the server before reopening the page', async () => {
+      let finishTheSync = () => {};
+      syncSpy.and.returnValue(new Promise<void>((resolve) => (finishTheSync = resolve)));
       component.password = 'the-password';
 
-      await component.unlock();
+      const unlocking = component.unlock();
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(reopenSpy).not.toHaveBeenCalled();
+      finishTheSync();
+      await unlocking;
 
-      expect(syncSpy).toHaveBeenCalledBefore(reopenSpy);
+      expect(reopenSpy).toHaveBeenCalled();
     });
 
     it('should try only once when asked twice while the key is being decrypted', async () => {

@@ -100,8 +100,14 @@ describe('BackupService', () => {
     expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
   });
 
-  it('should mark the session read-only on a 409', () => {
-    serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 409 })));
+  it('should not mark the session read-only for a block the server could not chain', () => {
+    serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'NOT_CHAINING' } })));
+    service.saveNow(fakeUser, 'sk').subscribe({ error: () => {} });
+    expect(userServiceSpy.setReadOnly).not.toHaveBeenCalled();
+  });
+
+  it('should mark the session read-only when another device took the account over', () => {
+    serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'DEVICE_REVOKED' } })));
     service.saveNow(fakeUser, 'sk').subscribe({ error: () => {} });
     expect(userServiceSpy.setReadOnly).toHaveBeenCalled();
   });

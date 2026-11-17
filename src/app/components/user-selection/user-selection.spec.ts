@@ -167,7 +167,9 @@ describe('UserSelection', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/home']);
   });
 
-  it('should sync with the server before opening the page', async () => {
+  it('should wait for the sync with the server before opening the page', async () => {
+    let finishTheSync = () => {}
+    syncSpy.and.returnValue(new Promise<void>((resolve) => (finishTheSync = resolve)))
     const secretkey = await encryptSecretKey('ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f', 'correct-password')
     getUserListSpy.and.resolveTo([{ name: 'Alice', publickey: 'pk', secretkey, status: 'active', blocks: [] }])
     fixture.detectChanges();
@@ -175,11 +177,14 @@ describe('UserSelection', () => {
     spyOn(component.dialog, 'open').and.returnValue({ afterClosed: () => of('correct-password') } as any)
 
     component.selectUser(0)
+    await waitUntil(() => syncSpy.calls.count() > 0)
+    expect(router.navigate).not.toHaveBeenCalled()
+    finishTheSync()
     await waitUntil(() => (router.navigate as jasmine.Spy).calls.count() > 0)
     httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
     httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
 
-    expect(syncSpy).toHaveBeenCalledBefore(router.navigate as jasmine.Spy);
+    expect(router.navigate).toHaveBeenCalledWith(['/home'])
   });
 
   it('should connect the account as stored now, not as listed when the page opened', async () => {
