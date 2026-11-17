@@ -16,7 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { QrScanner } from '../qr-scanner/qr-scanner';
-import { localRefusal } from '../../utils/contact-refusal.util';
+import { offlineRefusal } from '../../utils/contact-refusal.util';
 
 @Component({
   selector: 'app-add-contact',
@@ -109,7 +109,7 @@ export class AddContact {
       return
     }
     const contact = this.contactFromForm()
-    const refusal = localRefusal(contact, this.user.contacts) ?? await this.serverRefusal(contact)
+    const refusal = offlineRefusal(contact, this.user.contacts) ?? await this.serverRefusal(contact)
     if (refusal) {
       this.formError = refusal
       return

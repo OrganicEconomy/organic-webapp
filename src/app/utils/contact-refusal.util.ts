@@ -9,7 +9,7 @@ export function hasContactWithKey(pk: string, contacts: Contact[]): boolean {
   return contactWithKey(pk, contacts) !== undefined;
 }
 
-export function localRefusal(contact: Contact, contacts: Contact[]): string | null {
+export function offlineRefusal(contact: Contact, contacts: Contact[]): string | null {
   if (!contact.name) {
     return 'Le nom du contact est obligatoire.';
   }
