@@ -1,4 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { ConnectedUserService } from '../../services/connected-user.service';
 
 @Component({
   selector: 'app-logout',
@@ -7,5 +9,8 @@ import { Component } from '@angular/core';
   styleUrl: './logout.css',
 })
 export class Logout {
-
+  constructor() {
+    inject(ConnectedUserService).disconnect();
+    inject(Router).navigate(['/user-selection']);
+  }
 }

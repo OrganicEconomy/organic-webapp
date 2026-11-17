@@ -91,25 +91,41 @@ test.describe('contact server', () => {
   });
 });
 
+async function contactLinkOf(browser: Browser, name: string): Promise<string> {
+  const citizen = await newCitizenPage(browser, name);
+  await citizen.getByRole('link', { name: 'Mon compte' }).click();
+  await citizen.getByRole('button', { name: 'Copier mon lien de contact' }).click();
+  await expect(citizen.getByText('Lien copié')).toBeVisible();
+  return citizen.evaluate(() => navigator.clipboard.readText());
+}
+
 test.describe('contact link', () => {
-  test('should let a citizen add a contact from the link that contact shared', async ({
+  test('should let a citizen open, in a new tab, the link a contact shared', async ({
     browser,
   }) => {
-    const hugo = await newCitizenPage(browser, 'Hugo Lambert');
-    await hugo.getByRole('link', { name: 'Mon compte' }).click();
-    await hugo.getByRole('button', { name: 'Copier mon lien de contact' }).click();
-    await expect(hugo.getByText('Lien copié')).toBeVisible();
-    const link = await hugo.evaluate(() => navigator.clipboard.readText());
-
+    const link = await contactLinkOf(browser, 'Hugo Lambert');
     const ines = await newCitizenPage(browser, 'Inès Faure');
-    await ines.goto(link);
-    await ines.getByRole('button', { name: 'Inès Faure' }).click();
-    await ines.getByPlaceholder('Mot de passe').fill('secret');
-    await ines.getByRole('button', { name: 'OK' }).click();
 
-    await expect(ines.getByLabel('Nom')).toHaveValue('Hugo Lambert');
-    await ines.getByRole('button', { name: 'Enregistrer' }).click();
-    await expect(ines.getByRole('cell', { name: 'Hugo Lambert' })).toBeVisible();
+    const linkTab = await ines.context().newPage();
+    await linkTab.goto(link);
+    await linkTab.getByRole('button', { name: 'Inès Faure' }).click();
+    await linkTab.getByPlaceholder('Mot de passe').fill('secret');
+    await linkTab.getByRole('button', { name: 'OK' }).click();
+
+    await expect(linkTab.getByLabel('Nom')).toHaveValue('Hugo Lambert');
+    await linkTab.getByRole('button', { name: 'Enregistrer' }).click();
+    await expect(linkTab.getByRole('cell', { name: 'Hugo Lambert' })).toBeVisible();
+  });
+
+  test('should open the shared link straight on the filled form in a tab already connected', async ({
+    browser,
+  }) => {
+    const link = await contactLinkOf(browser, 'Jules Lambert');
+    const kim = await newCitizenPage(browser, 'Kim Faure');
+
+    await kim.goto(link);
+
+    await expect(kim.getByLabel('Nom')).toHaveValue('Jules Lambert');
   });
 });
 
