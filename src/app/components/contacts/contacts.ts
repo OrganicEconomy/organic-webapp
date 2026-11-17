@@ -26,6 +26,11 @@ export interface ImportReport {
   refused: RefusedContact[]
 }
 
+interface TriageResult {
+  accepted: Contact[]
+  report: ImportReport
+}
+
 @Component({
   selector: 'app-contacts',
   imports: [
@@ -105,7 +110,7 @@ export class Contacts {
     return pk === this.user.publickey
   }
 
-  private triage(contacts: Contact[]): { accepted: Contact[], report: ImportReport } {
+  private triage(contacts: Contact[]): TriageResult {
     const accepted: Contact[] = []
     const refused: RefusedContact[] = []
     let alreadyKnown = 0
