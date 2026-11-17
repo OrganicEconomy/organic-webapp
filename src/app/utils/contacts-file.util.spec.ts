@@ -34,7 +34,7 @@ describe('contactsFile', () => {
 });
 
 describe('contactsFromFile', () => {
-  const NOT_A_CONTACTS_FILE = "Ce fichier n'est pas un fichier de contacts.";
+  const NOT_A_CONTACTS_FILE_MESSAGE = "Ce fichier n'est pas un fichier de contacts.";
   const zoe: Contact = {
     name: 'Zoé',
     pk: 'pk-zoe',
@@ -61,14 +61,14 @@ describe('contactsFromFile', () => {
   it('should reject a text that is not JSON', () => {
     expect(() => contactsFromFile('pas du JSON')).toThrowError(
       ContactsFileError,
-      NOT_A_CONTACTS_FILE,
+      NOT_A_CONTACTS_FILE_MESSAGE,
     );
   });
 
   it('should reject a JSON file that is not a contacts file', () => {
     expect(() => contactsFromFile('{"contacts": []}')).toThrowError(
       ContactsFileError,
-      NOT_A_CONTACTS_FILE,
+      NOT_A_CONTACTS_FILE_MESSAGE,
     );
   });
 
@@ -100,7 +100,7 @@ describe('contactsFromFile', () => {
   it('should reject a file without a version', () => {
     expect(() => contactsFromFile(fileWith({ version: undefined }))).toThrowError(
       ContactsFileError,
-      NOT_A_CONTACTS_FILE,
+      NOT_A_CONTACTS_FILE_MESSAGE,
     );
   });
 });
