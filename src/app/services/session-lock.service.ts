@@ -72,7 +72,7 @@ export class SessionLockService {
     });
   }
 
-  start(): void {
+  startWatchingIdleness(): void {
     this.lastActivityAt = this.tabSession.stored()?.lastActivityAt ?? Date.now();
     this.listenToTheCitizen();
     if (this.userService.isLocked()) {

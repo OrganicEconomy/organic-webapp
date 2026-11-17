@@ -21,14 +21,14 @@ export class LockDialog {
   private router = inject(Router);
 
   password = '';
-  error = '';
+  unlockError = '';
 
   unlocking = false;
 
   private async tryToUnlock(): Promise<void> {
     const isUnlocked = await this.userService.unlock(this.password);
     if (!isUnlocked) {
-      this.error = 'Mot de passe incorrect.';
+      this.unlockError = 'Mot de passe incorrect.';
       return;
     }
     this.dialogRef.close();

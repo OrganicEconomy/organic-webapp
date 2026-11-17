@@ -5,8 +5,8 @@
     <mat-label>Mot de passe</mat-label>
     <input matInput type="password" [(ngModel)]="password" (keyup.enter)="unlock()" />
   </mat-form-field>
-  @if (error) {
-    <p class="unlock-error">{{ error }}</p>
+  @if (unlockError) {
+    <p class="unlock-error">{{ unlockError }}</p>
   }
 </mat-dialog-content>
 <mat-dialog-actions>

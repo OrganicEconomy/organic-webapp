@@ -45,9 +45,9 @@ describe('SessionLockService', () => {
     sessionStorage.clear();
   });
 
-  describe('start', () => {
+  describe('startWatchingIdleness', () => {
     it('should lock and ask for the password after 15 minutes without activity', () => {
-      service.start();
+      service.startWatchingIdleness();
 
       jasmine.clock().tick(15 * 60_000);
 
@@ -59,7 +59,7 @@ describe('SessionLockService', () => {
     });
 
     it('should open the lock dialog again, at the next check, while the session stays locked', () => {
-      service.start();
+      service.startWatchingIdleness();
       locked = true;
       dialogSpy.open.calls.reset();
 
@@ -71,7 +71,7 @@ describe('SessionLockService', () => {
     it('should ask for the password at once when the session was resumed locked', () => {
       locked = true;
 
-      service.start();
+      service.startWatchingIdleness();
 
       expect(dialogSpy.open).toHaveBeenCalledWith(
         LockDialog,
@@ -80,7 +80,7 @@ describe('SessionLockService', () => {
     });
 
     it('should lock at once when the app comes back after a long time in the background', () => {
-      service.start();
+      service.startWatchingIdleness();
       jasmine.clock().mockDate(new Date(2026, 10, 17, 9, 20));
 
       document.dispatchEvent(new Event('visibilitychange'));
@@ -89,7 +89,7 @@ describe('SessionLockService', () => {
     });
 
     it('should push the lock back each time the citizen does something', () => {
-      service.start();
+      service.startWatchingIdleness();
       jasmine.clock().tick(10 * 60_000);
 
       document.dispatchEvent(new PointerEvent('pointerdown'));
@@ -99,7 +99,7 @@ describe('SessionLockService', () => {
     });
 
     it('should count a key pressed as an activity', () => {
-      service.start();
+      service.startWatchingIdleness();
       jasmine.clock().tick(10 * 60_000);
 
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'a' }));
@@ -110,7 +110,7 @@ describe('SessionLockService', () => {
 
     it('should copy the activity to the tab session at most every 30 seconds', () => {
       const noteActivity = spyOn(tabSession, 'noteActivity');
-      service.start();
+      service.startWatchingIdleness();
 
       document.dispatchEvent(new PointerEvent('pointerdown'));
       jasmine.clock().tick(10_000);
@@ -120,7 +120,7 @@ describe('SessionLockService', () => {
     });
 
     it('should not lock when the app goes to the background', () => {
-      service.start();
+      service.startWatchingIdleness();
       jasmine.clock().mockDate(new Date(2026, 10, 17, 9, 20));
       spyOnProperty(document, 'visibilityState').and.returnValue('hidden');
 
@@ -131,7 +131,7 @@ describe('SessionLockService', () => {
 
     it('should not lock when nobody is connected', () => {
       connected = false;
-      service.start();
+      service.startWatchingIdleness();
 
       jasmine.clock().tick(15 * 60_000);
 
@@ -140,7 +140,7 @@ describe('SessionLockService', () => {
     });
 
     it('should stop watching once the app is destroyed', () => {
-      service.start();
+      service.startWatchingIdleness();
 
       TestBed.resetTestingModule();
       jasmine.clock().tick(15 * 60_000);
@@ -150,7 +150,7 @@ describe('SessionLockService', () => {
 
     it('should still lock when this browser refuses the tab storage', () => {
       spyOn(tabSession, 'stored').and.returnValue(null);
-      service.start();
+      service.startWatchingIdleness();
 
       jasmine.clock().tick(15 * 60_000);
 
@@ -158,7 +158,7 @@ describe('SessionLockService', () => {
     });
 
     it('should not lock before 15 minutes without activity', () => {
-      service.start();
+      service.startWatchingIdleness();
 
       jasmine.clock().tick(14 * 60_000 + 30_000);
 

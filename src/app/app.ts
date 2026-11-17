@@ -23,6 +23,6 @@ export class App {
       'currency-mark',
       sanitizer.bypassSecurityTrustResourceUrl('icons/currency-mark.svg')
     );
-    inject(SessionLockService).start();
+    inject(SessionLockService).startWatchingIdleness();
   }
 }

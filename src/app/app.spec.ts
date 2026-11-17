@@ -3,10 +3,10 @@ import { App } from './app';
 import { SessionLockService } from './services/session-lock.service';
 
 describe('App', () => {
-  let lockServiceSpy: jasmine.SpyObj<Pick<SessionLockService, 'start'>>;
+  let lockServiceSpy: jasmine.SpyObj<Pick<SessionLockService, 'startWatchingIdleness'>>;
 
   beforeEach(async () => {
-    lockServiceSpy = jasmine.createSpyObj('SessionLockService', ['start']);
+    lockServiceSpy = jasmine.createSpyObj('SessionLockService', ['startWatchingIdleness']);
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [{ provide: SessionLockService, useValue: lockServiceSpy }],
@@ -23,7 +23,7 @@ describe('App', () => {
     it('should start watching for idleness, to lock the session after a while', () => {
       TestBed.createComponent(App);
 
-      expect(lockServiceSpy.start).toHaveBeenCalled();
+      expect(lockServiceSpy.startWatchingIdleness).toHaveBeenCalled();
     });
   });
 });
