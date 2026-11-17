@@ -17,12 +17,14 @@ describe('ConnectedUserService', () => {
   let service: ConnectedUserService;
   let httpMock: HttpTestingController;
   let accountsInUseElsewhere: Set<string>;
+  let takeBackSpy: jasmine.Spy;
 
   afterEach(() => sessionStorage.clear());
 
   beforeEach(() => {
     sessionStorage.clear();
     accountsInUseElsewhere = new Set();
+    takeBackSpy = jasmine.createSpy('takeBack').and.callFake((pk: string) => accountsInUseElsewhere.delete(pk));
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
@@ -32,7 +34,7 @@ describe('ConnectedUserService', () => {
           useValue: {
             isInUseElsewhere: (pk: string) => accountsInUseElsewhere.has(pk),
             announceChange: () => {},
-            takeBack: (pk: string) => accountsInUseElsewhere.delete(pk),
+            takeBack: takeBackSpy,
           },
         },
       ],
@@ -127,7 +129,8 @@ describe('ConnectedUserService', () => {
     it('should reconnect, unlocked, the account of a tab active less than 15 minutes ago', async () => {
       rememberedMinutesAgo(14, 'alice-sk');
 
-      expect(await service.resumeTabSession()).toBe('unlocked');
+      await service.resumeTabSession();
+
       expect(service.getConnectedUser().name).toBe('Alice');
       expect(service.getSecretKey()).toBe('alice-sk');
     });
@@ -135,20 +138,43 @@ describe('ConnectedUserService', () => {
     it('should reconnect, locked, the account of a tab idle for 15 minutes or more', async () => {
       rememberedMinutesAgo(15, 'alice-sk');
 
-      expect(await service.resumeTabSession()).toBe('locked');
+      await service.resumeTabSession();
+
       expect(service.getConnectedUser().name).toBe('Alice');
-      expect(service.getSecretKey()).toBe('');
+      expect(service.isLocked()).toBeTrue();
       expect(tabSession.stored()?.secretKey).toBeNull();
     });
 
     it('should reconnect, locked, an account whose key was already forgotten', async () => {
       rememberedMinutesAgo(1, null);
 
-      expect(await service.resumeTabSession()).toBe('locked');
+      await service.resumeTabSession();
+
+      expect(service.isLocked()).toBeTrue();
+    });
+
+    it('should keep, through a reload, that another device took the account over', async () => {
+      sessionStorage.setItem(
+        'organic-session',
+        JSON.stringify({ publickey: pk, secretKey: 'alice-sk', lastActivityAt: Date.now(), revokedByAnotherDevice: true }),
+      );
+
+      await service.resumeTabSession();
+
+      expect(service.readOnlyReason()).toBe('other-device');
+    });
+
+    it('should not take the account from the other tabs before the password is given', async () => {
+      rememberedMinutesAgo(15, 'alice-sk');
+
+      await service.resumeTabSession();
+
+      expect(takeBackSpy).not.toHaveBeenCalled();
     });
 
     it('should connect nobody when this tab has no session', async () => {
-      expect(await service.resumeTabSession()).toBe('none');
+      await service.resumeTabSession();
+
       expect(service.getConnectedUser()).toBeNull();
     });
 
@@ -157,15 +183,53 @@ describe('ConnectedUserService', () => {
       spyOn(TestBed.inject(LocalDatabaseService), 'getUser').and.rejectWith(new LocalReadError('blocked'));
       spyOn(console, 'error');
 
-      expect(await service.resumeTabSession()).toBe('none');
+      await service.resumeTabSession();
+
+      expect(service.getConnectedUser()).toBeNull();
       expect(console.error).toHaveBeenCalled();
+      expect(tabSession.stored()).not.toBeNull();
     });
 
     it('should forget a session whose account is no longer on this device', async () => {
       sessionStorage.setItem('organic-session', JSON.stringify({ publickey: 'pk-gone', secretKey: 'sk', lastActivityAt: Date.now() }));
 
-      expect(await service.resumeTabSession()).toBe('none');
+      await service.resumeTabSession();
+
+      expect(service.getConnectedUser()).toBeNull();
       expect(tabSession.stored()).toBeNull();
+    });
+  });
+
+  describe('setConnectedUser after a revocation', () => {
+    it('should let this device write again once the citizen logs in afresh', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-again') as any, 'sk');
+      service.setReadOnly();
+
+      service.setConnectedUser(makeDefaultAccount('pk-again') as any, 'sk');
+
+      expect(service.isReadOnlySession()).toBeFalse();
+    });
+  });
+
+  describe('setReadOnly', () => {
+    it('should note in the tab session that another device took the account over', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-revoked') as any, 'sk');
+
+      service.setReadOnly();
+
+      expect(TestBed.inject(TabSessionService).stored()?.revokedByAnotherDevice).toBeTrue();
+    });
+  });
+
+  describe('isUnlocked', () => {
+    it('should say that a connected account with its key can write', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-open') as any, 'open-sk');
+
+      expect(service.isUnlocked()).toBeTrue();
+    });
+
+    it('should say that nobody connected is not unlocked', () => {
+      expect(service.isUnlocked()).toBeFalse();
     });
   });
 
@@ -184,16 +248,49 @@ describe('ConnectedUserService', () => {
   describe('unlock', () => {
     const SK = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f';
 
+    let pk: string;
+
     beforeEach(async () => {
-      const account: any = { ...makeDefaultAccount('pk-unlock'), secretkey: await encryptSecretKey(SK, 'the-password') };
+      pk = `pk-${Date.now()}-${Math.random().toString(36).slice(2)}-unlock`;
+      const account: any = { ...makeDefaultAccount(pk), secretkey: await encryptSecretKey(SK, 'the-password') };
+      await TestBed.inject(LocalDatabaseService).saveUser(account);
       service.setConnectedUser(account, SK);
       service.lock();
+      takeBackSpy.calls.reset();
+    });
+
+    it('should take the account back, as stored now, once unlocked', async () => {
+      await TestBed.inject(LocalDatabaseService).saveUser({
+        ...makeDefaultAccount(pk),
+        name: 'Stored by another tab',
+        secretkey: await encryptSecretKey(SK, 'the-password'),
+      });
+
+      await service.unlock('the-password');
+
+      expect(service.getConnectedUser().name).toBe('Stored by another tab');
+      expect(takeBackSpy).toHaveBeenCalledWith(pk);
+    });
+
+    it('should accept a password changed meanwhile in another tab', async () => {
+      await TestBed.inject(LocalDatabaseService).saveUser({
+        ...makeDefaultAccount(pk),
+        secretkey: await encryptSecretKey(SK, 'the-new-password'),
+      });
+
+      expect(await service.unlock('the-new-password')).toBeTrue();
     });
 
     it('should give the key back to this tab with the right password', async () => {
       expect(await service.unlock('the-password')).toBeTrue();
       expect(service.getSecretKey()).toBe(SK);
       expect(TestBed.inject(TabSessionService).stored()?.secretKey).toBe(SK);
+    });
+
+    it('should report, rather than hide as a wrong password, a key that cannot be read', async () => {
+      await TestBed.inject(LocalDatabaseService).saveUser({ ...makeDefaultAccount(pk), secretkey: 'not an encrypted key' });
+
+      await expectAsync(service.unlock('the-password')).toBeRejected();
     });
 
     it('should stay locked with a wrong password', async () => {
@@ -224,6 +321,12 @@ describe('ConnectedUserService', () => {
   });
 
   describe('readOnlyMessage', () => {
+    it('should refuse to explain a read-only state that does not exist', () => {
+      service.setConnectedUser(makeDefaultAccount('pk-writable') as any, 'sk');
+
+      expect(() => service.readOnlyMessage()).toThrowError();
+    });
+
     it('should ask for the password when the session is locked', () => {
       service.setConnectedUser(makeDefaultAccount('pk-locked-message') as any, 'sk');
       service.lock();

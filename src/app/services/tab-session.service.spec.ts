@@ -19,15 +19,31 @@ describe('TabSessionService', () => {
     it('should keep the account and its unlocked key for this tab', () => {
       service.remember(ALICE_PK, 'alice-sk');
 
-      expect(service.stored()).toEqual(jasmine.objectContaining({ publickey: ALICE_PK, secretKey: 'alice-sk' }));
+      expect(service.stored()).toEqual(
+        jasmine.objectContaining({ publickey: ALICE_PK, secretKey: 'alice-sk' }),
+      );
     });
 
     it('should keep the app working, and say so, when this browser refuses the tab storage', () => {
-      spyOn(Storage.prototype, 'setItem').and.throwError(new DOMException('denied', 'SecurityError'));
+      spyOn(Storage.prototype, 'setItem').and.throwError(
+        new DOMException('denied', 'SecurityError'),
+      );
       spyOn(console, 'error');
 
       expect(() => service.remember(ALICE_PK, 'alice-sk')).not.toThrow();
       expect(console.error).toHaveBeenCalled();
+    });
+
+    it('should say only once that this browser refuses the tab storage', () => {
+      spyOn(Storage.prototype, 'setItem').and.throwError(
+        new DOMException('denied', 'SecurityError'),
+      );
+      spyOn(console, 'error');
+
+      service.remember(ALICE_PK, 'alice-sk');
+      service.remember(ALICE_PK, 'alice-sk');
+
+      expect(console.error).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -37,7 +53,9 @@ describe('TabSessionService', () => {
 
       service.forgetSecretKey();
 
-      expect(service.stored()).toEqual(jasmine.objectContaining({ publickey: ALICE_PK, secretKey: null }));
+      expect(service.stored()).toEqual(
+        jasmine.objectContaining({ publickey: ALICE_PK, secretKey: null }),
+      );
     });
   });
 
@@ -51,7 +69,9 @@ describe('TabSessionService', () => {
     });
 
     it('should say so when this browser refuses to forget the session', () => {
-      spyOn(Storage.prototype, 'removeItem').and.throwError(new DOMException('denied', 'SecurityError'));
+      spyOn(Storage.prototype, 'removeItem').and.throwError(
+        new DOMException('denied', 'SecurityError'),
+      );
       spyOn(console, 'error');
 
       expect(() => service.forget()).not.toThrow();
@@ -76,7 +96,9 @@ describe('TabSessionService', () => {
 
   describe('stored', () => {
     it('should find no session, and say so, when this browser refuses the tab storage', () => {
-      spyOn(Storage.prototype, 'getItem').and.throwError(new DOMException('denied', 'SecurityError'));
+      spyOn(Storage.prototype, 'getItem').and.throwError(
+        new DOMException('denied', 'SecurityError'),
+      );
       spyOn(console, 'error');
 
       expect(service.stored()).toBeNull();

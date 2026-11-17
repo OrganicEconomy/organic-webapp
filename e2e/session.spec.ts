@@ -18,12 +18,16 @@ test.describe('session', () => {
     await page.getByRole('link', { name: 'Contacts' }).click();
 
     await page.clock.fastForward('15:30');
-
     await expect(page.getByText('Session verrouillée')).toBeVisible();
+    await page.goBack();
+    await expect(page.getByText('Session verrouillée')).toBeVisible();
+
     await page.getByLabel('Mot de passe').fill('secret');
     await page.getByRole('button', { name: 'Déverrouiller' }).click();
+
     await expect(page.getByText('Session verrouillée')).toHaveCount(0);
-    await expect(page).toHaveURL(/\/contacts$/);
+    await page.getByRole('link', { name: 'Mon compte' }).click();
+    await expect(page.getByRole('button', { name: 'Changer le mot de passe' })).toBeEnabled();
   });
 
   test('should forget the session when logging out, even through a reload', async ({ page }) => {

@@ -3,7 +3,7 @@
   <p>Après 15 minutes sans activité, votre mot de passe est demandé à nouveau.</p>
   <mat-form-field class="full-width">
     <mat-label>Mot de passe</mat-label>
-    <input matInput type="password" [(ngModel)]="password" (keyup.enter)="unlock()">
+    <input matInput type="password" [(ngModel)]="password" (keyup.enter)="unlock()" />
   </mat-form-field>
   @if (error) {
     <p class="unlock-error">{{ error }}</p>
@@ -11,5 +11,7 @@
 </mat-dialog-content>
 <mat-dialog-actions>
   <button mat-button type="button" (click)="changeAccount()">Changer de compte</button>
-  <button mat-flat-button type="button" (click)="unlock()">Déverrouiller</button>
+  <button mat-flat-button type="button" (click)="unlock()" [disabled]="unlocking">
+    Déverrouiller
+  </button>
 </mat-dialog-actions>

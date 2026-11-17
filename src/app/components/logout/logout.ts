@@ -11,6 +11,6 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 export class Logout {
   constructor() {
     inject(ConnectedUserService).disconnect();
-    inject(Router).navigate(['/user-selection']);
+    inject(Router).navigate(['/user-selection'], { replaceUrl: true });
   }
 }

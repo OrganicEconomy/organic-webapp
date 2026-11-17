@@ -6,7 +6,7 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 
 describe('Logout', () => {
   describe('constructor', () => {
-    it('should forget the connected account, then open the account choice', async () => {
+    it('should forget the connected account, then open the account choice in place of the logout page', async () => {
       const disconnect = jasmine.createSpy('disconnect');
       await TestBed.configureTestingModule({
         imports: [Logout],
@@ -17,7 +17,7 @@ describe('Logout', () => {
       TestBed.createComponent(Logout);
 
       expect(disconnect).toHaveBeenCalled();
-      expect(navigate).toHaveBeenCalledWith(['/user-selection']);
+      expect(navigate).toHaveBeenCalledWith(['/user-selection'], { replaceUrl: true });
     });
   });
 });

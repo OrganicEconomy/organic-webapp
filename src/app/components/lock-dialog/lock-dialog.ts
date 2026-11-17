@@ -23,13 +23,28 @@ export class LockDialog {
   password = '';
   error = '';
 
-  async unlock(): Promise<void> {
-    if (!(await this.userService.unlock(this.password))) {
+  unlocking = false;
+
+  private async tryToUnlock(): Promise<void> {
+    const isUnlocked = await this.userService.unlock(this.password);
+    if (!isUnlocked) {
       this.error = 'Mot de passe incorrect.';
       return;
     }
     this.dialogRef.close();
     await this.pageReopener.reopenCurrentPage();
+  }
+
+  async unlock(): Promise<void> {
+    if (this.unlocking) {
+      return;
+    }
+    this.unlocking = true;
+    try {
+      await this.tryToUnlock();
+    } finally {
+      this.unlocking = false;
+    }
   }
 
   changeAccount(): void {

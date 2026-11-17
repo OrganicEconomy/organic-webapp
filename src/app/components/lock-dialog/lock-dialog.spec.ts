@@ -41,7 +41,15 @@ describe('LockDialog', () => {
       expect(dialogRefSpy.close).toHaveBeenCalled();
       expect(reopenSpy).toHaveBeenCalled();
     });
-  
+
+    it('should try only once when asked twice while the key is being decrypted', async () => {
+      component.password = 'the-password';
+
+      await Promise.all([component.unlock(), component.unlock()]);
+
+      expect(unlockSpy).toHaveBeenCalledTimes(1);
+    });
+
     it('should stay open and say so with a wrong password', async () => {
       unlockSpy.and.resolveTo(false);
       component.password = 'a-wrong-password';
@@ -50,7 +58,9 @@ describe('LockDialog', () => {
       fixture.detectChanges();
 
       expect(dialogRefSpy.close).not.toHaveBeenCalled();
-      expect(fixture.nativeElement.querySelector('.unlock-error').textContent).toContain('Mot de passe incorrect.');
+      expect(fixture.nativeElement.querySelector('.unlock-error').textContent).toContain(
+        'Mot de passe incorrect.',
+      );
     });
   });
 
@@ -62,6 +72,29 @@ describe('LockDialog', () => {
 
       expect(dialogRefSpy.close).toHaveBeenCalled();
       expect(navigate).toHaveBeenCalledWith(['/logout']);
+    });
+  });
+
+  describe('template', () => {
+    it('should unlock when the citizen presses Enter in the password field', () => {
+      spyOn(component, 'unlock');
+      const passwordField: HTMLInputElement =
+        fixture.nativeElement.querySelector('input[type=password]');
+
+      passwordField.dispatchEvent(new KeyboardEvent('keyup', { key: 'Enter' }));
+
+      expect(component.unlock).toHaveBeenCalled();
+    });
+
+    it('should log out to change account from the « Changer de compte » button', () => {
+      spyOn(component, 'changeAccount');
+      const buttons = Array.from(
+        fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>,
+      );
+
+      buttons.find((button) => button.textContent?.includes('Changer de compte'))?.click();
+
+      expect(component.changeAccount).toHaveBeenCalled();
     });
   });
 });

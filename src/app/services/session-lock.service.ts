@@ -1,11 +1,11 @@
-import { Injectable, inject } from '@angular/core';
+import { DestroyRef, Injectable, inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { ConnectedUserService } from './connected-user.service';
-import { SESSION_LIFETIME_MS, TabSessionService } from './tab-session.service';
+import { TabSessionService, hasBeenIdleForTooLong } from './tab-session.service';
 import { LockDialog } from '../components/lock-dialog/lock-dialog';
 
 const IDLENESS_CHECK_INTERVAL_MS = 30_000;
-const ACTIVITY_NOTING_INTERVAL_MS = 30_000;
+const ACTIVITY_COPY_INTERVAL_MS = 30_000;
 const ACTIVITY_EVENTS = ['pointerdown', 'keydown'];
 const LOCK_DIALOG_ID = 'session-lock';
 
@@ -14,29 +14,28 @@ export class SessionLockService {
   private userService = inject(ConnectedUserService);
   private tabSession = inject(TabSessionService);
   private dialog = inject(MatDialog);
-  private idlenessCheck: ReturnType<typeof setInterval> | null = null;
-  private lastNotedActivityAt = 0;
+  private destroyRef = inject(DestroyRef);
+  private lastActivityAt = Date.now();
+  private lastActivityCopiedAt = 0;
+
+  private hasCopiedActivityRecently(): boolean {
+    return Date.now() - this.lastActivityCopiedAt < ACTIVITY_COPY_INTERVAL_MS;
+  }
 
   private noteActivity = (): void => {
-    if (Date.now() - this.lastNotedActivityAt < ACTIVITY_NOTING_INTERVAL_MS) {
+    this.lastActivityAt = Date.now();
+    if (this.hasCopiedActivityRecently()) {
       return;
     }
-    this.lastNotedActivityAt = Date.now();
+    this.lastActivityCopiedAt = Date.now();
     this.tabSession.noteActivity();
   };
 
-  private isIdleForTooLong(): boolean {
-    const session = this.tabSession.stored();
-    return session !== null && Date.now() - session.lastActivityAt >= SESSION_LIFETIME_MS;
-  }
-
-  private isUnlocked(): boolean {
-    return this.userService.getConnectedUser() !== null && !this.userService.isLocked();
-  }
-
-  private lockWhenIdleForTooLong(): void {
-    if (this.isUnlocked() && this.isIdleForTooLong()) {
+  private lockIfIdleForTooLong(): void {
+    if (this.userService.isUnlocked() && hasBeenIdleForTooLong(this.lastActivityAt)) {
       this.userService.lock();
+    }
+    if (this.userService.isLocked()) {
       this.askForPassword();
     }
   }
@@ -45,29 +44,39 @@ export class SessionLockService {
     if (this.dialog.getDialogById(LOCK_DIALOG_ID)) {
       return;
     }
-    this.dialog.open(LockDialog, { id: LOCK_DIALOG_ID, disableClose: true, width: '320px' });
+    this.dialog.open(LockDialog, {
+      id: LOCK_DIALOG_ID,
+      disableClose: true,
+      closeOnNavigation: false,
+      width: '320px',
+    });
   }
 
-  private lockOnReturnWhenIdleForTooLong = (): void => {
+  private lockOnReturnIfIdleForTooLong = (): void => {
     if (document.visibilityState === 'visible') {
-      this.lockWhenIdleForTooLong();
+      this.lockIfIdleForTooLong();
     }
   };
 
-  start(): void {
-    document.addEventListener('visibilitychange', this.lockOnReturnWhenIdleForTooLong);
+  private listenToTheCitizen(): void {
+    document.addEventListener('visibilitychange', this.lockOnReturnIfIdleForTooLong);
     ACTIVITY_EVENTS.forEach((event) => document.addEventListener(event, this.noteActivity));
-    this.idlenessCheck = setInterval(() => this.lockWhenIdleForTooLong(), IDLENESS_CHECK_INTERVAL_MS);
-    if (this.userService.isLocked()) {
-      this.askForPassword();
-    }
+    const idlenessCheck = setInterval(
+      () => this.lockIfIdleForTooLong(),
+      IDLENESS_CHECK_INTERVAL_MS,
+    );
+    this.destroyRef.onDestroy(() => {
+      document.removeEventListener('visibilitychange', this.lockOnReturnIfIdleForTooLong);
+      ACTIVITY_EVENTS.forEach((event) => document.removeEventListener(event, this.noteActivity));
+      clearInterval(idlenessCheck);
+    });
   }
 
-  stop(): void {
-    document.removeEventListener('visibilitychange', this.lockOnReturnWhenIdleForTooLong);
-    ACTIVITY_EVENTS.forEach((event) => document.removeEventListener(event, this.noteActivity));
-    if (this.idlenessCheck !== null) {
-      clearInterval(this.idlenessCheck);
+  start(): void {
+    this.lastActivityAt = this.tabSession.stored()?.lastActivityAt ?? Date.now();
+    this.listenToTheCitizen();
+    if (this.userService.isLocked()) {
+      this.askForPassword();
     }
   }
 }
