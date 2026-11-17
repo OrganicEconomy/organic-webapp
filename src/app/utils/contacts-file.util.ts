@@ -3,7 +3,7 @@ import type { Contact, ContactType } from '../models/account';
 const CONTACTS_FILE_FORMAT = 'organic-contacts';
 const CONTACTS_FILE_VERSION = 1;
 const CONTACT_TYPES: ContactType[] = ['citizen', 'ecosystem'];
-const NOT_A_CONTACTS_FILE = "Ce fichier n'est pas un fichier de contacts.";
+const NOT_A_CONTACTS_FILE_MESSAGE = "Ce fichier n'est pas un fichier de contacts.";
 
 function onlyContactFields({ name, pk, url, type }: Contact): Contact {
   return { name, pk, url, type };
@@ -23,7 +23,7 @@ function parsedJson(text: string): any {
   try {
     return JSON.parse(text);
   } catch {
-    throw new ContactsFileError(NOT_A_CONTACTS_FILE);
+    throw new ContactsFileError(NOT_A_CONTACTS_FILE_MESSAGE);
   }
 }
 
@@ -61,7 +61,7 @@ function withTrimmedName(contact: Contact): Contact {
 export function contactsFromFile(text: string): Contact[] {
   const file = parsedJson(text);
   if (!isContactsFile(file)) {
-    throw new ContactsFileError(NOT_A_CONTACTS_FILE);
+    throw new ContactsFileError(NOT_A_CONTACTS_FILE_MESSAGE);
   }
   if (isWrittenByNewerVersion(file)) {
     throw new ContactsFileError(
