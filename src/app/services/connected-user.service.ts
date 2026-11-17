@@ -4,8 +4,16 @@ import { ServerConnexionService } from './server-connection.service';
 import { LocalDatabaseService, LocalReadError } from './local-database.service';
 import type { LoadedAccount } from '../models/account';
 import { AccountTabsService } from './account-tabs.service';
+import { decryptSecretKey, isWrongPasswordError } from './secret-key-crypto.util';
+import { TabSession, TabSessionService, hasBeenIdleForTooLong } from './tab-session.service';
 
-export type ReadOnlyReason = 'other-device' | 'other-tab'
+export type ReadOnlyReason = 'other-device' | 'other-tab' | 'locked'
+
+const READ_ONLY_MESSAGES: Record<ReadOnlyReason, string> = {
+    'other-device': 'Ce compte est actif sur un autre appareil — lecture seule.',
+    'other-tab': "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
+    'locked': 'Session verrouillée : entrez votre mot de passe pour continuer.',
+}
 
 @Injectable({
     providedIn: 'root',
@@ -14,14 +22,16 @@ export class ConnectedUserService {
     private server = inject(ServerConnexionService)
     private localDB = inject(LocalDatabaseService)
     private tabs = inject(AccountTabsService)
+    private tabSession = inject(TabSessionService)
 
     private connectedUser = null
-    /** Decrypted secret key, in memory for the session only — never persisted. */
     private secretKey = ''
     /** Set once a save gets a 409 DEVICE_REVOKED — this account is active on another device. */
     private revokedByAnotherDevice = false
 
     public setConnectedUser(user: any, secretKey: string) {
+        this.revokedByAnotherDevice = false
+        this.tabSession.remember(user.publickey, secretKey)
         this.tabs.takeBack(user.publickey)
         this.connectedUser = user
         this.secretKey = secretKey
@@ -76,11 +86,20 @@ export class ConnectedUserService {
 
     public setReadOnly(): void {
         this.revokedByAnotherDevice = true
+        this.tabSession.noteRevokedByAnotherDevice()
     }
 
     private isInUseInAnotherTab(): boolean {
         const user = this.connectedUser as any
         return user !== null && this.tabs.isInUseElsewhere(user.publickey)
+    }
+
+    public isUnlocked(): boolean {
+        return this.secretKey !== ''
+    }
+
+    public isLocked(): boolean {
+        return this.connectedUser !== null && this.secretKey === ''
     }
 
     public readOnlyReason(): ReadOnlyReason | null {
@@ -89,6 +108,9 @@ export class ConnectedUserService {
         }
         if (this.isInUseInAnotherTab()) {
             return 'other-tab'
+        }
+        if (this.isLocked()) {
+            return 'locked'
         }
         return null
     }
@@ -107,9 +129,75 @@ export class ConnectedUserService {
     }
 
     public readOnlyMessage(): string {
-        return this.readOnlyReason() === 'other-tab'
-            ? "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci."
-            : 'Ce compte est actif sur un autre appareil — lecture seule.'
+        const reason = this.readOnlyReason()
+        if (reason === null) {
+            throw new Error('This session can write: there is no read-only state to explain.')
+        }
+        return READ_ONLY_MESSAGES[reason]
+    }
+
+    public async unlock(password: string): Promise<boolean> {
+        const account = await this.storedAccount((this.connectedUser as any).publickey)
+        let secretKey: string
+        try {
+            secretKey = await decryptSecretKey(account.secretkey, password)
+        } catch (error) {
+            if (isWrongPasswordError(error)) {
+                return false
+            }
+            throw error
+        }
+        this.setConnectedUser(account, secretKey)
+        return true
+    }
+
+    public lock(): void {
+        this.secretKey = ''
+        this.tabSession.forgetSecretKey()
+    }
+
+    private isStillUnlocked(session: TabSession): session is TabSession & { secretKey: string } {
+        return session.secretKey !== null && !hasBeenIdleForTooLong(session.lastActivityAt)
+    }
+
+    private connectLocked(account: LoadedAccount): void {
+        this.connectedUser = account as any
+        account.blockchain = new CitizenBlockchain(account.blocks)
+        this.lock()
+    }
+
+    private async resumeFrom(session: TabSession): Promise<void> {
+        const account = await this.localDB.getUser(session.publickey)
+        if (account === null) {
+            this.tabSession.forget()
+            return
+        }
+        if (this.isStillUnlocked(session)) {
+            this.setConnectedUser(account, session.secretKey)
+        } else {
+            this.connectLocked(account)
+        }
+        if (session.revokedByAnotherDevice) {
+            this.setReadOnly()
+        }
+    }
+
+    public async resumeTabSession(): Promise<void> {
+        const session = this.tabSession.stored()
+        if (session === null) {
+            return
+        }
+        try {
+            await this.resumeFrom(session)
+        } catch (error) {
+            console.error('The session of this tab cannot be resumed.', error)
+        }
+    }
+
+    public disconnect(): void {
+        this.connectedUser = null
+        this.secretKey = ''
+        this.tabSession.forget()
     }
 
     public isReadOnlySession(): boolean {

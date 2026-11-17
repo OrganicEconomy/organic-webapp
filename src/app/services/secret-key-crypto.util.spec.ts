@@ -1,4 +1,4 @@
-import { decryptSecretKey, encryptSecretKey } from './secret-key-crypto.util';
+import { decryptSecretKey, encryptSecretKey, isWrongPasswordError } from './secret-key-crypto.util';
 
 describe('secret-key-crypto.util', () => {
   const secretKeyHex = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c396912f'
@@ -35,5 +35,18 @@ describe('secret-key-crypto.util', () => {
 
     expect(() => JSON.parse(blob)).not.toThrow()
     expect(typeof blob).toBe('string')
+  });
+});
+
+describe('isWrongPasswordError', () => {
+  it('should recognize the error of a wrong password', async () => {
+    const blob = await encryptSecretKey('ab'.repeat(32), 'the-password');
+    const error = await decryptSecretKey(blob, 'a-wrong-password').catch((caught) => caught);
+
+    expect(isWrongPasswordError(error)).toBeTrue();
+  });
+
+  it('should not take any other error for a wrong password', () => {
+    expect(isWrongPasswordError(new SyntaxError('Unexpected token'))).toBeFalse();
   });
 });

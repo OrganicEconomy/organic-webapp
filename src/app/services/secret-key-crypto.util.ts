@@ -52,3 +52,7 @@ export async function decryptSecretKey(blob: string, password: string): Promise<
   const decrypted = await aesDecrypt(encrypted, password)
   return toHex(decrypted)
 }
+
+export function isWrongPasswordError(error: unknown): boolean {
+  return error instanceof Error && error.message === 'Invalid password'
+}

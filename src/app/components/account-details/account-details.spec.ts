@@ -198,6 +198,15 @@ describe('AccountDetails', () => {
     expect(serverDBSpy.changePassword).not.toHaveBeenCalled();
   });
 
+  describe('template', () => {
+    it('should log out through the logout page, which forgets the session', () => {
+      const logoutLink = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
+        .find((link) => link.textContent?.includes('Déconnexion'));
+
+      expect(logoutLink?.getAttribute('href')).toBe('/logout');
+    });
+  });
+
   describe('copyContactLink', () => {
     it('should copy to the clipboard the link that opens the contact form filled with my card', async () => {
       const writeText = spyOn(navigator.clipboard, 'writeText').and.resolveTo();

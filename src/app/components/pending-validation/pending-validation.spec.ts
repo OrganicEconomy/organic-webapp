@@ -219,4 +219,13 @@ describe('PendingValidation', () => {
     tick(30000);
     httpMock.expectNone(isMyValidationRequest);
   }));
+
+  describe('template', () => {
+    it('should log out through the logout page, which forgets the session', () => {
+      const logoutLink = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
+        .find((link) => link.textContent?.includes('Déconnexion'));
+
+      expect(logoutLink?.getAttribute('href')).toBe('/logout');
+    });
+  });
 });
