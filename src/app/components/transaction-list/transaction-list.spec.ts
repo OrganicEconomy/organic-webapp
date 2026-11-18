@@ -68,6 +68,20 @@ describe('TransactionList', () => {
       expect(card.querySelector('app-transaction-amounts')?.textContent).toContain('+3 XP');
     });
 
+    it('should keep the column headers stuck on top while the rows scroll', () => {
+      const header: HTMLElement = fixture.nativeElement.querySelector('.desktop-table th');
+
+      expect(header.classList).toContain('mat-mdc-table-sticky');
+    });
+
+    it('should scroll the rows in their own area, leaving the title in place', () => {
+      const rows: HTMLElement = fixture.nativeElement.querySelector('.history-rows');
+
+      expect(getComputedStyle(rows).overflowY).toBe('auto');
+      expect(rows.querySelector('.mobile-list')).not.toBeNull();
+      expect(rows.querySelector('h1')).toBeNull();
+    });
+
     it('should lead back to the payments', () => {
       const backLink = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
         .find((link) => link.textContent?.includes('Retour'));
