@@ -1,3 +1,14 @@
+<ng-template #partyView let-party>
+    @if (party.fullKey) {
+    <details class="party-key">
+        <summary>{{ party.label }}</summary>
+        <span class="full-key">{{ party.fullKey }}</span>
+    </details>
+    } @else {
+    {{ party.label }}
+    }
+</ng-template>
+
 <mat-card appearance="outlined">
     <mat-card-content>
         <h1>Historique des transactions</h1>
@@ -15,12 +26,20 @@
 
             <ng-container matColumnDef="source">
                 <th mat-header-cell *matHeaderCellDef>Émetteur</th>
-                <td mat-cell *matCellDef="let element">{{ element.parties?.source.label }}</td>
+                <td mat-cell *matCellDef="let element">
+                    @if (element.parties) {
+                    <ng-container *ngTemplateOutlet="partyView; context: { $implicit: element.parties.source }" />
+                    }
+                </td>
             </ng-container>
 
             <ng-container matColumnDef="target">
                 <th mat-header-cell *matHeaderCellDef>Receveur</th>
-                <td mat-cell *matCellDef="let element">{{ element.parties?.target.label }}</td>
+                <td mat-cell *matCellDef="let element">
+                    @if (element.parties) {
+                    <ng-container *ngTemplateOutlet="partyView; context: { $implicit: element.parties.target }" />
+                    }
+                </td>
             </ng-container>
 
             <ng-container matColumnDef="amount">
@@ -41,7 +60,11 @@
                 </div>
                 <div class="tx-bottom">
                     @if (element.parties) {
-                    <span class="tx-parties">{{ element.parties.source.label }} → {{ element.parties.target.label }}</span>
+                    <span class="tx-parties">
+                        <ng-container *ngTemplateOutlet="partyView; context: { $implicit: element.parties.source }" />
+                        →
+                        <ng-container *ngTemplateOutlet="partyView; context: { $implicit: element.parties.target }" />
+                    </span>
                     }
                     <span class="tx-date">{{ element.date }}</span>
                 </div>

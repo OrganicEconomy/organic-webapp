@@ -55,5 +55,20 @@ describe('TransactionList', () => {
 
       expect(backLink?.getAttribute('href')).toBe('/pay');
     });
+
+    it('should show the whole key of an unknown party once it is touched', () => {
+      const unknownKey = '03' + 'ab'.repeat(32);
+      fakeAccount.blockchain.getHistory = () => [
+        { date: new Date(2026, 0, 16), type: 3, signer: unknownKey, target: MY_PK, money: [1] },
+      ];
+      fixture = TestBed.createComponent(TransactionList);
+      fixture.detectChanges();
+
+      const abbreviatedKey: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .party-key summary');
+      abbreviatedKey.click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.mobile-list .party-key[open]')?.textContent).toContain(unknownKey);
+    });
   });
 });

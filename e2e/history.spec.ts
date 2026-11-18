@@ -14,8 +14,8 @@ test.describe('history', () => {
 
     await openTheHistory(page);
 
-    const opening = page.getByRole('row', { name: /Ouverture du compte/ });
-    const creation = page.getByRole('row', { name: /Création du jour/ });
+    const opening = page.locator('.tx-card', { hasText: 'Ouverture du compte' });
+    const creation = page.locator('.tx-card', { hasText: 'Création du jour' });
     await expect(opening).toBeVisible();
     await expect(creation).toBeVisible();
     await expect(opening).not.toContainText('Moi');

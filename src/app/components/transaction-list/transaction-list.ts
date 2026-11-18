@@ -1,4 +1,5 @@
 import { Component, inject } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
@@ -10,6 +11,7 @@ import { DisplayRow, toDisplayRow } from '../../utils/transaction-display.util';
 @Component({
   selector: 'app-transaction-list',
   imports: [
+    NgTemplateOutlet,
     RouterLink,
     MatButtonModule,
     MatTableModule,

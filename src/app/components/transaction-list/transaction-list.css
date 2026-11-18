@@ -75,9 +75,24 @@ h1 {
 .tx-parties {
     font-size: 0.82rem;
     color: var(--mat-sys-on-surface-variant);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+.party-key {
+    display: inline;
+}
+
+.party-key summary {
+    display: inline;
+    cursor: pointer;
+    text-decoration: underline dotted;
+}
+
+.party-key[open] .full-key {
+    display: block;
+    font-family: monospace;
+    word-break: break-all;
 }
 
 .tx-date {

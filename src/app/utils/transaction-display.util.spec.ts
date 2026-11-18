@@ -45,10 +45,30 @@ describe('toDisplayRow', () => {
     expect(row.type).toBe('Gain');
   });
 
+  it('should abbreviate a key that matches no contact, keeping the whole key to show on demand', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'some-unknown-public-key', target: 'my-pk', money: [1] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.parties?.source).toEqual({ label: '...blic-key', fullKey: 'some-unknown-public-key' });
+  });
+
+  it('should name a contact or oneself without any key to show', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1] };
+    const row = toDisplayRow(tx, 'my-pk', [{ pk: 'alice-pk', name: 'Alice' }]);
+    expect(row.parties?.source).toEqual({ label: 'Alice', fullKey: null });
+    expect(row.parties?.target).toEqual({ label: 'Moi', fullKey: null });
+  });
+
   it('should show the account opening without sender nor receiver', () => {
     const tx = { date: new Date(2026, 0, 15), type: 1, signer: 'my-pk', target: '', money: [] };
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.type).toBe('Ouverture du compte');
+    expect(row.parties).toBeNull();
+  });
+
+  it('should show the daily creation without sender nor receiver', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 2, signer: 'my-pk', target: '', money: [1, 2] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.type).toBe('Création du jour');
     expect(row.parties).toBeNull();
   });
 

@@ -1,3 +1,5 @@
+import { TxType } from 'organic-protocol'
+
 export function getContactName(pk: string, myPublicKey: string, contacts: any[]): string {
   if (!pk) return "-"
   if (pk === myPublicKey) return "Moi"
@@ -7,7 +9,7 @@ export function getContactName(pk: string, myPublicKey: string, contacts: any[])
 
 export const TX_TYPE_LABELS: Record<string, string> = {
   "1": "Ouverture du compte",
-  "2": "Création",
+  "2": "Création du jour",
   "3": "Paiement",
   "4": "Engagement",
   "5": "Billet",
@@ -31,6 +33,7 @@ function typeLabel(tx: any): string {
 
 export interface Party {
   label: string
+  fullKey: string | null
 }
 
 export interface Parties {
@@ -45,14 +48,27 @@ export interface DisplayRow {
   amount: number
 }
 
+const TYPES_WITHOUT_PARTIES = [TxType.INIT, TxType.CREATE]
+
 function hasParties(tx: any): boolean {
-  return String(tx.type) !== "1"
+  return !TYPES_WITHOUT_PARTIES.includes(tx.type)
+}
+
+function isUnknownKey(pk: string, myPublicKey: string, contacts: any[]): boolean {
+  return !!pk && pk !== myPublicKey && !contacts.some((contact: any) => contact.pk === pk)
+}
+
+function partyOf(pk: string, myPublicKey: string, contacts: any[]): Party {
+  return {
+    label: getContactName(pk, myPublicKey, contacts),
+    fullKey: isUnknownKey(pk, myPublicKey, contacts) ? pk : null,
+  }
 }
 
 function partiesOf(tx: any, myPublicKey: string, contacts: any[]): Parties {
   return {
-    source: { label: getContactName(tx.signer, myPublicKey, contacts) },
-    target: { label: getContactName(tx.target, myPublicKey, contacts) },
+    source: partyOf(tx.signer, myPublicKey, contacts),
+    target: partyOf(tx.target, myPublicKey, contacts),
   }
 }
 
