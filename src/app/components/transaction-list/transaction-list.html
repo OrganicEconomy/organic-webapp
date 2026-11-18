@@ -1,7 +1,7 @@
 <ng-template #partyView let-party>
     @if (party.fullKey) {
     <details class="party-key">
-        <summary>{{ party.label }}</summary>
+        <summary [attr.aria-label]="'Clé inconnue ' + party.label + ', toucher pour la voir en entier'">{{ party.label }}</summary>
         <span class="full-key">{{ party.fullKey }}</span>
     </details>
     } @else {
@@ -60,11 +60,11 @@
                 </div>
                 <div class="tx-bottom">
                     @if (element.parties) {
-                    <span class="tx-parties">
+                    <div class="tx-parties">
                         <ng-container *ngTemplateOutlet="partyView; context: { $implicit: element.parties.source }" />
                         →
                         <ng-container *ngTemplateOutlet="partyView; context: { $implicit: element.parties.target }" />
-                    </span>
+                    </div>
                     }
                     <span class="tx-date">{{ element.date }}</span>
                 </div>

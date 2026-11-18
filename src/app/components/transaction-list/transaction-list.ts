@@ -7,6 +7,17 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { DisplayRow, toDisplayRow } from '../../utils/transaction-display.util';
+import type { Contact, LoadedAccount } from '../../models/account';
+
+function partiesKnownBy(user: LoadedAccount): Contact[] {
+  const myEcosystems = (user.myEcosystems ?? []).map((ecosystem): Contact => ({
+    name: ecosystem.name,
+    pk: ecosystem.publickey,
+    url: user.serverUrl,
+    type: 'ecosystem',
+  }))
+  return [...user.contacts, ...myEcosystems]
+}
 
 @Component({
   selector: 'app-transaction-list',
@@ -35,7 +46,8 @@ export class TransactionList {
       return
     }
 
+    const knownParties = partiesKnownBy(this.user)
     this.dataSource = this.user.blockchain.getHistory()
-      .map((tx: any) => toDisplayRow(tx, this.user.blockchain.getMyPublicKey(), this.user.contacts))
+      .map((tx: any) => toDisplayRow(tx, this.user.blockchain.getMyPublicKey(), knownParties))
   }
 }
