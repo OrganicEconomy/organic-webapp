@@ -1,4 +1,4 @@
-import { getContactName, toDisplayRow } from './transaction-display.util';
+import { getContactName, toDisplayRow, withSign } from './transaction-display.util';
 
 describe('getContactName', () => {
   it('should return "Moi" when the key is the account\'s own public key', () => {
@@ -30,6 +30,67 @@ describe('toDisplayRow', () => {
     const tx = { date: new Date(2026, 0, 15), type: 2, signer: 'my-pk', target: '', money: [1, 2], invests: [3] };
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.amounts).toEqual({ money: 2, invests: 1, experience: 0 });
+  });
+
+  it('should count a payment to someone else as money spent', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'my-pk', target: 'alice-pk', money: [1, 2], invests: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts).toEqual({ money: -2, invests: 0, experience: 0 });
+  });
+
+  it('should count a payment received as experience gained, not as money', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1, 2, 3], invests: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 3 });
+  });
+
+  it('should count an engagement as the invests it engages, not as zero', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 4, signer: 'my-pk', target: 'eco-pk', money: [], invests: [1, 2, 3, 4] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts).toEqual({ money: 0, invests: -4, experience: 0 });
+  });
+
+  it('should count a payer order as the invests it spends', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 12, signer: 'my-pk', target: 'bob-pk', money: [], invests: [1, 2] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts).toEqual({ money: 0, invests: -2, experience: 0 });
+  });
+
+  it('should count printed bills as money spent', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 5, signer: 'my-pk', target: 'core-pk', money: [1, 2], invests: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts).toEqual({ money: -2, invests: 0, experience: 0 });
+  });
+
+  it('should count a cashed bill as experience gained', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 5, signer: 'alice-pk', target: 'core-pk', money: [1, 2, 3], invests: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 3 });
+  });
+
+  it('should count an earning from an ecosystem as experience gained', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 13, signer: 'eco-pk', target: 'my-pk', money: [1, 2], invests: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 2 });
+  });
+
+  it('should count a payment to oneself as money spent and experience gained', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'my-pk', target: 'my-pk', money: [1, 2], invests: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts).toEqual({ money: -2, invests: 0, experience: 2 });
+  });
+
+  it('should count no amount for a role given in an ecosystem', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 7, signer: 'my-pk', target: 'bob-pk', money: [], invests: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 0 });
+  });
+
+  it('should tell a printed bill from a cashed one', () => {
+    const printed = { date: new Date(2026, 0, 15), type: 5, signer: 'my-pk', target: 'core-pk', money: [1], invests: [] };
+    const cashed = { date: new Date(2026, 0, 15), type: 5, signer: 'alice-pk', target: 'core-pk', money: [1], invests: [] };
+    expect(toDisplayRow(printed, 'my-pk', []).type).toBe('Billet imprimé');
+    expect(toDisplayRow(cashed, 'my-pk', []).type).toBe('Billet encaissé');
   });
 
   it('should map PAYERORDER (12) to a French label instead of showing the raw number', () => {
@@ -69,7 +130,7 @@ describe('toDisplayRow', () => {
   });
 
   it('should show a missing key as "-", with no key to show', () => {
-    const tx = { date: new Date(2026, 0, 15), type: 4, signer: 'my-pk', target: '', money: [] };
+    const tx = { date: new Date(2026, 0, 15), type: 4, signer: 'my-pk', target: '', money: [], invests: [] };
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.parties?.target).toEqual({ label: '-', fullKey: null });
   });
@@ -82,7 +143,7 @@ describe('toDisplayRow', () => {
   });
 
   it('should show the daily creation with neither sender nor receiver', () => {
-    const tx = { date: new Date(2026, 0, 15), type: 2, signer: 'my-pk', target: '', money: [1, 2] };
+    const tx = { date: new Date(2026, 0, 15), type: 2, signer: 'my-pk', target: '', money: [1, 2], invests: [3] };
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.type).toBe('Création du jour');
     expect(row.parties).toBeNull();
@@ -112,5 +173,39 @@ describe('toDisplayRow', () => {
     const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'my-pk', target: 'my-pk', money: [1, 2] };
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.type).toBe('Encaissement');
+  });
+
+  [
+    { kind: 'the account opening', type: 1, signer: 'my-pk', target: 'Camille', icon: 'bi-person-plus' },
+    { kind: 'the daily creation', type: 2, signer: 'my-pk', target: '', icon: 'bi-stars' },
+    { kind: 'a payment sent', type: 3, signer: 'my-pk', target: 'alice-pk', icon: 'bi-arrow-up-right' },
+    { kind: 'a payment received', type: 3, signer: 'alice-pk', target: 'my-pk', icon: 'bi-arrow-down-left' },
+    { kind: 'a payment to oneself', type: 3, signer: 'my-pk', target: 'my-pk', icon: 'bi-arrow-repeat' },
+    { kind: 'an engagement', type: 4, signer: 'my-pk', target: 'eco-pk', icon: 'bi-piggy-bank' },
+    { kind: 'a printed bill', type: 5, signer: 'my-pk', target: 'core-pk', icon: 'bi-printer' },
+    { kind: 'a cashed bill', type: 5, signer: 'alice-pk', target: 'core-pk', icon: 'bi-qr-code-scan' },
+    { kind: 'a role given', type: 7, signer: 'my-pk', target: 'bob-pk', icon: 'bi-person-badge' },
+    { kind: 'a payer order', type: 12, signer: 'my-pk', target: 'bob-pk', icon: 'bi-receipt' },
+    { kind: 'an earning', type: 13, signer: 'eco-pk', target: 'my-pk', icon: 'bi-briefcase' },
+  ].forEach(({ kind, type, signer, target, icon }) => {
+    it(`should show ${kind} with its own icon`, () => {
+      const tx = { date: new Date(2026, 0, 15), type, signer, target, money: [], invests: [] };
+      expect(toDisplayRow(tx, 'my-pk', []).icon).toBe(icon);
+    });
+  });
+
+  it('should show a type it does not know with a generic icon', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 99, signer: 'my-pk', target: '', money: [], invests: [] };
+    expect(toDisplayRow(tx, 'my-pk', []).icon).toBe('bi-question-circle');
+  });
+});
+
+describe('withSign', () => {
+  it('should write a gain with a plus sign', () => {
+    expect(withSign(3)).toBe('+3');
+  });
+
+  it('should write a spending with a minus sign', () => {
+    expect(withSign(-3)).toBe('−3');
   });
 });

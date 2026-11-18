@@ -18,7 +18,7 @@ describe('TransactionList', () => {
       blockchain: {
         getMyPublicKey: () => MY_PK,
         getHistory: () => [
-          { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: MY_PK, money: [1, 2, 3] },
+          { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: MY_PK, money: [1, 2, 3], invests: [] },
         ],
       },
     };
@@ -61,6 +61,13 @@ describe('TransactionList', () => {
   });
 
   describe('template', () => {
+    it('should show each row with the icon of its kind and its signed amounts', () => {
+      const card: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .tx-card');
+
+      expect(card.querySelector('i.bi-arrow-down-left')).not.toBeNull();
+      expect(card.querySelector('app-transaction-amounts')?.textContent).toContain('+3 XP');
+    });
+
     it('should lead back to the payments', () => {
       const backLink = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
         .find((link) => link.textContent?.includes('Retour'));
@@ -100,7 +107,7 @@ describe('TransactionList', () => {
 
     it('should leave the desktop sender and receiver cells empty for the daily creation', () => {
       fakeAccount.blockchain.getHistory = () => [
-        { date: new Date(2026, 0, 16), type: 2, signer: MY_PK, target: '', money: [1] },
+        { date: new Date(2026, 0, 16), type: 2, signer: MY_PK, target: '', money: [1], invests: [] },
       ];
       fixture = TestBed.createComponent(TransactionList);
       fixture.detectChanges();

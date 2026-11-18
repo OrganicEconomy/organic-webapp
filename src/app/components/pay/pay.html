@@ -65,8 +65,8 @@
         @for (tx of recentTransactions; track $index) {
         <div class="tx-row">
             <span class="tx-date">{{ tx.date }}</span>
-            <span class="tx-type">{{ tx.type }}</span>
-            <span class="tx-amount">{{ tx.amount }} <mat-icon svgIcon="currency-mark"></mat-icon></span>
+            <span class="tx-type"><i [class]="'bi tx-icon ' + tx.icon"></i> {{ tx.type }}</span>
+            <app-transaction-amounts [amounts]="tx.amounts" />
         </div>
         }
         }

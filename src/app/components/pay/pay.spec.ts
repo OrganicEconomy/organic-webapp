@@ -552,7 +552,7 @@ describe('Pay', () => {
 
   describe('Historique card', () => {
     it('should show at most the 5 most recent transactions', () => {
-      const tx = (n: number) => ({ date: new Date(2026, 0, n), type: 3, signer: MY_PK, target: MY_PK, money: [1] });
+      const tx = (n: number) => ({ date: new Date(2026, 0, n), type: 3, signer: MY_PK, target: MY_PK, money: [1], invests: [] });
       fakeBlockchain.getHistory = () => [tx(6), tx(5), tx(4), tx(3), tx(2), tx(1)];
 
       fixture = TestBed.createComponent(Pay);
@@ -560,6 +560,19 @@ describe('Pay', () => {
       fixture.detectChanges();
 
       expect(component.recentTransactions.length).toBe(5);
+    });
+
+    it('should show each recent transaction with its icon and signed amounts', () => {
+      fakeBlockchain.getHistory = () => [
+        { date: new Date(2026, 0, 6), type: 3, signer: MY_PK, target: 'alice-pk', money: [1, 2], invests: [] },
+      ];
+
+      fixture = TestBed.createComponent(Pay);
+      fixture.detectChanges();
+
+      const row: HTMLElement = fixture.nativeElement.querySelector('.history-card .tx-row');
+      expect(row.querySelector('i.bi-arrow-up-right')).not.toBeNull();
+      expect(row.querySelector('app-transaction-amounts')?.textContent).toContain('−2');
     });
 
     it('should show an empty message when there is no transaction yet', () => {

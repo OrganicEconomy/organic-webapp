@@ -1,0 +1,33 @@
+:host {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.amount {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.gain {
+    color: #2e7d32;
+}
+
+.spending {
+    color: #b3261e;
+}
+
+.experience-badge {
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    color: var(--mat-sys-on-secondary-container);
+    background: var(--mat-sys-secondary-container);
+}

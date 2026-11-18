@@ -1,0 +1,41 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+
+import { TransactionAmounts } from './transaction-amounts';
+import type { Amounts } from '../../utils/transaction-display.util';
+
+describe('TransactionAmounts', () => {
+  let fixture: ComponentFixture<TransactionAmounts>;
+
+  function showAmounts(amounts: Amounts): HTMLElement {
+    fixture = TestBed.createComponent(TransactionAmounts);
+    fixture.componentRef.setInput('amounts', amounts);
+    fixture.detectChanges();
+    return fixture.nativeElement;
+  }
+
+  describe('template', () => {
+    it('should show money spent as a signed spending', () => {
+      const shown = showAmounts({ money: -2, invests: 0, experience: 0 });
+
+      expect(shown.querySelector('.spending')?.textContent).toContain('−2');
+    });
+
+    it('should show invests engaged apart from money', () => {
+      const shown = showAmounts({ money: 0, invests: -4, experience: 0 });
+
+      expect(shown.querySelector('.spending')?.textContent).toContain('−4 invest.');
+    });
+
+    it('should show the experience gained as a badge', () => {
+      const shown = showAmounts({ money: -1, invests: 0, experience: 1 });
+
+      expect(shown.querySelector('.experience-badge')?.textContent?.trim()).toBe('+1 XP');
+    });
+
+    it('should show nothing for a transaction that moves no amount', () => {
+      const shown = showAmounts({ money: 0, invests: 0, experience: 0 });
+
+      expect(shown.textContent?.trim()).toBe('');
+    });
+  });
+});

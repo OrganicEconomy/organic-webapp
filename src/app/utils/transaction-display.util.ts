@@ -16,7 +16,6 @@ const TX_TYPE_LABELS: Record<number, string> = {
   [TxType.CREATE]: "Création du jour",
   [TxType.PAY]: "Paiement",
   [TxType.ENGAGE]: "Engagement",
-  [TxType.PAPER]: "Billet",
   [TxType.SETADMIN]: "Assignation Admin",
   [TxType.SETACTOR]: "Assignation Acteur",
   [TxType.SETPAYER]: "Assignation Payeur",
@@ -31,8 +30,18 @@ function isCashing(tx: any): boolean {
   return tx.type === TxType.PAY && tx.signer === tx.target
 }
 
-function typeLabel(tx: any): string {
-  return isCashing(tx) ? "Encaissement" : TX_TYPE_LABELS[tx.type] ?? String(tx.type)
+function isCashedBill(tx: any, myPublicKey: string): boolean {
+  return tx.type === TxType.PAPER && tx.signer !== myPublicKey
+}
+
+function typeLabel(tx: any, myPublicKey: string): string {
+  if (isCashing(tx)) {
+    return "Encaissement"
+  }
+  if (tx.type === TxType.PAPER) {
+    return isCashedBill(tx, myPublicKey) ? "Billet encaissé" : "Billet imprimé"
+  }
+  return TX_TYPE_LABELS[tx.type] ?? String(tx.type)
 }
 
 export interface Party {
@@ -45,11 +54,18 @@ export interface Parties {
   target: Party
 }
 
+export interface Amounts {
+  money: number
+  invests: number
+  experience: number
+}
+
 export interface DisplayRow {
   date: string
   type: string
+  icon: string
   parties: Parties | null
-  amount: number
+  amounts: Amounts
 }
 
 const PAPER_BEARER: Party = { label: "Porteur du billet", fullKey: null }
@@ -85,11 +101,91 @@ function hasParties(tx: any): boolean {
   return !TYPES_WITHOUT_PARTIES.includes(tx.type) && !isCashing(tx)
 }
 
+const MONEY_SPENDINGS = [TxType.PAY, TxType.PAPER]
+
+function moneyOf(tx: any, myPublicKey: string): number {
+  if (tx.type === TxType.CREATE) {
+    return tx.money.length
+  }
+  if (MONEY_SPENDINGS.includes(tx.type) && tx.signer === myPublicKey) {
+    return -tx.money.length
+  }
+  return 0
+}
+
+const INVEST_SPENDINGS = [TxType.ENGAGE, TxType.PAYERORDER]
+
+function investsOf(tx: any, myPublicKey: string): number {
+  if (tx.type === TxType.CREATE) {
+    return tx.invests.length
+  }
+  if (INVEST_SPENDINGS.includes(tx.type) && tx.signer === myPublicKey) {
+    return -tx.invests.length
+  }
+  return 0
+}
+
+const EXPERIENCE_GAINS = [TxType.PAY, TxType.EARN]
+
+function experienceOf(tx: any, myPublicKey: string): number {
+  if (EXPERIENCE_GAINS.includes(tx.type) && tx.target === myPublicKey) {
+    return tx.money.length
+  }
+  if (isCashedBill(tx, myPublicKey)) {
+    return tx.money.length
+  }
+  return 0
+}
+
+function amountsOf(tx: any, myPublicKey: string): Amounts {
+  return {
+    money: moneyOf(tx, myPublicKey),
+    invests: investsOf(tx, myPublicKey),
+    experience: experienceOf(tx, myPublicKey),
+  }
+}
+
+const TX_TYPE_ICONS: Record<number, string> = {
+  [TxType.INIT]: "bi-person-plus",
+  [TxType.CREATE]: "bi-stars",
+  [TxType.ENGAGE]: "bi-piggy-bank",
+  [TxType.SETADMIN]: "bi-person-badge",
+  [TxType.SETACTOR]: "bi-person-badge",
+  [TxType.SETPAYER]: "bi-person-badge",
+  [TxType.UNSETADMIN]: "bi-person-badge",
+  [TxType.UNSETACTOR]: "bi-person-badge",
+  [TxType.UNSETPAYER]: "bi-person-badge",
+  [TxType.PAYERORDER]: "bi-receipt",
+  [TxType.EARN]: "bi-briefcase",
+}
+
+function paymentIcon(tx: any, myPublicKey: string): string {
+  if (isCashing(tx)) {
+    return "bi-arrow-repeat"
+  }
+  return tx.signer === myPublicKey ? "bi-arrow-up-right" : "bi-arrow-down-left"
+}
+
+function iconOf(tx: any, myPublicKey: string): string {
+  if (tx.type === TxType.PAY) {
+    return paymentIcon(tx, myPublicKey)
+  }
+  if (tx.type === TxType.PAPER) {
+    return isCashedBill(tx, myPublicKey) ? "bi-qr-code-scan" : "bi-printer"
+  }
+  return TX_TYPE_ICONS[tx.type] ?? "bi-question-circle"
+}
+
 export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): DisplayRow {
   return {
     date: tx.date.toLocaleDateString("fr-FR"),
-    type: typeLabel(tx),
+    type: typeLabel(tx, myPublicKey),
+    icon: iconOf(tx, myPublicKey),
     parties: hasParties(tx) ? partiesOf(tx, myPublicKey, contacts) : null,
-    amount: tx.money.length,
+    amounts: amountsOf(tx, myPublicKey),
   }
+}
+
+export function withSign(amount: number): string {
+  return amount > 0 ? `+${amount}` : `−${-amount}`
 }

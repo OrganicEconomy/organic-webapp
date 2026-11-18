@@ -4,9 +4,9 @@ import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { DisplayRow, toDisplayRow } from '../../utils/transaction-display.util';
+import { TransactionAmounts } from '../transaction-amounts/transaction-amounts';
 import type { Contact, LoadedAccount } from '../../models/account';
 
 function partiesKnownBy(user: LoadedAccount): Contact[] {
@@ -26,8 +26,8 @@ function partiesKnownBy(user: LoadedAccount): Contact[] {
     RouterLink,
     MatButtonModule,
     MatTableModule,
+    TransactionAmounts,
     MatCardModule,
-    MatIconModule,
   ],
   templateUrl: './transaction-list.html',
   styleUrl: './transaction-list.css',

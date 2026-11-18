@@ -17,7 +17,8 @@ import { LevelUpService } from '../../services/level-up.service';
 import { BackupService, UndoNotStoredError } from '../../services/backup.service';
 import { LocalSaveError } from '../../services/local-database.service';
 import { isDeviceRevoked } from '../../services/server-error.util';
-import { toDisplayRow, getContactName } from '../../utils/transaction-display.util';
+import { DisplayRow, toDisplayRow, getContactName } from '../../utils/transaction-display.util';
+import { TransactionAmounts } from '../transaction-amounts/transaction-amounts';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { Observable, catchError, finalize, map, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -43,7 +44,8 @@ function originOf(url: string): string {
     MatButtonModule,
     MatCardModule,
     MatIconModule,
-    FormsModule
+    FormsModule,
+    TransactionAmounts,
   ],
   templateUrl: './pay.html',
   styleUrl: './pay.css',
@@ -58,7 +60,7 @@ export class Pay {
   amount = 0;
   max = 0;
   target: string = "";
-  recentTransactions: any[] = []
+  recentTransactions: DisplayRow[] = []
   checkingRecipient = false
   paying = false
 

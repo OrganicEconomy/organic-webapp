@@ -42,6 +42,7 @@ test.describe('history', () => {
     const cashing = page.locator('.tx-card', { hasText: 'Encaissement' });
     await expect(cashing).toContainText('−1');
     await expect(cashing).toContainText('+1 XP');
-    await expect(page.locator('.tx-card', { hasText: 'Ouverture du compte' })).not.toContainText('0');
+    const opening = page.locator('.tx-card', { hasText: 'Ouverture du compte' });
+    await expect(opening.locator('app-transaction-amounts')).toHaveText('');
   });
 });
