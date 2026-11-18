@@ -54,6 +54,6 @@ describe('TransactionList', () => {
   });
 
   it('should read the source contact from tx.signer, not the nonexistent tx.source', () => {
-    expect(component.dataSource[0].source).toBe('Alice');
+    expect(component.dataSource[0].parties?.source.label).toBe('Alice');
   });
 });

@@ -23,7 +23,7 @@ describe('toDisplayRow', () => {
   it('should read the source contact from tx.signer, not the nonexistent tx.source', () => {
     const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1, 2, 3] };
     const row = toDisplayRow(tx, 'my-pk', [{ pk: 'alice-pk', name: 'Alice' }]);
-    expect(row.source).toBe('Alice');
+    expect(row.parties?.source.label).toBe('Alice');
   });
 
   it('should map the numeric type to its French label and the amount to money.length', () => {
@@ -43,6 +43,13 @@ describe('toDisplayRow', () => {
     const tx = { date: new Date(2026, 0, 15), type: 13, signer: 'alice-pk', target: 'my-pk', money: [1] };
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.type).toBe('Gain');
+  });
+
+  it('should show the account opening without sender nor receiver', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 1, signer: 'my-pk', target: '', money: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.type).toBe('Ouverture du compte');
+    expect(row.parties).toBeNull();
   });
 
   it('should label a payment to oneself as a cashing', () => {

@@ -6,7 +6,7 @@ export function getContactName(pk: string, myPublicKey: string, contacts: any[])
 }
 
 export const TX_TYPE_LABELS: Record<string, string> = {
-  "1": "Initialisation",
+  "1": "Ouverture du compte",
   "2": "Création",
   "3": "Paiement",
   "4": "Engagement",
@@ -29,12 +29,38 @@ function typeLabel(tx: any): string {
   return isCashing(tx) ? "Encaissement" : TX_TYPE_LABELS[tx.type] ?? tx.type
 }
 
-export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]) {
+export interface Party {
+  label: string
+}
+
+export interface Parties {
+  source: Party
+  target: Party
+}
+
+export interface DisplayRow {
+  date: string
+  type: string
+  parties: Parties | null
+  amount: number
+}
+
+function hasParties(tx: any): boolean {
+  return String(tx.type) !== "1"
+}
+
+function partiesOf(tx: any, myPublicKey: string, contacts: any[]): Parties {
+  return {
+    source: { label: getContactName(tx.signer, myPublicKey, contacts) },
+    target: { label: getContactName(tx.target, myPublicKey, contacts) },
+  }
+}
+
+export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): DisplayRow {
   return {
     date: tx.date.toLocaleDateString("fr-FR"),
     type: typeLabel(tx),
-    source: getContactName(tx.signer, myPublicKey, contacts),
-    target: getContactName(tx.target, myPublicKey, contacts),
+    parties: hasParties(tx) ? partiesOf(tx, myPublicKey, contacts) : null,
     amount: tx.money.length,
   }
 }

@@ -5,7 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { toDisplayRow } from '../../utils/transaction-display.util';
+import { DisplayRow, toDisplayRow } from '../../utils/transaction-display.util';
 
 @Component({
   selector: 'app-transaction-list',
@@ -24,7 +24,7 @@ export class TransactionList {
 
   user: any
   displayedColumns: string[] = ['date', 'type', 'source', 'target', 'amount']
-  dataSource: any[] = []
+  dataSource: DisplayRow[] = []
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
