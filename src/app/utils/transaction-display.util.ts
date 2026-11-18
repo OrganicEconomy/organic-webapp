@@ -113,13 +113,11 @@ function moneyOf(tx: any, myPublicKey: string): number {
   return 0
 }
 
-const INVEST_SPENDINGS = [TxType.ENGAGE, TxType.PAYERORDER]
-
 function investsOf(tx: any, myPublicKey: string): number {
   if (tx.type === TxType.CREATE) {
     return tx.invests.length
   }
-  if (INVEST_SPENDINGS.includes(tx.type) && tx.signer === myPublicKey) {
+  if (tx.type === TxType.ENGAGE && tx.signer === myPublicKey) {
     return -tx.invests.length
   }
   return 0
@@ -187,5 +185,19 @@ export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): Dis
 }
 
 export function withSign(amount: number): string {
-  return amount > 0 ? `+${amount}` : `−${-amount}`
+  if (amount > 0) {
+    return `+${amount}`
+  }
+  return amount < 0 ? `−${-amount}` : "0"
+}
+
+export function withoutRepeats(history: any[]): any[] {
+  const seen = new Set<string>()
+  return history.filter((tx) => {
+    if (seen.has(tx.signature)) {
+      return false
+    }
+    seen.add(tx.signature)
+    return true
+  })
 }

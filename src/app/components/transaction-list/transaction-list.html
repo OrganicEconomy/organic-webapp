@@ -21,7 +21,7 @@
 
             <ng-container matColumnDef="type">
                 <th mat-header-cell *matHeaderCellDef>Type</th>
-                <td mat-cell *matCellDef="let element"><i [class]="'bi tx-icon ' + element.icon"></i> {{ element.type }}</td>
+                <td mat-cell *matCellDef="let element"><i class="bi tx-icon" [class]="element.icon" aria-hidden="true"></i> {{ element.type }}</td>
             </ng-container>
 
             <ng-container matColumnDef="source">
@@ -55,7 +55,7 @@
             @for (element of dataSource; track $index) {
             <div class="tx-card">
                 <div class="tx-top">
-                    <span class="tx-type"><i [class]="'bi tx-icon ' + element.icon"></i> {{ element.type }}</span>
+                    <span class="tx-type"><i class="bi tx-icon" [class]="element.icon" aria-hidden="true"></i> {{ element.type }}</span>
                     <app-transaction-amounts [amounts]="element.amounts" />
                 </div>
                 <div class="tx-bottom">

@@ -50,10 +50,10 @@ describe('toDisplayRow', () => {
     expect(row.amounts).toEqual({ money: 0, invests: -4, experience: 0 });
   });
 
-  it('should count a payer order as the invests it spends', () => {
+  it('should count no invests of mine for a payer order, which spends those of the ecosystem', () => {
     const tx = { date: new Date(2026, 0, 15), type: 12, signer: 'my-pk', target: 'bob-pk', money: [], invests: [1, 2] };
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: 0, invests: -2, experience: 0 });
+    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 0 });
   });
 
   it('should count printed bills as money spent', () => {
@@ -184,7 +184,12 @@ describe('toDisplayRow', () => {
     { kind: 'an engagement', type: 4, signer: 'my-pk', target: 'eco-pk', icon: 'bi-piggy-bank' },
     { kind: 'a printed bill', type: 5, signer: 'my-pk', target: 'core-pk', icon: 'bi-printer' },
     { kind: 'a cashed bill', type: 5, signer: 'alice-pk', target: 'core-pk', icon: 'bi-qr-code-scan' },
+    { kind: 'an admin named', type: 6, signer: 'my-pk', target: 'bob-pk', icon: 'bi-person-badge' },
     { kind: 'a role given', type: 7, signer: 'my-pk', target: 'bob-pk', icon: 'bi-person-badge' },
+    { kind: 'a payer named', type: 8, signer: 'my-pk', target: 'bob-pk', icon: 'bi-person-badge' },
+    { kind: 'an admin removed', type: 9, signer: 'my-pk', target: 'bob-pk', icon: 'bi-person-badge' },
+    { kind: 'an actor removed', type: 10, signer: 'my-pk', target: 'bob-pk', icon: 'bi-person-badge' },
+    { kind: 'a payer removed', type: 11, signer: 'my-pk', target: 'bob-pk', icon: 'bi-person-badge' },
     { kind: 'a payer order', type: 12, signer: 'my-pk', target: 'bob-pk', icon: 'bi-receipt' },
     { kind: 'an earning', type: 13, signer: 'eco-pk', target: 'my-pk', icon: 'bi-briefcase' },
   ].forEach(({ kind, type, signer, target, icon }) => {
@@ -207,5 +212,9 @@ describe('withSign', () => {
 
   it('should write a spending with a minus sign', () => {
     expect(withSign(-3)).toBe('−3');
+  });
+
+  it('should write zero without any sign', () => {
+    expect(withSign(0)).toBe('0');
   });
 });

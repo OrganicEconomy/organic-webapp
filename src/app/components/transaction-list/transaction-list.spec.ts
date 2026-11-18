@@ -48,6 +48,15 @@ describe('TransactionList', () => {
     expect(component.dataSource[0].parties?.source.label).toBe('Alice');
   });
 
+  it('should show only once an engagement that each new block carries over', () => {
+    const engagement = { date: new Date(2026, 0, 10), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: [1, 2], signature: 'engagement-signature' };
+    fakeAccount.blockchain.getHistory = () => [engagement, { ...engagement }];
+
+    const list = TestBed.createComponent(TransactionList).componentInstance;
+
+    expect(list.dataSource.length).toBe(1);
+  });
+
   it('should name an ecosystem of mine even when it is not among the contacts', () => {
     const ecosystemKey = '02' + 'cd'.repeat(32);
     fakeAccount.myEcosystems = [{ publickey: ecosystemKey, name: 'La Boulange', role: 'actor' }];
@@ -64,7 +73,7 @@ describe('TransactionList', () => {
     it('should show each row with the icon of its kind and its signed amounts', () => {
       const card: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .tx-card');
 
-      expect(card.querySelector('i.bi-arrow-down-left')).not.toBeNull();
+      expect(card.querySelector('i.bi-arrow-down-left')?.getAttribute('aria-hidden')).toBe('true');
       expect(card.querySelector('app-transaction-amounts')?.textContent).toContain('+3 XP');
     });
 
