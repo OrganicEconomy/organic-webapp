@@ -49,4 +49,21 @@ test.describe('history', () => {
     const opening = page.locator('.tx-card', { hasText: 'Ouverture du compte' });
     await expect(opening.locator('app-transaction-amounts')).toHaveText('');
   });
+
+  test('should group the rows by month, and find them by words without accents or by type', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Yanis Perrin');
+
+    await openTheHistory(page);
+    await expect(page.locator('.month-heading', { hasText: 'février 1990' })).toBeVisible();
+
+    await page.getByLabel('Rechercher').fill('creation');
+    await expect(page.locator('.tx-card')).toHaveCount(1);
+    await expect(page.locator('.tx-card')).toContainText('Création du jour');
+
+    await page.getByLabel('Rechercher').fill('');
+    await page.getByRole('combobox', { name: 'Type' }).click();
+    await page.getByRole('option', { name: 'Ouverture du compte' }).click();
+    await expect(page.locator('.tx-card')).toHaveCount(1);
+    await expect(page.locator('.tx-card')).toContainText('Ouverture du compte');
+  });
 });

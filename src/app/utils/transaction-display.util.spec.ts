@@ -20,6 +20,11 @@ describe('getContactName', () => {
 });
 
 describe('toDisplayRow', () => {
+  it('should tell the month of the transaction, to group the rows by month', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1], invests: [] };
+    expect(toDisplayRow(tx, 'my-pk', []).month).toBe('janvier 2026');
+  });
+
   it('should map the numeric type to its French label', () => {
     const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1, 2, 3] };
     const row = toDisplayRow(tx, 'my-pk', []);

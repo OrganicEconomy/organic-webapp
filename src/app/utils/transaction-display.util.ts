@@ -62,6 +62,7 @@ export interface Amounts {
 
 export interface DisplayRow {
   date: string
+  month: string
   type: string
   icon: string
   parties: Parties | null
@@ -177,6 +178,7 @@ function iconOf(tx: any, myPublicKey: string): string {
 export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): DisplayRow {
   return {
     date: tx.date.toLocaleDateString("fr-FR"),
+    month: tx.date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }),
     type: typeLabel(tx, myPublicKey),
     icon: iconOf(tx, myPublicKey),
     parties: hasParties(tx) ? partiesOf(tx, myPublicKey, contacts) : null,
