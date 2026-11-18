@@ -155,6 +155,17 @@ describe('PendingValidation', () => {
     expect(component.user.blockchain.getLevel()).toBe(1);
   });
 
+  it('should note as backed up the chain it takes from the server', () => {
+    createComponent();
+    fakeAccount.isuptodate = false;
+    fakeAccount.lastBackupAt = null;
+
+    expectAuthenticated(httpMock, isMyValidationRequest).flush({ status: 'active', blocks: makeValidatedBlocks() });
+
+    expect(fakeAccount.isuptodate).toBeTrue();
+    expect(fakeAccount.lastBackupAt).not.toBeNull();
+  });
+
   it('should schedule a follow-up check 30s later when still pending', fakeAsync(() => {
     createComponent();
     expectAuthenticated(httpMock, isMyValidationRequest).flush({ status: 'pending-validation' });

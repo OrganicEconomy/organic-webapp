@@ -144,6 +144,24 @@ describe('SignupPage', () => {
     expect(savedAccount.status).toBe('pending-validation')
   });
 
+  it('should note the new account as backed up now, since the server just stored it', async () => {
+    const saveSpy = spyOn(localDB, 'saveUser').and.callThrough()
+    const connectSpy = spyOn(userService, 'setConnectedUser').and.callThrough()
+
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+    await component.signup()
+
+    const req = httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
+    req.flush({ publickey: req.request.body.publickey, status: 'pending-validation', blocks: [], devicetoken: 'dt-1' })
+    await waitUntil(() => connectSpy.calls.count() > 0)
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
+
+    const savedAccount = saveSpy.calls.mostRecent().args[0]
+    expect(savedAccount.isuptodate).toBeTrue()
+    expect(savedAccount.lastBackupAt).not.toBeNull()
+  });
+
   it('should not add the new citizen to their own contacts', async () => {
     const saveSpy = spyOn(localDB, 'saveUser').and.callThrough()
     const connectSpy = spyOn(userService, 'setConnectedUser').and.callThrough()

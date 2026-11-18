@@ -127,6 +127,23 @@ describe('RestoreAccount', () => {
     expect(component.error).toBe('')
   });
 
+  it('should note the restored account as backed up now, since it comes from the server', async () => {
+    const saveSpy = spyOn(localDB, 'saveUser').and.callThrough()
+    const connectSpy = spyOn(userService, 'setConnectedUser').and.callThrough()
+
+    component.restoreForm.setValue({ serverUrl: SERVER_URL, email: 'alice@ex.fr', password: 'correct-password' })
+    component.restore()
+
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/login`).flush({ publickey: TEST_PK, name: 'Alice', mail: 'alice@ex.fr', secretkey: secretkeyForCorrectPassword, status: 'active', blocks: [], devicetoken: 'dt-1' })
+    await waitUntil(() => connectSpy.calls.count() > 0)
+    httpMock.expectOne((r) => r.url.endsWith('/ecosystems/mine')).flush([])
+    httpMock.expectOne((r) => r.url.endsWith('/info')).flush({ corePk: null })
+
+    const savedAccount = saveSpy.calls.mostRecent().args[0]
+    expect(savedAccount.isuptodate).toBeTrue()
+    expect(savedAccount.lastBackupAt).not.toBeNull()
+  });
+
   it('should navigate to /home when the server reports the account is already active', async () => {
     const connectSpy = spyOn(userService, 'setConnectedUser').and.callThrough()
 

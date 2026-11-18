@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Subscription, timer } from 'rxjs';
 import { encodeValidationQr } from 'organic-protocol';
 import { CitizenBlockchain } from 'organic-money/src/index.js';
+import { markAsBackedUp } from '../../models/account';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
@@ -62,6 +63,7 @@ export class PendingValidation implements OnDestroy {
           this.user.blocks = res.blocks;
           this.user.blockchain = new CitizenBlockchain(res.blocks);
           this.user.lastSavedBlockSignature = this.user.blockchain.lastblock.signature;
+          markAsBackedUp(this.user);
           this.localDB.saveUserInBackground(this.user);
         }
         if (res.status === 'active') {

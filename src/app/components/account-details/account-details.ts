@@ -45,8 +45,6 @@ export class AccountDetails {
   publickey: string = ""
   myContactQr: string = ""
 
-  lastBackupAt: string | null = null
-
   serverInfo: InfoResponse | null = null
 
   oldPassword = ""
@@ -65,8 +63,6 @@ export class AccountDetails {
     this.myContactQr = encodeContactQr({ pk: this.user.publickey, url: this.user.serverUrl, n: this.user.name })
     const birthBlock = this.user.blockchain.blocks[this.user.blockchain.blocks.length - 1]
     this.inscription_date = birthBlock.closedate.toLocaleDateString('fr-FR')
-
-    this.lastBackupAt = this.user.lastBackupAt
 
     this.serverDB.getServerInfo(this.user.serverUrl).subscribe({
       next: (info) => { this.serverInfo = info },

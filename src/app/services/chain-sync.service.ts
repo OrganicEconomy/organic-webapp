@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { DestroyRef, Injectable, inject } from '@angular/core';
 import { firstValueFrom, timeout } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -14,7 +14,7 @@ import {
 import { BackupService } from './backup.service';
 import { ConnectedUserService } from './connected-user.service';
 import { isDeviceRevoked } from './server-error.util';
-import type { LoadedAccount } from '../models/account';
+import { isBackedUp, markAsBackedUp, type LoadedAccount } from '../models/account';
 
 const SERVER_ANSWER_TIMEOUT_MS = 5_000;
 const SERVER_RECEPTION_TIMEOUT_MS = 10_000;
@@ -89,6 +89,8 @@ export class ChainSyncService {
   private backup = inject(BackupService);
   private snackBar = inject(MatSnackBar);
   private userService = inject(ConnectedUserService);
+  private destroyRef = inject(DestroyRef);
+  private runningSync: Promise<void> | null = null;
 
   private sayTheSyncIsImpossible(): void {
     this.snackBar.open(SYNC_IMPOSSIBLE_MESSAGE, 'Fermer', {
@@ -143,7 +145,7 @@ export class ChainSyncService {
     account.blockchain = serverChain;
     account.status = serverCopy.status;
     account.lastSavedBlockSignature = this.newestSignedBlockSignature(account);
-    account.isuptodate = true;
+    markAsBackedUp(account);
     return this.isStoredOnThisDevice(account);
   }
 
@@ -207,9 +209,21 @@ export class ChainSyncService {
     }
   }
 
+  private confirmTheBackup(account: LoadedAccount): void {
+    if (isBackedUp(account)) {
+      return;
+    }
+    markAsBackedUp(account);
+    this.localDB.saveUserInBackground(account);
+  }
+
   async syncWithServer(account: LoadedAccount, secretKey: string): Promise<void> {
     const serverCopy = await this.fetchTheServerCopy(account, secretKey);
-    if (serverCopy === null || isTheSameAccountState(account, serverCopy)) {
+    if (serverCopy === null) {
+      return;
+    }
+    if (isTheSameAccountState(account, serverCopy)) {
+      this.confirmTheBackup(account);
       return;
     }
     const deviceChain = account.blockchain.export();
@@ -224,10 +238,7 @@ export class ChainSyncService {
     await this.giveUpTheDeviceChain(account, serverCopy);
   }
 
-  async syncTheConnectedAccount(): Promise<void> {
-    if (!this.userService.isUnlocked()) {
-      return;
-    }
+  private async syncOrSayItFailed(): Promise<void> {
     try {
       await this.syncWithServer(
         this.userService.getConnectedUser(),
@@ -237,5 +248,27 @@ export class ChainSyncService {
       console.error(error);
       this.snackBar.open(SYNC_FAILED_MESSAGE, 'Fermer');
     }
+  }
+
+  syncTheConnectedAccount(): Promise<void> {
+    if (!this.userService.isUnlocked()) {
+      return Promise.resolve();
+    }
+    this.runningSync ??= this.syncOrSayItFailed().finally(() => {
+      this.runningSync = null;
+    });
+    return this.runningSync;
+  }
+
+  private syncWhenBackOnline = (): void => {
+    if (this.userService.isReadOnlySession()) {
+      return;
+    }
+    this.syncTheConnectedAccount();
+  };
+
+  startSyncingWhenBackOnline(): void {
+    window.addEventListener('online', this.syncWhenBackOnline);
+    this.destroyRef.onDestroy(() => window.removeEventListener('online', this.syncWhenBackOnline));
   }
 }

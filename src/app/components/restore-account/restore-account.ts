@@ -6,7 +6,7 @@ import { ACCOUNT_NOT_STORED_MESSAGE, LocalDatabaseService } from '../../services
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { AccountTabsService } from '../../services/account-tabs.service';
 import { decryptSecretKey } from '../../services/secret-key-crypto.util';
-import { makeDefaultAccount, type Account } from '../../models/account';
+import { makeDefaultAccount, markAsBackedUp, type Account } from '../../models/account';
 import { environment } from '../../../environments/environment';
 
 // Angular Material
@@ -75,7 +75,7 @@ export class RestoreAccount {
         account.secretkey = res.secretkey
         account.devicetoken = res.devicetoken
         account.status = res.status
-        account.isuptodate = true
+        markAsBackedUp(account)
 
         this.tabs.takeBack(account.publickey)
         const user = await this.trySaveOnDevice(account)
