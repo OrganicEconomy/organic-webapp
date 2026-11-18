@@ -107,12 +107,6 @@ describe('AccountDetails', () => {
     expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
   });
 
-  it('saveNow() should call backupService.saveNow', () => {
-    component.saveNow();
-
-    expect(backupSpy.saveNow).toHaveBeenCalledWith(fakeAccount, REAL_SK_HEX);
-  });
-
   it('changePassword() should reject a wrong old password without calling the server', async () => {
     component.oldPassword = 'wrong-password';
     component.newPassword = 'new-password';
@@ -176,6 +170,14 @@ describe('AccountDetails', () => {
     await component.changePassword();
 
     expect(serverDBSpy.changePassword).not.toHaveBeenCalled();
+  });
+
+  describe('saveNow', () => {
+    it('should call backupService.saveNow', () => {
+      component.saveNow();
+
+      expect(backupSpy.saveNow).toHaveBeenCalledWith(fakeAccount, REAL_SK_HEX);
+    });
   });
 
   describe('template', () => {

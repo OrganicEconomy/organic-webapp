@@ -103,8 +103,6 @@ export class BackupService {
     })
   }
 
-
-  /** "Sauvegarder maintenant" button (manual policy). */
   saveNow(user: LoadedAccount, sk: string): Observable<unknown> {
     return this.pushToServer(user, sk)
   }

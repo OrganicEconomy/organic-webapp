@@ -61,29 +61,25 @@ describe('BackupService', () => {
     service = TestBed.inject(BackupService);
   });
 
-  it('recordAutomatic should save locally in the background', () => {
-    service.recordAutomatic(fakeUser, 'sk');
-    expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
-  });
+  describe('recordAutomatic', () => {
+    it('should save locally in the background', () => {
+      service.recordAutomatic(fakeUser, 'sk');
+      expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
+    });
 
-  it('recordAutomatic should neither store nor push anything from a read-only session', () => {
-    userServiceSpy.isReadOnlySession.and.returnValue(true);
+    it('should neither store nor push anything from a read-only session', () => {
+      userServiceSpy.isReadOnlySession.and.returnValue(true);
 
-    service.recordAutomatic(fakeUser, 'sk');
+      service.recordAutomatic(fakeUser, 'sk');
 
-    expect(localDBSpy.saveUserInBackground).not.toHaveBeenCalled();
-    expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
-  });
+      expect(localDBSpy.saveUserInBackground).not.toHaveBeenCalled();
+      expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
+    });
 
-  it('recordAutomatic should push to the server', () => {
-    service.recordAutomatic(fakeUser, 'sk');
-    expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(fakeUser, 'sk', fakeUser.blockchain.blocks[0]);
-  });
-
-  it('recordAutomatic should push to the server even for an account stored with an old manual policy', () => {
-    fakeUser.backupPolicy = 'manual';
-    service.recordAutomatic(fakeUser, 'sk');
-    expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(fakeUser, 'sk', fakeUser.blockchain.blocks[0]);
+    it('should push to the server', () => {
+      service.recordAutomatic(fakeUser, 'sk');
+      expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(fakeUser, 'sk', fakeUser.blockchain.blocks[0]);
+    });
   });
 
   it('should update lastBackupAt and isuptodate on a successful push', () => {

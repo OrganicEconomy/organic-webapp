@@ -150,12 +150,12 @@ describe('LocalDatabaseService', () => {
 
   describe('saveUser', () => {
     it('should drop the backup policy that older versions stored', async () => {
-      const account = { ...makeDefaultAccount(uniquePk('old-policy')), backupPolicy: 'manual' }
+      const account = { ...makeDefaultAccount(uniquePk('old-policy')), backupPolicy: 'manual' };
 
-      await service.saveUser(account)
+      await service.saveUser(account);
 
-      const stored: any = await localforage.getItem(account.publickey)
-      expect(stored.backupPolicy).toBeUndefined()
+      const stored: any = await localforage.getItem(account.publickey);
+      expect(stored.backupPolicy).toBeUndefined();
     });
 
     it('should tell the other tabs that the account changed', async () => {
