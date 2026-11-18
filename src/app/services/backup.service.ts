@@ -39,12 +39,16 @@ export class BackupService {
   private serverDB = inject(ServerConnexionService)
   private userService = inject(ConnectedUserService)
 
+  private pushToServerInBackground(user: LoadedAccount, sk: string): void {
+    this.pushToServer(user, sk).subscribe({ error: (error) => console.error(error) })
+  }
+
   recordAutomatic(user: LoadedAccount, sk: string): void {
     if (this.userService.isReadOnlySession()) {
       return
     }
     this.localDB.saveUserInBackground(user)
-    this.pushToServer(user, sk).subscribe()
+    this.pushToServerInBackground(user, sk)
   }
 
   private applyOrUndo<T>(user: LoadedAccount, before: AccountSnapshot, change: () => T): T {
@@ -65,7 +69,7 @@ export class BackupService {
       restore(user, before)
       throw error
     }
-    this.pushToServer(user, sk).subscribe()
+    this.pushToServerInBackground(user, sk)
     return result
   }
 

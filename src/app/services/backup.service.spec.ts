@@ -80,6 +80,16 @@ describe('BackupService', () => {
       service.recordAutomatic(fakeUser, 'sk');
       expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(fakeUser, 'sk', fakeUser.blockchain.blocks[0]);
     });
+
+    it('should note in the console a push that failed, leaving the catch-up to the next sync', () => {
+      const offline = { status: 0 };
+      serverDBSpy.saveBlock.and.returnValue(throwError(() => offline));
+      spyOn(console, 'error');
+
+      service.recordAutomatic(fakeUser, 'sk');
+
+      expect(console.error).toHaveBeenCalledWith(offline);
+    });
   });
 
   it('should update lastBackupAt and isuptodate on a successful push', () => {
@@ -276,6 +286,20 @@ describe('BackupService', () => {
       await service.applyAndRecord(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1));
 
       expect(serverDBSpy.saveBlock).toHaveBeenCalled();
+    });
+
+    it('should keep the change on the device and note in the console a push that failed', async () => {
+      const { account, sk } = makeAccountWithMoney();
+      const moneyBefore = account.blockchain.getAvailableMoneyAmount();
+      const offline = { status: 0 };
+      serverDBSpy.saveBlock.and.returnValue(throwError(() => offline));
+      spyOn(console, 'error');
+
+      await service.applyAndRecord(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1));
+
+      expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore - 1);
+      expect(localDBSpy.saveUser).toHaveBeenCalledWith(account);
+      expect(console.error).toHaveBeenCalledWith(offline);
     });
   });
 });
