@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { NEVER, Observable, firstValueFrom, of, throwError } from 'rxjs';
+import { NEVER, Observable, Subject, firstValueFrom, of, throwError } from 'rxjs';
 
 import { BackupService, UndoNotStoredError } from './backup.service';
 import { LocalDatabaseService, LocalSaveError } from './local-database.service';
@@ -40,6 +40,7 @@ describe('BackupService', () => {
       blockchain: {
         blocks: [currentBlock],
         getMyPublicKey: () => 'pk',
+        export: () => [],
       },
     };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveUserInBackground']);
@@ -106,6 +107,20 @@ describe('BackupService', () => {
   });
 
   describe('pushToServer', () => {
+    it('should not note as sent a chain that changed while it was being sent', () => {
+      const { account, sk } = makeAccountWithMoney();
+      account.isuptodate = false;
+      const serverAnswer = new Subject<unknown>();
+      serverDBSpy.saveBlock.and.returnValue(serverAnswer);
+
+      service.pushToServer(account, sk).subscribe();
+      account.blockchain.pay(sk, RECIPIENT_PK, 1);
+      serverAnswer.next({});
+      serverAnswer.complete();
+
+      expect(account.isuptodate).toBeFalse();
+    });
+
     it('should update lastBackupAt and isuptodate on a successful push', () => {
       service.pushToServer(fakeUser, 'sk').subscribe();
       expect(fakeUser.isuptodate).toBeTrue();

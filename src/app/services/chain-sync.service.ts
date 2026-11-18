@@ -90,6 +90,7 @@ export class ChainSyncService {
   private snackBar = inject(MatSnackBar);
   private userService = inject(ConnectedUserService);
   private destroyRef = inject(DestroyRef);
+  private runningSync: Promise<void> | null = null;
 
   private sayTheSyncIsImpossible(): void {
     this.snackBar.open(SYNC_IMPOSSIBLE_MESSAGE, 'Fermer', {
@@ -237,10 +238,7 @@ export class ChainSyncService {
     await this.giveUpTheDeviceChain(account, serverCopy);
   }
 
-  async syncTheConnectedAccount(): Promise<void> {
-    if (!this.userService.isUnlocked()) {
-      return;
-    }
+  private async syncOrSayItFailed(): Promise<void> {
     try {
       await this.syncWithServer(
         this.userService.getConnectedUser(),
@@ -252,7 +250,20 @@ export class ChainSyncService {
     }
   }
 
+  syncTheConnectedAccount(): Promise<void> {
+    if (!this.userService.isUnlocked()) {
+      return Promise.resolve();
+    }
+    this.runningSync ??= this.syncOrSayItFailed().finally(() => {
+      this.runningSync = null;
+    });
+    return this.runningSync;
+  }
+
   private syncWhenBackOnline = (): void => {
+    if (this.userService.isReadOnlySession()) {
+      return;
+    }
     this.syncTheConnectedAccount();
   };
 

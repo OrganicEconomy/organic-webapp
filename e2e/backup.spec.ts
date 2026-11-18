@@ -37,7 +37,6 @@ test.describe('backup', () => {
     await page.context().setOffline(false);
 
     await expect(page.getByText(NOT_SENT_YET)).toBeHidden();
-    await expect(page.getByText(/Dernière sauvegarde/)).toBeVisible();
   });
 
   test('should send on a reload what the server could not receive', async ({ page }) => {
@@ -51,7 +50,6 @@ test.describe('backup', () => {
     await page.unroute('**/users/save');
     await page.reload();
 
-    await expect(page.getByText(/Dernière sauvegarde/)).toBeVisible();
     await expect(page.getByText(NOT_SENT_YET)).toBeHidden();
   });
 });

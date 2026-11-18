@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, Subject, of, throwError } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CitizenBlockchain } from 'organic-money/src/index.js';
@@ -114,18 +114,20 @@ describe('ChainSyncService', () => {
       await service.syncWithServer(account, secretKey);
 
       expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+      expect(localDBSpy.saveUserInBackground).not.toHaveBeenCalled();
       expect(backupSpy.pushToServer).not.toHaveBeenCalled();
     });
 
     it('should note as sent, and store, a chain the server already holds although the device did not know it', async () => {
       const { account, secretKey } = accountWithMoney();
       account.isuptodate = false;
+      account.lastBackupAt = null;
       serverHolds(account.blockchain.export());
 
       await service.syncWithServer(account, secretKey);
 
       expect(account.isuptodate).toBeTrue();
-      expect(account.lastBackupAt).toBeDefined();
+      expect(account.lastBackupAt).not.toBeNull();
       expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(account);
       expect(backupSpy.pushToServer).not.toHaveBeenCalled();
     });
@@ -388,6 +390,26 @@ describe('ChainSyncService', () => {
 
       expect(service.syncTheConnectedAccount).toHaveBeenCalled();
     });
+
+    it('should stop listening once the app is destroyed', () => {
+      const sync = spyOn(service, 'syncTheConnectedAccount').and.resolveTo();
+      service.startSyncingWhenBackOnline();
+
+      TestBed.resetTestingModule();
+      window.dispatchEvent(new Event('online'));
+
+      expect(sync).not.toHaveBeenCalled();
+    });
+
+    it('should not sync a read-only session, which could not store what it gets', () => {
+      readOnly = true;
+      spyOn(service, 'syncTheConnectedAccount').and.resolveTo();
+
+      service.startSyncingWhenBackOnline();
+      window.dispatchEvent(new Event('online'));
+
+      expect(service.syncTheConnectedAccount).not.toHaveBeenCalled();
+    });
   });
 
   describe('syncTheConnectedAccount', () => {
@@ -398,6 +420,20 @@ describe('ChainSyncService', () => {
       await service.syncTheConnectedAccount();
 
       expect(serverSpy.getMyValidation).toHaveBeenCalled();
+    });
+
+    it('should not start a second sync while one is still running', async () => {
+      connected = accountWithMoney();
+      const serverAnswer = new Subject<any>();
+      serverSpy.getMyValidation.and.returnValue(serverAnswer);
+
+      const firstSync = service.syncTheConnectedAccount();
+      const secondSync = service.syncTheConnectedAccount();
+      serverAnswer.next({ status: 'active', blocks: connected.account.blockchain.export() });
+      serverAnswer.complete();
+      await Promise.all([firstSync, secondSync]);
+
+      expect(serverSpy.getMyValidation).toHaveBeenCalledTimes(1);
     });
 
     it('should ask nothing of the server for a locked session', async () => {

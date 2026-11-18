@@ -4,7 +4,7 @@ import { LocalDatabaseService } from './local-database.service';
 import { ServerConnexionService } from './server-connection.service';
 import { ConnectedUserService } from './connected-user.service';
 import { isDeviceRevoked } from './server-error.util';
-import { markAsBackedUp, type LoadedAccount, type PendingOfflineTx } from '../models/account';
+import { markAsBackedUp, markAsNotBackedUpYet, type LoadedAccount, type PendingOfflineTx } from '../models/account';
 import type { TxWire } from 'organic-protocol';
 import { CitizenBlockchain } from 'organic-money/src/index.js';
 
@@ -36,6 +36,10 @@ function restore(user: LoadedAccount, before: AccountSnapshot): void {
   user.isuptodate = before.isuptodate
 }
 
+function exportedChain(user: LoadedAccount): string {
+  return JSON.stringify(user.blockchain.export())
+}
+
 @Injectable({ providedIn: 'root' })
 export class BackupService {
   private localDB = inject(LocalDatabaseService)
@@ -50,7 +54,7 @@ export class BackupService {
     if (this.userService.isReadOnlySession()) {
       return
     }
-    user.isuptodate = false
+    markAsNotBackedUpYet(user)
     this.localDB.saveUserInBackground(user)
     this.pushToServerInBackground(user, sk)
   }
@@ -67,7 +71,7 @@ export class BackupService {
   async applyAndRecord<T>(user: LoadedAccount, sk: string, change: () => T): Promise<T> {
     const before = snapshotOf(user)
     const result = this.applyOrUndo(user, before, change)
-    user.isuptodate = false
+    markAsNotBackedUpYet(user)
     try {
       await this.localDB.saveUser(user)
     } catch (error) {
@@ -105,7 +109,7 @@ export class BackupService {
     return defer(() => {
       const before = snapshotOf(user)
       const result = this.applyOrUndo(user, before, change)
-      user.isuptodate = false
+      markAsNotBackedUpYet(user)
       return this.storeOnDeviceOrUndo(user, before).pipe(
         concatMap(() => this.pushToServerOrUndo(user, sk, before)),
         map(() => result),
@@ -132,10 +136,11 @@ export class BackupService {
   // A single, un-subscribed-to-twice pipe: side effects ride along via tap()
   // rather than an internal subscribe(), so callers that subscribe to the
   // returned Observable trigger exactly one round of HTTP requests, not two.
-  // Blocks are sent one PUT at a time, in order (concatMap) — sending two at once would race on the server's
-  // "does this chain onto what I have" check.
+  // Blocks are sent one PUT at a time, in order (concatMap) — sending two at
+  // once would race on the server's "does this chain onto what I have" check.
   pushToServer(user: LoadedAccount, sk: string): Observable<unknown> {
     const blocks = this.blocksNeedingSync(user)
+    const sentChain = exportedChain(user)
     return from(blocks).pipe(
       concatMap((block) => this.serverDB.saveBlock(user, sk, block).pipe(
         tap(() => {
@@ -145,7 +150,9 @@ export class BackupService {
       last(),
       tap({
         next: () => {
-          markAsBackedUp(user)
+          if (exportedChain(user) === sentChain) {
+            markAsBackedUp(user)
+          }
           this.localDB.saveUserInBackground(user)
         },
         error: (err: any) => {

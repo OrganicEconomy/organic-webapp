@@ -81,6 +81,10 @@ export function makeDefaultAccount(publickey: string): Account {
   }
 }
 
+export function markAsNotBackedUpYet(account: Account): void {
+  account.isuptodate = false
+}
+
 export function markAsBackedUp(account: Account): void {
   account.isuptodate = true
   account.lastBackupAt = new Date().toISOString()

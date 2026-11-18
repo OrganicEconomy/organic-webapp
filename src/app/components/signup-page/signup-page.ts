@@ -8,7 +8,7 @@ import { LocalDatabaseService } from '../../services/local-database.service'
 import { ConnectedUserService } from '../../services/connected-user.service'
 import { AccountTabsService } from '../../services/account-tabs.service'
 import { encryptSecretKey } from '../../services/secret-key-crypto.util'
-import { makeDefaultAccount, type Account } from '../../models/account'
+import { makeDefaultAccount, markAsBackedUp, type Account } from '../../models/account'
 import { environment } from '../../../environments/environment'
 import { formatDateInput, parseDateInput } from '../../utils/date-input.util'
 
@@ -105,6 +105,7 @@ export class SignupPage {
         account.secretkey = secretkey
         account.devicetoken = res.devicetoken
         account.status = res.status
+        markAsBackedUp(account)
 
         this.tabs.takeBack(account.publickey)
         const user = await this.trySaveOnDevice(account)
