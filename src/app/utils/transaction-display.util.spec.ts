@@ -26,11 +26,16 @@ describe('toDisplayRow', () => {
     expect(row.parties?.source.label).toBe('Alice');
   });
 
-  it('should map the numeric type to its French label and the amount to money.length', () => {
+  it('should map the numeric type to its French label', () => {
     const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1, 2, 3] };
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.type).toBe('Paiement');
-    expect(row.amount).toBe(3);
+  });
+
+  it('should count the daily creation as money and invests gained', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 2, signer: 'my-pk', target: '', money: [1, 2], invests: [3] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts).toEqual({ money: 2, invests: 1, experience: 0 });
   });
 
   it('should map PAYERORDER (12) to a French label instead of showing the raw number', () => {
