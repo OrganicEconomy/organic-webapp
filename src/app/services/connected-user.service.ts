@@ -7,10 +7,12 @@ import { AccountTabsService } from './account-tabs.service';
 import { decryptSecretKey, isWrongPasswordError } from './secret-key-crypto.util';
 import { TabSession, TabSessionService, hasBeenIdleForTooLong } from './tab-session.service';
 
-export type ReadOnlyReason = 'other-device' | 'other-tab' | 'locked'
+export type ReadOnlyReason = 'other-device' | 'out-of-sync' | 'other-tab' | 'locked'
 
 const READ_ONLY_MESSAGES: Record<ReadOnlyReason, string> = {
     'other-device': 'Ce compte est actif sur un autre appareil — lecture seule.',
+    'out-of-sync':
+        "Ce téléphone et le serveur ne sont plus d'accord sur des paiements : lecture seule, rien n'a été effacé. Contactez l'administrateur de votre serveur.",
     'other-tab': "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
     'locked': 'Session verrouillée : entrez votre mot de passe pour continuer.',
 }
@@ -28,9 +30,11 @@ export class ConnectedUserService {
     private secretKey = ''
     /** Set once a save gets a 409 DEVICE_REVOKED — this account is active on another device. */
     private revokedByAnotherDevice = false
+    private outOfSync = false
 
     public setConnectedUser(user: any, secretKey: string) {
         this.revokedByAnotherDevice = false
+        this.outOfSync = false
         this.tabSession.remember(user.publickey, secretKey)
         this.tabs.takeBack(user.publickey)
         this.connectedUser = user
@@ -84,6 +88,10 @@ export class ConnectedUserService {
         return this.secretKey
     }
 
+    public markOutOfSync(): void {
+        this.outOfSync = true
+    }
+
     public setReadOnly(): void {
         this.revokedByAnotherDevice = true
         this.tabSession.noteRevokedByAnotherDevice()
@@ -105,6 +113,9 @@ export class ConnectedUserService {
     public readOnlyReason(): ReadOnlyReason | null {
         if (this.revokedByAnotherDevice) {
             return 'other-device'
+        }
+        if (this.outOfSync) {
+            return 'out-of-sync'
         }
         if (this.isInUseInAnotherTab()) {
             return 'other-tab'

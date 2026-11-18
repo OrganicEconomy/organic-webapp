@@ -3,6 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { LocalDatabaseService } from '../../services/local-database.service';
 import { ConnectedUserService } from '../../services/connected-user.service';
+import { ChainSyncService } from '../../services/chain-sync.service';
 import { decryptSecretKey } from '../../services/secret-key-crypto.util';
 
 // Angular Material
@@ -37,6 +38,7 @@ const ACCOUNTS_NOT_READ_MESSAGE =
 export class UserSelection {
   localDB = inject(LocalDatabaseService);
   userService = inject(ConnectedUserService);
+  private chainSync = inject(ChainSyncService);
   dialog = inject(MatDialog);
   users: any[] = [];
   loadError = '';
@@ -90,6 +92,7 @@ export class UserSelection {
         return
       }
       this.userService.setConnectedUser(account, secretKey);
+      await this.chainSync.syncTheConnectedAccount();
       if (account.status !== 'active') {
         this.router.navigate(['/pending-validation']);
       } else {

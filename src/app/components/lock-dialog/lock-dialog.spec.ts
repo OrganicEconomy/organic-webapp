@@ -5,6 +5,7 @@ import { Router, provideRouter } from '@angular/router';
 import { LockDialog } from './lock-dialog';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { PageReopenerService } from '../../services/page-reopener.service';
+import { ChainSyncService } from '../../services/chain-sync.service';
 
 describe('LockDialog', () => {
   let fixture: ComponentFixture<LockDialog>;
@@ -12,11 +13,13 @@ describe('LockDialog', () => {
   let unlockSpy: jasmine.Spy;
   let dialogRefSpy: jasmine.SpyObj<Pick<MatDialogRef<LockDialog>, 'close'>>;
   let reopenSpy: jasmine.Spy;
+  let syncSpy: jasmine.Spy;
 
   beforeEach(async () => {
     unlockSpy = jasmine.createSpy('unlock').and.resolveTo(true);
     dialogRefSpy = jasmine.createSpyObj('MatDialogRef', ['close']);
     reopenSpy = jasmine.createSpy('reopenCurrentPage').and.resolveTo();
+    syncSpy = jasmine.createSpy('syncTheConnectedAccount').and.resolveTo();
     await TestBed.configureTestingModule({
       imports: [LockDialog],
       providers: [
@@ -24,6 +27,7 @@ describe('LockDialog', () => {
         { provide: ConnectedUserService, useValue: { unlock: unlockSpy } },
         { provide: MatDialogRef, useValue: dialogRefSpy },
         { provide: PageReopenerService, useValue: { reopenCurrentPage: reopenSpy } },
+        { provide: ChainSyncService, useValue: { syncTheConnectedAccount: syncSpy } },
       ],
     }).compileComponents();
     fixture = TestBed.createComponent(LockDialog);
@@ -39,6 +43,28 @@ describe('LockDialog', () => {
 
       expect(unlockSpy).toHaveBeenCalledWith('the-password');
       expect(dialogRefSpy.close).toHaveBeenCalled();
+      expect(reopenSpy).toHaveBeenCalled();
+    });
+
+    it('should stay open until the page is reopened, so that nothing can be tapped in between', async () => {
+      component.password = 'the-password';
+
+      await component.unlock();
+
+      expect(reopenSpy).toHaveBeenCalledBefore(dialogRefSpy.close);
+    });
+
+    it('should wait for the sync with the server before reopening the page', async () => {
+      let finishTheSync = () => {};
+      syncSpy.and.returnValue(new Promise<void>((resolve) => (finishTheSync = resolve)));
+      component.password = 'the-password';
+
+      const unlocking = component.unlock();
+      await new Promise((resolve) => setTimeout(resolve));
+      expect(reopenSpy).not.toHaveBeenCalled();
+      finishTheSync();
+      await unlocking;
+
       expect(reopenSpy).toHaveBeenCalled();
     });
 

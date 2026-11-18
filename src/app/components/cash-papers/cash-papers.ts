@@ -135,7 +135,7 @@ export class CashPapers {
       await this.localDB.saveUser(this.user)
     } catch (error) {
       console.error(error)
-      this.displayMessage("Billets encaissés sur le serveur, mais cet appareil n'a pas pu les enregistrer : déconnectez-vous, puis reconnectez-vous pour reprendre la copie du serveur.")
+      this.displayMessage("Billets encaissés sur le serveur, mais cet appareil n'a pas pu les enregistrer : rechargez la page pour reprendre la copie du serveur.")
       return
     }
     for (const paper of papers) {
