@@ -9,8 +9,6 @@ export interface Contact {
   type: ContactType
 }
 
-export type BackupPolicy = 'every-tx' | 'manual' | 'payments-only'
-
 /**
  * An offline payment received camera-to-screen, awaiting deferred server-side
  * verification (POST tx/verify). The payer's own server url must travel with
@@ -34,7 +32,6 @@ export interface Account {
   blocks: BlockWire[]
   secretkey: string
   contacts: Contact[]
-  backupPolicy: BackupPolicy
   lastBackupAt: string | null
   isuptodate: boolean
   pendingOfflineTx: PendingOfflineTx[]
@@ -72,7 +69,6 @@ export function makeDefaultAccount(publickey: string): Account {
     blocks: [],
     secretkey: '',
     contacts: [],
-    backupPolicy: 'every-tx',
     lastBackupAt: null,
     isuptodate: false,
     pendingOfflineTx: [],

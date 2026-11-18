@@ -7,12 +7,10 @@ import { ServerConnexionService } from '../../services/server-connection.service
 import { BackupService } from '../../services/backup.service';
 import { encodeContactQr } from 'organic-protocol';
 import type { InfoResponse } from 'organic-protocol';
-import type { BackupPolicy } from '../../models/account';
 import { encryptSecretKey, decryptSecretKey } from '../../services/secret-key-crypto.util';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatListModule } from '@angular/material/list';
-import { MatRadioModule } from '@angular/material/radio';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { FormsModule } from '@angular/forms';
@@ -27,7 +25,6 @@ import { contactLink } from '../../utils/contact-link.util';
     MatButtonModule,
     MatCardModule,
     MatListModule,
-    MatRadioModule,
     MatFormFieldModule,
     MatInputModule,
     FormsModule,
@@ -50,7 +47,6 @@ export class AccountDetails {
   publickey: string = ""
   myContactQr: string = ""
 
-  backupPolicy: BackupPolicy = 'every-tx'
   lastBackupAt: string | null = null
 
   serverInfo: InfoResponse | null = null
@@ -72,7 +68,6 @@ export class AccountDetails {
     const birthBlock = this.user.blockchain.blocks[this.user.blockchain.blocks.length - 1]
     this.inscription_date = birthBlock.closedate.toLocaleDateString('fr-FR')
 
-    this.backupPolicy = this.user.backupPolicy
     this.lastBackupAt = this.user.lastBackupAt
 
     this.serverDB.getServerInfo(this.user.serverUrl).subscribe({
@@ -89,16 +84,6 @@ export class AccountDetails {
     } catch {
       this.displayMessage("Impossible de copier le lien.")
     }
-  }
-
-  updateBackupPolicy(policy: BackupPolicy): void {
-    if (this.userService.isReadOnlySession()) {
-      this.displayMessage(this.userService.readOnlyMessage())
-      return
-    }
-    this.backupPolicy = policy
-    this.user.backupPolicy = policy
-    this.localDB.saveUserInBackground(this.user)
   }
 
   saveNow(): void {

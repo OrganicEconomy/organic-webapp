@@ -45,7 +45,6 @@ For most usages, we use a local database with Localforage — one record per acc
   blocks: BlockWire[]       // the user's blockchain, organic-protocol wire format
   secretkey: string         // AES-encrypted, serialized — never the plaintext key or password
   contacts: { name: string, pk: string, url: string, type: 'citizen' | 'ecosystem' }[]
-  backupPolicy: 'every-tx' | 'manual' | 'payments-only'
   lastBackupAt: string | null
   isuptodate: boolean
   pendingOfflineTx: TxWire[]  // received offline (QR), awaiting tx/verify

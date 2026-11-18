@@ -27,12 +27,6 @@ qrcode {
     padding: 16px 0;
 }
 
-mat-radio-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
 mat-form-field {
     width: 100%;
 }

@@ -39,23 +39,12 @@ export class BackupService {
   private serverDB = inject(ServerConnexionService)
   private userService = inject(ConnectedUserService)
 
-  /**
-   * After an automatic mutation (daily money, receiving a payment, cashing a
-   * paper…): always saved locally, pushed to the server only if the account's
-   * policy allows it.
-   */
-  private pushToServerIfThePolicyAsks(user: LoadedAccount, sk: string): void {
-    if (user.backupPolicy === 'every-tx') {
-      this.pushToServer(user, sk).subscribe()
-    }
-  }
-
   recordAutomatic(user: LoadedAccount, sk: string): void {
     if (this.userService.isReadOnlySession()) {
       return
     }
     this.localDB.saveUserInBackground(user)
-    this.pushToServerIfThePolicyAsks(user, sk)
+    this.pushToServer(user, sk).subscribe()
   }
 
   private applyOrUndo<T>(user: LoadedAccount, before: AccountSnapshot, change: () => T): T {
@@ -76,7 +65,7 @@ export class BackupService {
       restore(user, before)
       throw error
     }
-    this.pushToServerIfThePolicyAsks(user, sk)
+    this.pushToServer(user, sk).subscribe()
     return result
   }
 

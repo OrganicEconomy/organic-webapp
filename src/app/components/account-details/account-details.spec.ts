@@ -15,7 +15,7 @@ const REAL_SK_HEX = 'ed945716dddb7af2c9774939e9946f1fee31f5ec0a3c6ec96059f119c39
 
 let fakeAccount: any;
 let stubConnectedUserService: any;
-let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser' | 'saveUserInBackground'>>;
+let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getServerInfo' | 'changePassword'>>;
 let backupSpy: jasmine.SpyObj<Pick<BackupService, 'saveNow'>>;
 
@@ -28,7 +28,6 @@ describe('AccountDetails', () => {
       name: 'Alice',
       publickey: 'alice-pk',
       serverUrl: 'https://trifouillis.fr',
-      backupPolicy: 'every-tx',
       lastBackupAt: null,
       secretkey: await encryptSecretKey(REAL_SK_HEX, 'old-password'),
       blockchain: {
@@ -44,7 +43,7 @@ describe('AccountDetails', () => {
       isReadOnlySession: () => false,
       readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
     };
-    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveUserInBackground']);
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
     localDBSpy.saveUser.and.callFake(async (account) => account);
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['getServerInfo', 'changePassword']);
     serverDBSpy.getServerInfo.and.returnValue(of({
@@ -95,17 +94,6 @@ describe('AccountDetails', () => {
     expect(component.serverInfo?.stats.users).toBe(42);
   });
 
-  it('updateBackupPolicy() should keep the policy and say why in a read-only session', () => {
-    stubConnectedUserService.isReadOnlySession = () => true;
-    spyOn(component, 'displayMessage');
-
-    component.updateBackupPolicy('manual');
-
-    expect(fakeAccount.backupPolicy).toBe('every-tx');
-    expect(localDBSpy.saveUserInBackground).not.toHaveBeenCalled();
-    expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
-  });
-
   it('changePassword() should not change the password from a read-only session', async () => {
     stubConnectedUserService.isReadOnlySession = () => true;
     spyOn(component, 'displayMessage');
@@ -117,14 +105,6 @@ describe('AccountDetails', () => {
 
     expect(serverDBSpy.changePassword).not.toHaveBeenCalled();
     expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
-  });
-
-  it('updateBackupPolicy() should persist the new policy locally', () => {
-    component.updateBackupPolicy('manual');
-
-    expect(component.backupPolicy).toBe('manual');
-    expect(fakeAccount.backupPolicy).toBe('manual');
-    expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeAccount);
   });
 
   it('saveNow() should call backupService.saveNow', () => {
