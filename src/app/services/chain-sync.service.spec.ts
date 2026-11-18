@@ -56,7 +56,7 @@ describe('ChainSyncService', () => {
   let service: ChainSyncService;
   let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getMyValidation'>>;
   let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
-  let backupSpy: jasmine.SpyObj<Pick<BackupService, 'saveNow'>>;
+  let backupSpy: jasmine.SpyObj<Pick<BackupService, 'pushToServer'>>;
   let snackBarSpy: jasmine.SpyObj<Pick<MatSnackBar, 'open'>>;
   let userServiceStub: {
     isUnlocked: () => boolean;
@@ -77,8 +77,8 @@ describe('ChainSyncService', () => {
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getMyValidation']);
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
     localDBSpy.saveUser.and.callFake(async (account) => account);
-    backupSpy = jasmine.createSpyObj('BackupService', ['saveNow']);
-    backupSpy.saveNow.and.returnValue(of({}));
+    backupSpy = jasmine.createSpyObj('BackupService', ['pushToServer']);
+    backupSpy.pushToServer.and.returnValue(of({}));
     snackBarSpy = jasmine.createSpyObj('MatSnackBar', ['open']);
     connected = null;
     readOnly = false;
@@ -113,7 +113,7 @@ describe('ChainSyncService', () => {
       await service.syncWithServer(account, secretKey);
 
       expect(localDBSpy.saveUser).not.toHaveBeenCalled();
-      expect(backupSpy.saveNow).not.toHaveBeenCalled();
+      expect(backupSpy.pushToServer).not.toHaveBeenCalled();
     });
 
     it('should take the chain of the server when it holds more, keeping the contacts of the device', async () => {
@@ -188,7 +188,7 @@ describe('ChainSyncService', () => {
 
       await service.syncWithServer(account, secretKey);
 
-      expect(backupSpy.saveNow).toHaveBeenCalledWith(account, secretKey);
+      expect(backupSpy.pushToServer).toHaveBeenCalledWith(account, secretKey);
       expect(account.blockchain.export()).toEqual(deviceChain);
     });
 
@@ -200,7 +200,7 @@ describe('ChainSyncService', () => {
 
       await service.syncWithServer(account, secretKey);
 
-      expect(backupSpy.saveNow).not.toHaveBeenCalled();
+      expect(backupSpy.pushToServer).not.toHaveBeenCalled();
     });
 
     it('should keep the copy of the device when the server fails while receiving it', async () => {
@@ -208,7 +208,7 @@ describe('ChainSyncService', () => {
       serverHolds(account.blockchain.export());
       const deviceChain = chainAfterAPayment(account, secretKey);
       account.blockchain = new CitizenBlockchain(deviceChain);
-      backupSpy.saveNow.and.returnValue(throwError(() => new HttpErrorResponse({ status: 502 })));
+      backupSpy.pushToServer.and.returnValue(throwError(() => new HttpErrorResponse({ status: 502 })));
 
       await service.syncWithServer(account, secretKey);
 
@@ -227,7 +227,7 @@ describe('ChainSyncService', () => {
       serverHolds(account.blockchain.export());
       const deviceChain = chainAfterAPayment(account, secretKey);
       account.blockchain = new CitizenBlockchain(deviceChain);
-      backupSpy.saveNow.and.returnValue(
+      backupSpy.pushToServer.and.returnValue(
         throwError(() => new HttpErrorResponse({ status: 409, error: { code: 'DEVICE_REVOKED' } })),
       );
 
@@ -242,10 +242,10 @@ describe('ChainSyncService', () => {
       serverHolds(account.blockchain.export());
       const deviceChain = chainAfterAPayment(account, secretKey);
       account.blockchain = new CitizenBlockchain(deviceChain);
-      backupSpy.saveNow.and.returnValue(NEVER);
+      backupSpy.pushToServer.and.returnValue(NEVER);
 
       const syncing = service.syncWithServer(account, secretKey);
-      while (!backupSpy.saveNow.calls.any()) {
+      while (!backupSpy.pushToServer.calls.any()) {
         await Promise.resolve();
       }
       jasmine.clock().tick(10_000);
@@ -282,7 +282,7 @@ describe('ChainSyncService', () => {
       serverHolds(account.blockchain.export());
       const deviceChain = chainAfterAPayment(account, secretKey);
       account.blockchain = new CitizenBlockchain(deviceChain);
-      backupSpy.saveNow.and.returnValue(throwError(() => new HttpErrorResponse({ status: 400 })));
+      backupSpy.pushToServer.and.returnValue(throwError(() => new HttpErrorResponse({ status: 400 })));
 
       await service.syncWithServer(account, secretKey);
 

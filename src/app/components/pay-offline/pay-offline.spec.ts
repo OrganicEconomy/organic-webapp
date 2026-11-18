@@ -157,6 +157,19 @@ describe('PayOffline', () => {
     }
   });
 
+  it('should tell the payer to reload the page once back online, so the recipient can check the payment', async () => {
+    component.target = CONTACT_PK;
+    component.amount = 5;
+
+    component.payOffline();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain(
+      'ⓘ Dès que vous retrouvez le réseau, rechargez la page pour que le destinataire puisse vérifier ce paiement.',
+    );
+  });
+
   it('should show no QR and cancel the payment when this device could not store it', async () => {
     backupSpy.applyAndRecord.and.rejectWith(new LocalSaveError('device full'));
     spyOn(component, 'displayMessage');

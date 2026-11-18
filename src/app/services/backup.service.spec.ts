@@ -61,23 +61,23 @@ describe('BackupService', () => {
     service = TestBed.inject(BackupService);
   });
 
-  describe('recordAutomatic', () => {
+  describe('recordInBackground', () => {
     it('should save locally in the background', () => {
-      service.recordAutomatic(fakeUser, 'sk');
+      service.recordInBackground(fakeUser, 'sk');
       expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
     });
 
     it('should neither store nor push anything from a read-only session', () => {
       userServiceSpy.isReadOnlySession.and.returnValue(true);
 
-      service.recordAutomatic(fakeUser, 'sk');
+      service.recordInBackground(fakeUser, 'sk');
 
       expect(localDBSpy.saveUserInBackground).not.toHaveBeenCalled();
       expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
     });
 
     it('should push to the server', () => {
-      service.recordAutomatic(fakeUser, 'sk');
+      service.recordInBackground(fakeUser, 'sk');
       expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(fakeUser, 'sk', fakeUser.blockchain.blocks[0]);
     });
 
@@ -86,95 +86,97 @@ describe('BackupService', () => {
       serverDBSpy.saveBlock.and.returnValue(throwError(() => offline));
       spyOn(console, 'error');
 
-      service.recordAutomatic(fakeUser, 'sk');
+      service.recordInBackground(fakeUser, 'sk');
 
       expect(console.error).toHaveBeenCalledWith(offline);
     });
   });
 
-  it('should update lastBackupAt and isuptodate on a successful push', () => {
-    service.saveNow(fakeUser, 'sk').subscribe();
-    expect(fakeUser.isuptodate).toBeTrue();
-    expect(fakeUser.lastBackupAt).not.toBeNull();
-    expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
-  });
-
-  it('should not mark the session read-only for a block the server could not chain', () => {
-    serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'NOT_CHAINING' } })));
-    service.saveNow(fakeUser, 'sk').subscribe({ error: () => {} });
-    expect(userServiceSpy.setReadOnly).not.toHaveBeenCalled();
-  });
-
-  it('should mark the session read-only when another device took the account over', () => {
-    serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'DEVICE_REVOKED' } })));
-    service.saveNow(fakeUser, 'sk').subscribe({ error: () => {} });
-    expect(userServiceSpy.setReadOnly).toHaveBeenCalled();
-  });
-
-  it('saveNow should not issue a second server request when the caller subscribes to the returned observable', () => {
-    let subscribeCount = 0;
-    serverDBSpy.saveBlock.and.returnValue(new Observable((subscriber) => {
-      subscribeCount++;
-      subscriber.next({});
-      subscriber.complete();
-    }));
-
-    service.saveNow(fakeUser, 'sk').subscribe();
-
-    expect(subscribeCount).toBe(1);
-  });
-
-  it('should catch up on blocks closed locally since the last confirmed save, oldest first, before the current one', () => {
-    const oldSaved = fakeBlock('sig-old-saved');
-    const closedA = fakeBlock('sig-a');
-    const closedB = fakeBlock('sig-b');
-    const current = fakeBlock('sig-current', false);
-    // Newest-first, as Blockchain.blocks is ordered — closedA/closedB were
-    // closed locally but never made it to the server (e.g. offline).
-    fakeUser.blockchain.blocks = [current, closedB, closedA, oldSaved];
-    fakeUser.lastSavedBlockSignature = 'sig-old-saved';
-
-    const sentBlocks: any[] = [];
-    serverDBSpy.saveBlock.and.callFake((_user: any, _sk: any, block: any) => {
-      sentBlocks.push(block);
-      return of({});
+  describe('pushToServer', () => {
+    it('should update lastBackupAt and isuptodate on a successful push', () => {
+      service.pushToServer(fakeUser, 'sk').subscribe();
+      expect(fakeUser.isuptodate).toBeTrue();
+      expect(fakeUser.lastBackupAt).not.toBeNull();
+      expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
     });
 
-    service.saveNow(fakeUser, 'sk').subscribe();
-
-    expect(sentBlocks).toEqual([closedA, closedB, current]);
-  });
-
-  it('should update lastSavedBlockSignature to the newest signed block actually confirmed by the server', () => {
-    const oldKnown = fakeBlock('sig-old-known');
-    const closedA = fakeBlock('sig-a');
-    const current = fakeBlock('sig-current', false);
-    fakeUser.blockchain.blocks = [current, closedA, oldKnown];
-    fakeUser.lastSavedBlockSignature = 'sig-old-known';
-
-    service.saveNow(fakeUser, 'sk').subscribe();
-
-    // closedA is signed (its signature is now confirmed server-side); the
-    // still-open current block has no stable signature to point to.
-    expect(fakeUser.lastSavedBlockSignature).toBe('sig-a');
-  });
-
-  it('should stop and not send later blocks once one save in the sequence fails', () => {
-    const oldKnown = fakeBlock('sig-old-known');
-    const closedA = fakeBlock('sig-a');
-    const current = fakeBlock('sig-current', false);
-    fakeUser.blockchain.blocks = [current, closedA, oldKnown];
-    fakeUser.lastSavedBlockSignature = 'sig-old-known';
-
-    let callCount = 0;
-    serverDBSpy.saveBlock.and.callFake(() => {
-      callCount++;
-      return throwError(() => ({ status: 500 }));
+    it('should not mark the session read-only for a block the server could not chain', () => {
+      serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'NOT_CHAINING' } })));
+      service.pushToServer(fakeUser, 'sk').subscribe({ error: () => {} });
+      expect(userServiceSpy.setReadOnly).not.toHaveBeenCalled();
     });
 
-    service.saveNow(fakeUser, 'sk').subscribe({ error: () => {} });
+    it('should mark the session read-only when another device took the account over', () => {
+      serverDBSpy.saveBlock.and.returnValue(throwError(() => ({ status: 409, error: { code: 'DEVICE_REVOKED' } })));
+      service.pushToServer(fakeUser, 'sk').subscribe({ error: () => {} });
+      expect(userServiceSpy.setReadOnly).toHaveBeenCalled();
+    });
 
-    expect(callCount).toBe(1);
+    it('should not issue a second server request when the caller subscribes to the returned observable', () => {
+      let subscribeCount = 0;
+      serverDBSpy.saveBlock.and.returnValue(new Observable((subscriber) => {
+        subscribeCount++;
+        subscriber.next({});
+        subscriber.complete();
+      }));
+
+      service.pushToServer(fakeUser, 'sk').subscribe();
+
+      expect(subscribeCount).toBe(1);
+    });
+
+    it('should catch up on blocks closed locally since the last confirmed save, oldest first, before the current one', () => {
+      const oldSaved = fakeBlock('sig-old-saved');
+      const closedA = fakeBlock('sig-a');
+      const closedB = fakeBlock('sig-b');
+      const current = fakeBlock('sig-current', false);
+      // Newest-first, as Blockchain.blocks is ordered — closedA/closedB were
+      // closed locally but never made it to the server (e.g. offline).
+      fakeUser.blockchain.blocks = [current, closedB, closedA, oldSaved];
+      fakeUser.lastSavedBlockSignature = 'sig-old-saved';
+
+      const sentBlocks: any[] = [];
+      serverDBSpy.saveBlock.and.callFake((_user: any, _sk: any, block: any) => {
+        sentBlocks.push(block);
+        return of({});
+      });
+
+      service.pushToServer(fakeUser, 'sk').subscribe();
+
+      expect(sentBlocks).toEqual([closedA, closedB, current]);
+    });
+
+    it('should update lastSavedBlockSignature to the newest signed block actually confirmed by the server', () => {
+      const oldKnown = fakeBlock('sig-old-known');
+      const closedA = fakeBlock('sig-a');
+      const current = fakeBlock('sig-current', false);
+      fakeUser.blockchain.blocks = [current, closedA, oldKnown];
+      fakeUser.lastSavedBlockSignature = 'sig-old-known';
+
+      service.pushToServer(fakeUser, 'sk').subscribe();
+
+      // closedA is signed (its signature is now confirmed server-side); the
+      // still-open current block has no stable signature to point to.
+      expect(fakeUser.lastSavedBlockSignature).toBe('sig-a');
+    });
+
+    it('should stop and not send later blocks once one save in the sequence fails', () => {
+      const oldKnown = fakeBlock('sig-old-known');
+      const closedA = fakeBlock('sig-a');
+      const current = fakeBlock('sig-current', false);
+      fakeUser.blockchain.blocks = [current, closedA, oldKnown];
+      fakeUser.lastSavedBlockSignature = 'sig-old-known';
+
+      let callCount = 0;
+      serverDBSpy.saveBlock.and.callFake(() => {
+        callCount++;
+        return throwError(() => ({ status: 500 }));
+      });
+
+      service.pushToServer(fakeUser, 'sk').subscribe({ error: () => {} });
+
+      expect(callCount).toBe(1);
+    });
   });
 
   describe('applyAndSave', () => {

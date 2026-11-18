@@ -7,7 +7,6 @@ import { AccountDetails } from './account-details';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService, LocalSaveError } from '../../services/local-database.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
-import { BackupService } from '../../services/backup.service';
 import { decryptSecretKey, encryptSecretKey } from '../../services/secret-key-crypto.util';
 import { contactLink } from '../../utils/contact-link.util';
 
@@ -17,7 +16,6 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getServerInfo' | 'changePassword'>>;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'saveNow'>>;
 
 describe('AccountDetails', () => {
   let component: AccountDetails;
@@ -39,7 +37,6 @@ describe('AccountDetails', () => {
     };
     stubConnectedUserService = {
       getConnectedUser: () => fakeAccount,
-      getSecretKey: () => REAL_SK_HEX,
       isReadOnlySession: () => false,
       readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
     };
@@ -51,8 +48,6 @@ describe('AccountDetails', () => {
       serverPk: 'x', corePk: null, stats: { users: 42 },
     }));
     serverDBSpy.changePassword.and.returnValue(of({}));
-    backupSpy = jasmine.createSpyObj('BackupService', ['saveNow']);
-    backupSpy.saveNow.and.returnValue(of({}));
 
     await TestBed.configureTestingModule({
       imports: [AccountDetails, RouterTestingModule],
@@ -60,7 +55,6 @@ describe('AccountDetails', () => {
         { provide: ConnectedUserService, useValue: stubConnectedUserService },
         { provide: LocalDatabaseService, useValue: localDBSpy },
         { provide: ServerConnexionService, useValue: serverDBSpy },
-        { provide: BackupService, useValue: backupSpy },
       ],
     })
     .compileComponents();
@@ -172,20 +166,16 @@ describe('AccountDetails', () => {
     expect(serverDBSpy.changePassword).not.toHaveBeenCalled();
   });
 
-  describe('saveNow', () => {
-    it('should call backupService.saveNow', () => {
-      component.saveNow();
-
-      expect(backupSpy.saveNow).toHaveBeenCalledWith(fakeAccount, REAL_SK_HEX);
-    });
-  });
-
   describe('template', () => {
     it('should log out through the logout page, which forgets the session', () => {
       const logoutLink = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
         .find((link) => link.textContent?.includes('Déconnexion'));
 
       expect(logoutLink?.getAttribute('href')).toBe('/logout');
+    });
+
+    it('should not offer to save by hand, since every operation is pushed and a reload syncs', () => {
+      expect(fixture.nativeElement.textContent).not.toContain('Sauvegarder maintenant');
     });
   });
 
