@@ -26,6 +26,13 @@ describe('TransactionAmounts', () => {
       expect(shown.querySelector('.spending')?.textContent).toContain('−4 invest.');
     });
 
+    it('should show the money and invests of a creation as gains', () => {
+      const shown = showAmounts({ money: 3, invests: 3, experience: 0 });
+
+      const gains = Array.from(shown.querySelectorAll('.gain')).map((gain) => gain.textContent?.trim());
+      expect(gains).toEqual(['+3', '+3 invest.']);
+    });
+
     it('should show the experience gained as a badge', () => {
       const shown = showAmounts({ money: -1, invests: 0, experience: 1 });
 

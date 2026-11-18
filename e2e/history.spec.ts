@@ -1,13 +1,16 @@
 import { expect, Page, test } from '@playwright/test';
 import { signUpApprovedCitizen } from './support/signup';
 
-async function payOneselfUpToTheNextLevel(page: Page, amount: number): Promise<void> {
+async function payOneself(page: Page, amount: number): Promise<void> {
   await page.getByRole('navigation').getByRole('link', { name: 'Paiement' }).click();
   await page.getByRole('combobox').click();
   await page.getByRole('option', { name: 'Moi-même' }).click();
   await page.locator('input.amount-input').fill(String(amount));
   await page.getByRole('button', { name: 'Payer', exact: true }).click();
   await page.getByRole('button', { name: 'Confirmer' }).click();
+}
+
+async function closeTheLevelUpDialog(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Continuer' }).click();
 }
 
@@ -34,7 +37,8 @@ test.describe('history', () => {
 
   test('should sign each amount, and show the experience a payment brings', async ({ page }) => {
     await signUpApprovedCitizen(page, 'Noé Chevalier');
-    await payOneselfUpToTheNextLevel(page, 1);
+    await payOneself(page, 1);
+    await closeTheLevelUpDialog(page);
 
     await openTheHistory(page);
 
