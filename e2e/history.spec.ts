@@ -7,7 +7,7 @@ async function openTheHistory(page: Page): Promise<void> {
 }
 
 test.describe('history', () => {
-  test('should show the account opening and the daily creation without sender nor receiver', async ({
+  test('should show the account opening and the daily creation with neither sender nor receiver', async ({
     page,
   }) => {
     await signUpApprovedCitizen(page, 'Lina Fontaine');
@@ -18,7 +18,7 @@ test.describe('history', () => {
     const creation = page.locator('.tx-card', { hasText: 'Création du jour' });
     await expect(opening).toBeVisible();
     await expect(creation).toBeVisible();
-    await expect(opening).not.toContainText('Moi');
-    await expect(creation).not.toContainText('Moi');
+    await expect(opening).not.toContainText('→');
+    await expect(creation).not.toContainText('→');
   });
 });

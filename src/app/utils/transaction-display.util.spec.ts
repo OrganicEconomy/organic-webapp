@@ -20,12 +20,6 @@ describe('getContactName', () => {
 });
 
 describe('toDisplayRow', () => {
-  it('should read the source contact from tx.signer, not the nonexistent tx.source', () => {
-    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1, 2, 3] };
-    const row = toDisplayRow(tx, 'my-pk', [{ pk: 'alice-pk', name: 'Alice' }]);
-    expect(row.parties?.source.label).toBe('Alice');
-  });
-
   it('should map the numeric type to its French label and the amount to money.length', () => {
     const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1, 2, 3] };
     const row = toDisplayRow(tx, 'my-pk', []);
@@ -51,25 +45,62 @@ describe('toDisplayRow', () => {
     expect(row.parties?.source).toEqual({ label: '...blic-key', fullKey: 'some-unknown-public-key' });
   });
 
-  it('should name a contact or oneself without any key to show', () => {
+  it('should abbreviate an unknown receiver the same way', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'my-pk', target: 'some-unknown-public-key', money: [1] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.parties?.target).toEqual({ label: '...blic-key', fullKey: 'some-unknown-public-key' });
+  });
+
+  it('should name a known contact, read from tx.signer, without any key to show', () => {
     const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1] };
     const row = toDisplayRow(tx, 'my-pk', [{ pk: 'alice-pk', name: 'Alice' }]);
     expect(row.parties?.source).toEqual({ label: 'Alice', fullKey: null });
+  });
+
+  it('should name oneself "Moi" without any key to show', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1] };
+    const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.parties?.target).toEqual({ label: 'Moi', fullKey: null });
   });
 
-  it('should show the account opening without sender nor receiver', () => {
+  it('should show a missing key as "-", with no key to show', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 4, signer: 'my-pk', target: '', money: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.parties?.target).toEqual({ label: '-', fullKey: null });
+  });
+
+  it('should show the account opening with neither sender nor receiver', () => {
     const tx = { date: new Date(2026, 0, 15), type: 1, signer: 'my-pk', target: '', money: [] };
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.type).toBe('Ouverture du compte');
     expect(row.parties).toBeNull();
   });
 
-  it('should show the daily creation without sender nor receiver', () => {
+  it('should show the daily creation with neither sender nor receiver', () => {
     const tx = { date: new Date(2026, 0, 15), type: 2, signer: 'my-pk', target: '', money: [1, 2] };
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.type).toBe('Création du jour');
     expect(row.parties).toBeNull();
+  });
+
+  it('should show a payment to oneself with neither sender nor receiver', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'my-pk', target: 'my-pk', money: [1] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.parties).toBeNull();
+  });
+
+  it('should send a printed bill to its bearer, not to the core it is checked by', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 5, signer: 'my-pk', target: 'core-pk', money: [1] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.parties?.source.label).toBe('Moi');
+    expect(row.parties?.target).toEqual({ label: 'Porteur du billet', fullKey: null });
+  });
+
+  it('should show a cashed bill as received from its issuer', () => {
+    const tx = { date: new Date(2026, 0, 15), type: 5, signer: 'alice-pk', target: 'core-pk', money: [1] };
+    const row = toDisplayRow(tx, 'my-pk', [{ pk: 'alice-pk', name: 'Alice' }]);
+    expect(row.parties?.source.label).toBe('Alice');
+    expect(row.parties?.target.label).toBe('Moi');
   });
 
   it('should label a payment to oneself as a cashing', () => {

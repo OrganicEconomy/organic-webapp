@@ -68,7 +68,7 @@ h1 {
 .tx-bottom {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: 8px;
 }
 
@@ -89,7 +89,7 @@ h1 {
     text-decoration: underline dotted;
 }
 
-.party-key[open] .full-key {
+.party-key .full-key {
     display: block;
     font-family: monospace;
     word-break: break-all;
