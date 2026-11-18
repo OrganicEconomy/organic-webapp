@@ -69,7 +69,7 @@ function lostOperationsMessage(numberOfLostOperations: number): string {
   return `Ce téléphone n'était plus d'accord avec le serveur : sa copie a été reprise, et ${whatWasLost}.`;
 }
 
-function isTheServerOutOfReach(error: unknown): boolean {
+function cannotReachTheServer(error: unknown): boolean {
   return (
     !(error instanceof HttpErrorResponse) ||
     error.status === 0 ||
@@ -96,7 +96,7 @@ export class ChainSyncService {
     });
   }
 
-  private async serverCopyOf(
+  private async fetchTheServerCopy(
     account: LoadedAccount,
     secretKey: string,
   ): Promise<MyValidationResponse | null> {
@@ -196,11 +196,11 @@ export class ChainSyncService {
       if (isDeviceRevoked(error)) {
         return;
       }
-      if (isTheServerOutOfReach(error)) {
+      if (cannotReachTheServer(error)) {
         this.sayTheSyncIsImpossible();
         return;
       }
-      const serverCopy = await this.serverCopyOf(account, secretKey);
+      const serverCopy = await this.fetchTheServerCopy(account, secretKey);
       if (serverCopy !== null) {
         await this.giveUpTheDeviceChain(account, serverCopy);
       }
@@ -208,7 +208,7 @@ export class ChainSyncService {
   }
 
   async syncWithServer(account: LoadedAccount, secretKey: string): Promise<void> {
-    const serverCopy = await this.serverCopyOf(account, secretKey);
+    const serverCopy = await this.fetchTheServerCopy(account, secretKey);
     if (serverCopy === null || isTheSameAccountState(account, serverCopy)) {
       return;
     }
