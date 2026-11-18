@@ -64,7 +64,6 @@ export class LocalDatabaseService {
             blocks: data.blockchain ? (data.blockchain.export() as Account['blocks']) : data.blocks,
             secretkey: data.secretkey,
             contacts: data.contacts,
-            backupPolicy: data.backupPolicy,
             lastBackupAt: data.lastBackupAt,
             isuptodate: data.isuptodate,
             pendingOfflineTx: data.pendingOfflineTx,

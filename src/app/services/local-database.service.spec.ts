@@ -45,7 +45,6 @@ describe('LocalDatabaseService', () => {
     expect(loaded.serverUrl).toBe('https://trifouillis.fr')
     expect(loaded.secretkey).toBe('encrypted-blob')
     expect(loaded.devicetoken).toBe('device-1')
-    expect(loaded.backupPolicy).toBe('every-tx')
     expect(loaded.status).toBe('active')
     expect(loaded.pendingOfflineTx).toEqual([])
     expect(loaded.sentOfflineTx).toEqual([])
@@ -150,6 +149,15 @@ describe('LocalDatabaseService', () => {
   });
 
   describe('saveUser', () => {
+    it('should drop the backup policy that older versions stored', async () => {
+      const account = { ...makeDefaultAccount(uniquePk('old-policy')), backupPolicy: 'manual' };
+
+      await service.saveUser(account);
+
+      const stored: any = await localforage.getItem(account.publickey);
+      expect(stored.backupPolicy).toBeUndefined();
+    });
+
     it('should tell the other tabs that the account changed', async () => {
       const account = makeDefaultAccount(uniquePk('announced'));
 

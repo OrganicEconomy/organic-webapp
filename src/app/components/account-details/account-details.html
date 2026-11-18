@@ -32,12 +32,6 @@
 
 
     <mat-card-content>
-        <mat-radio-group [ngModel]="backupPolicy" (ngModelChange)="updateBackupPolicy($event)" [disabled]="userService.isReadOnlySession()">
-            <mat-radio-button value="every-tx">À chaque transaction (recommandé)</mat-radio-button>
-            <mat-radio-button value="manual">Quand je le décide</mat-radio-button>
-            <mat-radio-button value="payments-only">Uniquement lors des paiements</mat-radio-button>
-        </mat-radio-group>
-
         <button mat-stroked-button (click)="saveNow()" [disabled]="userService.isReadOnlySession()">
             <i class="bi bi-cloud-upload"></i> Sauvegarder maintenant
         </button>

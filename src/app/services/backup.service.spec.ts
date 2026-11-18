@@ -14,7 +14,7 @@ function makeAccountWithMoney(): { account: any; sk: string } {
   const blockchain = new CitizenBlockchain();
   const sk = blockchain.startBlockchain('Camille', new Date(2000, 0, 1), VALIDATOR_SK);
   blockchain.createMoneyAndInvests(sk);
-  return { account: { backupPolicy: 'manual', lastSavedBlockSignature: null, blockchain }, sk };
+  return { account: { lastSavedBlockSignature: null, blockchain }, sk };
 }
 
 let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser' | 'saveUserInBackground'>>;
@@ -33,7 +33,6 @@ describe('BackupService', () => {
   beforeEach(() => {
     const currentBlock = fakeBlock('sig-current', false);
     fakeUser = {
-      backupPolicy: 'every-tx',
       lastBackupAt: null,
       isuptodate: false,
       // The server already has this exact block as its last one — no backlog.
@@ -62,35 +61,35 @@ describe('BackupService', () => {
     service = TestBed.inject(BackupService);
   });
 
-  it('recordAutomatic should save locally in the background', () => {
-    service.recordAutomatic(fakeUser, 'sk');
-    expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
-  });
+  describe('recordAutomatic', () => {
+    it('should save locally in the background', () => {
+      service.recordAutomatic(fakeUser, 'sk');
+      expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(fakeUser);
+    });
 
-  it('recordAutomatic should neither store nor push anything from a read-only session', () => {
-    userServiceSpy.isReadOnlySession.and.returnValue(true);
-    fakeUser.backupPolicy = 'every-tx';
+    it('should neither store nor push anything from a read-only session', () => {
+      userServiceSpy.isReadOnlySession.and.returnValue(true);
 
-    service.recordAutomatic(fakeUser, 'sk');
+      service.recordAutomatic(fakeUser, 'sk');
 
-    expect(localDBSpy.saveUserInBackground).not.toHaveBeenCalled();
-    expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
-  });
+      expect(localDBSpy.saveUserInBackground).not.toHaveBeenCalled();
+      expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
+    });
 
-  it('recordAutomatic should push to the server under every-tx', () => {
-    fakeUser.backupPolicy = 'every-tx';
-    service.recordAutomatic(fakeUser, 'sk');
-    expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(fakeUser, 'sk', fakeUser.blockchain.blocks[0]);
-  });
+    it('should push to the server', () => {
+      service.recordAutomatic(fakeUser, 'sk');
+      expect(serverDBSpy.saveBlock).toHaveBeenCalledWith(fakeUser, 'sk', fakeUser.blockchain.blocks[0]);
+    });
 
-  it('recordAutomatic should not push to the server under manual or payments-only', () => {
-    fakeUser.backupPolicy = 'manual';
-    service.recordAutomatic(fakeUser, 'sk');
-    expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
+    it('should note in the console a push that failed, leaving the catch-up to the next sync', () => {
+      const offline = { status: 0 };
+      serverDBSpy.saveBlock.and.returnValue(throwError(() => offline));
+      spyOn(console, 'error');
 
-    fakeUser.backupPolicy = 'payments-only';
-    service.recordAutomatic(fakeUser, 'sk');
-    expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
+      service.recordAutomatic(fakeUser, 'sk');
+
+      expect(console.error).toHaveBeenCalledWith(offline);
+    });
   });
 
   it('should update lastBackupAt and isuptodate on a successful push', () => {
@@ -281,21 +280,26 @@ describe('BackupService', () => {
       expect(account.sentOfflineTx).toEqual([]);
     });
 
-    it('should then push to the server under every-tx', async () => {
+    it('should then push to the server', async () => {
       const { account, sk } = makeAccountWithMoney();
-      account.backupPolicy = 'every-tx';
 
       await service.applyAndRecord(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1));
 
       expect(serverDBSpy.saveBlock).toHaveBeenCalled();
     });
 
-    it('should not push to the server under manual', async () => {
+    it('should keep the change on the device and note in the console a push that failed', async () => {
       const { account, sk } = makeAccountWithMoney();
+      const moneyBefore = account.blockchain.getAvailableMoneyAmount();
+      const offline = { status: 0 };
+      serverDBSpy.saveBlock.and.returnValue(throwError(() => offline));
+      spyOn(console, 'error');
 
       await service.applyAndRecord(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1));
 
-      expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
+      expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore - 1);
+      expect(localDBSpy.saveUser).toHaveBeenCalledWith(account);
+      expect(console.error).toHaveBeenCalledWith(offline);
     });
   });
 });
