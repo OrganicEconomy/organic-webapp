@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { DestroyRef, Injectable, inject } from '@angular/core';
 import { firstValueFrom, timeout } from 'rxjs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -89,6 +89,7 @@ export class ChainSyncService {
   private backup = inject(BackupService);
   private snackBar = inject(MatSnackBar);
   private userService = inject(ConnectedUserService);
+  private destroyRef = inject(DestroyRef);
 
   private sayTheSyncIsImpossible(): void {
     this.snackBar.open(SYNC_IMPOSSIBLE_MESSAGE, 'Fermer', {
@@ -237,5 +238,14 @@ export class ChainSyncService {
       console.error(error);
       this.snackBar.open(SYNC_FAILED_MESSAGE, 'Fermer');
     }
+  }
+
+  private syncWhenBackOnline = (): void => {
+    this.syncTheConnectedAccount();
+  };
+
+  startSyncingWhenBackOnline(): void {
+    window.addEventListener('online', this.syncWhenBackOnline);
+    this.destroyRef.onDestroy(() => window.removeEventListener('online', this.syncWhenBackOnline));
   }
 }

@@ -33,12 +33,15 @@
 
     <mat-card-content>
         <p class="last-backup">
-            @if (lastBackupAt) {
-            Dernière sauvegarde : {{ lastBackupAt | date:'dd/MM/yyyy HH:mm' }}
+            @if (user.lastBackupAt) {
+            Dernière sauvegarde : {{ user.lastBackupAt | date:'dd/MM/yyyy HH:mm' }}
             } @else {
             Jamais sauvegardé.
             }
         </p>
+        @if (!user.isuptodate) {
+        <p class="not-sent-yet">Des opérations faites ici n'ont pas encore été envoyées au serveur.</p>
+        }
     </mat-card-content>
 </mat-card>
 

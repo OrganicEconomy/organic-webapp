@@ -27,6 +27,7 @@ describe('AccountDetails', () => {
       publickey: 'alice-pk',
       serverUrl: 'https://trifouillis.fr',
       lastBackupAt: null,
+      isuptodate: true,
       secretkey: await encryptSecretKey(REAL_SK_HEX, 'old-password'),
       blockchain: {
         blocks: [
@@ -172,6 +173,24 @@ describe('AccountDetails', () => {
         .find((link) => link.textContent?.includes('Déconnexion'));
 
       expect(logoutLink?.getAttribute('href')).toBe('/logout');
+    });
+
+    it('should show the date of a backup that completed while the page was open', () => {
+      fakeAccount.lastBackupAt = '2026-11-18T21:05:00.000Z';
+
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('Dernière sauvegarde');
+    });
+
+    it('should say when operations made here have not been sent to the server yet', () => {
+      fakeAccount.isuptodate = false;
+
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain(
+        "Des opérations faites ici n'ont pas encore été envoyées au serveur.",
+      );
     });
 
     it('should not offer to save by hand, since every operation is pushed and a reload syncs', () => {

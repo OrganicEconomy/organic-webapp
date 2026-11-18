@@ -17,6 +17,7 @@ interface AccountSnapshot {
   chain: unknown
   sentOfflineTx: TxWire[]
   pendingOfflineTx: PendingOfflineTx[]
+  isuptodate: boolean
 }
 
 function snapshotOf(user: LoadedAccount): AccountSnapshot {
@@ -24,6 +25,7 @@ function snapshotOf(user: LoadedAccount): AccountSnapshot {
     chain: user.blockchain.export(),
     sentOfflineTx: user.sentOfflineTx?.slice(),
     pendingOfflineTx: user.pendingOfflineTx?.slice(),
+    isuptodate: user.isuptodate,
   }
 }
 
@@ -31,6 +33,7 @@ function restore(user: LoadedAccount, before: AccountSnapshot): void {
   user.blockchain = new CitizenBlockchain(before.chain)
   user.sentOfflineTx = before.sentOfflineTx
   user.pendingOfflineTx = before.pendingOfflineTx
+  user.isuptodate = before.isuptodate
 }
 
 @Injectable({ providedIn: 'root' })
@@ -47,6 +50,7 @@ export class BackupService {
     if (this.userService.isReadOnlySession()) {
       return
     }
+    user.isuptodate = false
     this.localDB.saveUserInBackground(user)
     this.pushToServerInBackground(user, sk)
   }
@@ -63,6 +67,7 @@ export class BackupService {
   async applyAndRecord<T>(user: LoadedAccount, sk: string, change: () => T): Promise<T> {
     const before = snapshotOf(user)
     const result = this.applyOrUndo(user, before, change)
+    user.isuptodate = false
     try {
       await this.localDB.saveUser(user)
     } catch (error) {
@@ -100,6 +105,7 @@ export class BackupService {
     return defer(() => {
       const before = snapshotOf(user)
       const result = this.applyOrUndo(user, before, change)
+      user.isuptodate = false
       return this.storeOnDeviceOrUndo(user, before).pipe(
         concatMap(() => this.pushToServerOrUndo(user, sk, before)),
         map(() => result),

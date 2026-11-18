@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Observable, firstValueFrom, of, throwError } from 'rxjs';
+import { NEVER, Observable, firstValueFrom, of, throwError } from 'rxjs';
 
 import { BackupService, UndoNotStoredError } from './backup.service';
 import { LocalDatabaseService, LocalSaveError } from './local-database.service';
@@ -74,6 +74,19 @@ describe('BackupService', () => {
 
       expect(localDBSpy.saveUserInBackground).not.toHaveBeenCalled();
       expect(serverDBSpy.saveBlock).not.toHaveBeenCalled();
+    });
+
+    it('should store the change as not sent to the server yet', () => {
+      fakeUser.isuptodate = true;
+      serverDBSpy.saveBlock.and.returnValue(NEVER);
+      let storedAsSent: boolean | undefined;
+      localDBSpy.saveUserInBackground.and.callFake(async (stored) => {
+        storedAsSent = stored.isuptodate;
+      });
+
+      service.recordInBackground(fakeUser, 'sk');
+
+      expect(storedAsSent).toBeFalse();
     });
 
     it('should push to the server', () => {
@@ -231,6 +244,21 @@ describe('BackupService', () => {
       expect(localDBSpy.saveUser).not.toHaveBeenCalled();
     });
 
+    it('should store the change as not sent to the server yet', () => {
+      const { account, sk } = makeAccountWithMoney();
+      account.isuptodate = true;
+      serverDBSpy.saveBlock.and.returnValue(NEVER);
+      let storedAsSent: boolean | undefined;
+      localDBSpy.saveUser.and.callFake(async (stored) => {
+        storedAsSent = stored.isuptodate;
+        return stored;
+      });
+
+      service.applyAndSave(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1)).subscribe();
+
+      expect(storedAsSent).toBeFalse();
+    });
+
     it('should cancel the change without asking the server when the device cannot store it', async () => {
       localDBSpy.saveUser.and.rejectWith(new LocalSaveError('full'));
       const { account, sk } = makeAccountWithMoney();
@@ -280,6 +308,32 @@ describe('BackupService', () => {
       await expectAsync(recording).toBeRejectedWithError(LocalSaveError);
       expect(account.blockchain.getAvailableMoneyAmount()).toBe(moneyBefore);
       expect(account.sentOfflineTx).toEqual([]);
+    });
+
+    it('should say again that everything was sent when this device cannot store the change', async () => {
+      localDBSpy.saveUser.and.rejectWith(new LocalSaveError('device full'));
+      const { account, sk } = makeAccountWithMoney();
+      account.isuptodate = true;
+
+      const recording = service.applyAndRecord(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1));
+
+      await expectAsync(recording).toBeRejectedWithError(LocalSaveError);
+      expect(account.isuptodate).toBeTrue();
+    });
+
+    it('should store the change as not sent to the server yet', async () => {
+      const { account, sk } = makeAccountWithMoney();
+      account.isuptodate = true;
+      serverDBSpy.saveBlock.and.returnValue(NEVER);
+      let storedAsSent: boolean | undefined;
+      localDBSpy.saveUser.and.callFake(async (stored) => {
+        storedAsSent = stored.isuptodate;
+        return stored;
+      });
+
+      await service.applyAndRecord(account, sk, () => account.blockchain.pay(sk, RECIPIENT_PK, 1));
+
+      expect(storedAsSent).toBeFalse();
     });
 
     it('should then push to the server', async () => {

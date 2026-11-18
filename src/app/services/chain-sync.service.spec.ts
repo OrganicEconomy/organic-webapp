@@ -355,6 +355,17 @@ describe('ChainSyncService', () => {
     });
   });
 
+  describe('startSyncingWhenBackOnline', () => {
+    it('should sync the connected account when the network comes back', () => {
+      spyOn(service, 'syncTheConnectedAccount').and.resolveTo();
+
+      service.startSyncingWhenBackOnline();
+      window.dispatchEvent(new Event('online'));
+
+      expect(service.syncTheConnectedAccount).toHaveBeenCalled();
+    });
+  });
+
   describe('syncTheConnectedAccount', () => {
     it('should sync the account connected and unlocked in this tab', async () => {
       connected = accountWithMoney();

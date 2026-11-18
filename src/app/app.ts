@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { SessionLockService } from './services/session-lock.service';
+import { ChainSyncService } from './services/chain-sync.service';
 
 @Component({
   selector: 'app-root',
@@ -24,5 +25,6 @@ export class App {
       sanitizer.bypassSecurityTrustResourceUrl('icons/currency-mark.svg')
     );
     inject(SessionLockService).startWatchingIdleness();
+    inject(ChainSyncService).startSyncingWhenBackOnline();
   }
 }
