@@ -35,7 +35,7 @@ let fakeAccount: any;
 let stubConnectedUserService: any;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getTransactionList'>>;
 let levelUpSpy: jasmine.SpyObj<Pick<LevelUpService, 'celebrateIfLevelUp'>>;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordInBackground'>>;
 
 describe('PendingPaymentsService', () => {
   let service: PendingPaymentsService;
@@ -60,7 +60,7 @@ describe('PendingPaymentsService', () => {
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['getTransactionList']);
     serverDBSpy.getTransactionList.and.returnValue(of([]));
     levelUpSpy = jasmine.createSpyObj('LevelUpService', ['celebrateIfLevelUp']);
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
+    backupSpy = jasmine.createSpyObj('BackupService', ['recordInBackground']);
 
     TestBed.configureTestingModule({
       providers: [
@@ -107,7 +107,7 @@ describe('PendingPaymentsService', () => {
 
     service.cash(hash);
 
-    expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+    expect(backupSpy.recordInBackground).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
   });
 
   it('should not cash anything when the session is read-only', () => {
@@ -119,7 +119,7 @@ describe('PendingPaymentsService', () => {
     service.cash(hash);
 
     expect(fakeBlockchain.receivePay).not.toHaveBeenCalled();
-    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+    expect(backupSpy.recordInBackground).not.toHaveBeenCalled();
   });
 
   it('should ask LevelUpService to celebrate using the level captured before and after receiving', () => {

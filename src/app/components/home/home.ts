@@ -88,7 +88,7 @@ export class Home {
     if (transactions.length === 0) {
       return
     }
-    this.backupService.recordAutomatic(this.user, sk)
+    this.backupService.recordInBackground(this.user, sk)
     this.dialog.open(DailyMoneyDialog, { data: this.dailyMoneyData(transactions) })
       .afterClosed()
       .subscribe(() => this.levelUp.celebrateIfLevelUp(oldLevel, this.user.blockchain.getLevel()))

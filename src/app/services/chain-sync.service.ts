@@ -189,7 +189,7 @@ export class ChainSyncService {
     }
     try {
       await firstValueFrom(
-        this.backup.saveNow(account, secretKey).pipe(timeout(SERVER_RECEPTION_TIMEOUT_MS)),
+        this.backup.pushToServer(account, secretKey).pipe(timeout(SERVER_RECEPTION_TIMEOUT_MS)),
       );
     } catch (error) {
       console.error(error);

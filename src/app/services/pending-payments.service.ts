@@ -63,7 +63,7 @@ export class PendingPaymentsService {
       user.blockchain.receivePay(tx)
     }
 
-    this.backupService.recordAutomatic(user, this.userService.getSecretKey())
+    this.backupService.recordInBackground(user, this.userService.getSecretKey())
 
     this.tx_list = this.tx_list.filter((t: any) => t.signature !== hash)
     this.dataSource = this.dataSource.filter((row: any) => row.hash !== hash)

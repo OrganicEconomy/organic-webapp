@@ -19,7 +19,7 @@ let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let pendingSpy: jasmine.SpyObj<Pick<PendingPaymentsService, 'refresh' | 'cash'>> & { dataSource: any[] };
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordInBackground'>>;
 let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getValidationList'>>;
 let dialogSpy: jasmine.SpyObj<Pick<MatDialog, 'open'>>;
 let dailyDialogClosed: Subject<void>;
@@ -55,7 +55,7 @@ describe('Home', () => {
     };
     pendingSpy = jasmine.createSpyObj('PendingPaymentsService', ['refresh', 'cash']);
     pendingSpy.dataSource = [];
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic']);
+    backupSpy = jasmine.createSpyObj('BackupService', ['recordInBackground']);
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getValidationList']);
     serverSpy.getValidationList.and.returnValue(of([]));
     dailyDialogClosed = new Subject<void>();
@@ -98,7 +98,7 @@ describe('Home', () => {
 
     createComponent();
 
-    expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-decrypted-sk');
+    expect(backupSpy.recordInBackground).toHaveBeenCalledWith(fakeAccount, 'the-real-decrypted-sk');
   });
 
   it('should open the daily money dialog with the units created today and the expired units cashed', () => {
@@ -137,7 +137,7 @@ describe('Home', () => {
 
     createComponent();
 
-    expect(backupSpy.recordAutomatic).not.toHaveBeenCalled();
+    expect(backupSpy.recordInBackground).not.toHaveBeenCalled();
   });
 
   it('should not even attempt automatic money creation when the session is read-only', () => {

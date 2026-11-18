@@ -24,7 +24,7 @@ let fakeBlockchain: any;
 let fakeAccount: any;
 let stubConnectedUserService: any;
 let serverDBSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'verifyTransaction'>>;
-let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordAutomatic' | 'applyAndRecord'>>;
+let backupSpy: jasmine.SpyObj<Pick<BackupService, 'recordInBackground' | 'applyAndRecord'>>;
 
 describe('ReceiveOffline', () => {
   let component: ReceiveOffline;
@@ -48,7 +48,7 @@ describe('ReceiveOffline', () => {
     };
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['verifyTransaction']);
     serverDBSpy.verifyTransaction.and.returnValue(of({ status: 'pending' }));
-    backupSpy = jasmine.createSpyObj('BackupService', ['recordAutomatic', 'applyAndRecord']);
+    backupSpy = jasmine.createSpyObj('BackupService', ['recordInBackground', 'applyAndRecord']);
     backupSpy.applyAndRecord.and.callFake(async (_account, _sk, change) => change());
 
     TestBed.configureTestingModule({
@@ -162,7 +162,7 @@ describe('ReceiveOffline', () => {
     component.dismiss('deadbeef');
 
     expect(fakeAccount.pendingOfflineTx.length).toBe(0);
-    expect(backupSpy.recordAutomatic).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
+    expect(backupSpy.recordInBackground).toHaveBeenCalledWith(fakeAccount, 'the-real-sk');
   });
 
   it('should not re-verify an entry already flagged invalid', () => {

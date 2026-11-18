@@ -130,6 +130,6 @@ export class ReceiveOffline {
   private removeFromPending(hash: string) {
     this.user.pendingOfflineTx = this.user.pendingOfflineTx.filter((e: any) => e.tx.h !== hash)
     this.statuses.delete(hash)
-    this.backupService.recordAutomatic(this.user, this.userService.getSecretKey())
+    this.backupService.recordInBackground(this.user, this.userService.getSecretKey())
   }
 }
