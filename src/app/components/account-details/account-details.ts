@@ -4,7 +4,6 @@ import { Router, RouterLink } from '@angular/router';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { LocalDatabaseService } from '../../services/local-database.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
-import { BackupService } from '../../services/backup.service';
 import { encodeContactQr } from 'organic-protocol';
 import type { InfoResponse } from 'organic-protocol';
 import { encryptSecretKey, decryptSecretKey } from '../../services/secret-key-crypto.util';
@@ -38,7 +37,6 @@ export class AccountDetails {
   userService = inject(ConnectedUserService)
   localDB = inject(LocalDatabaseService)
   serverDB = inject(ServerConnexionService)
-  backupService = inject(BackupService)
   private _snackBar = inject(MatSnackBar)
 
   user: any
@@ -84,20 +82,6 @@ export class AccountDetails {
     } catch {
       this.displayMessage("Impossible de copier le lien.")
     }
-  }
-
-  saveNow(): void {
-    const sk = this.userService.getSecretKey()
-    this.backupService.saveNow(this.user, sk).subscribe({
-      next: () => {
-        this.lastBackupAt = this.user.lastBackupAt
-        this.displayMessage("Sauvegardé.")
-      },
-      error: (err: any) => {
-        console.log(err)
-        this.displayMessage("Échec de la sauvegarde — réessayez plus tard.")
-      },
-    })
   }
 
   private async keepNewKeyOnThisDevice(newEncryptedKey: string): Promise<void> {

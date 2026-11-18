@@ -32,9 +32,6 @@
 
 
     <mat-card-content>
-        <button mat-stroked-button (click)="saveNow()" [disabled]="userService.isReadOnlySession()">
-            <i class="bi bi-cloud-upload"></i> Sauvegarder maintenant
-        </button>
         <p class="last-backup">
             @if (lastBackupAt) {
             Dernière sauvegarde : {{ lastBackupAt | date:'dd/MM/yyyy HH:mm' }}
