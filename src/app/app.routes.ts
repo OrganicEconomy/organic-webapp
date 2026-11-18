@@ -36,10 +36,6 @@ export const routes: Routes = [
     { path: "signup", component: SignupPage },
     { path: "restore-account", component: RestoreAccount },
     { path: "pending-validation", component: PendingValidation },
-    // Every other screen shares the bottom-nav shell (Phase-1.md §7) — none of
-    // these read route params or render their own back button, and all
-    // in-app navigation to them uses absolute paths, so nesting them here
-    // doesn't break anything reaching them.
     {
         path: "", component: MainLayout, children: [
             { path: "home", component: Home },

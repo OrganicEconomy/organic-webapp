@@ -10,6 +10,8 @@ import { ConnectedUserService, ReadOnlyReason } from '../../services/connected-u
 @Component({ template: '' })
 class SomePage {}
 
+const PAYMENT_PAGES = ['pay', 'pay-offline', 'receive-offline', 'cashpapers', 'printpapers', 'transactions'];
+
 describe('MainLayout', () => {
   let fixture: ComponentFixture<MainLayout>;
   let readOnlyReason: ReadOnlyReason | null;
@@ -24,8 +26,7 @@ describe('MainLayout', () => {
       imports: [MainLayout],
       providers: [
         provideRouter([
-          { path: 'pay', component: SomePage },
-          { path: 'transactions', component: SomePage },
+          ...PAYMENT_PAGES.map((path) => ({ path, component: SomePage })),
           { path: 'contacts', component: SomePage },
         ]),
         { provide: ConnectedUserService, useValue: { readOnlyReason: () => readOnlyReason, useThisTab: takeTheAccountBack } },
@@ -79,6 +80,22 @@ describe('MainLayout', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('nav.bottom-nav a[href="/pay"]').classList).not.toContain('active');
+    });
+  });
+
+  describe('isInThePaySection', () => {
+    PAYMENT_PAGES.forEach((page) => {
+      it(`should answer yes on /${page}, a page of the payments`, async () => {
+        await TestBed.inject(Router).navigateByUrl(`/${page}`);
+
+        expect(fixture.componentInstance.isInThePaySection()).toBeTrue();
+      });
+    });
+
+    it('should answer no on a page of another tab', async () => {
+      await TestBed.inject(Router).navigateByUrl('/contacts');
+
+      expect(fixture.componentInstance.isInThePaySection()).toBeFalse();
     });
   });
 

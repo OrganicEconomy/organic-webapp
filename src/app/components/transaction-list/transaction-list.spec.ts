@@ -44,6 +44,10 @@ describe('TransactionList', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should read the source contact from tx.signer, not the nonexistent tx.source', () => {
+    expect(component.dataSource[0].parties?.source.label).toBe('Alice');
+  });
+
   describe('template', () => {
     it('should lead back to the payments', () => {
       const backLink = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
@@ -51,9 +55,5 @@ describe('TransactionList', () => {
 
       expect(backLink?.getAttribute('href')).toBe('/pay');
     });
-  });
-
-  it('should read the source contact from tx.signer, not the nonexistent tx.source', () => {
-    expect(component.dataSource[0].parties?.source.label).toBe('Alice');
   });
 });
