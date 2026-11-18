@@ -37,7 +37,6 @@ describe('AccountDetails', () => {
     };
     stubConnectedUserService = {
       getConnectedUser: () => fakeAccount,
-      getSecretKey: () => REAL_SK_HEX,
       isReadOnlySession: () => false,
       readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
     };

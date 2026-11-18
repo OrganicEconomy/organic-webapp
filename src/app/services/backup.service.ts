@@ -129,8 +129,7 @@ export class BackupService {
 
   // A single, un-subscribed-to-twice pipe: side effects ride along via tap()
   // rather than an internal subscribe(), so callers that subscribe to the
-  // returned Observable (pay.ts, the sync with the server) trigger exactly
-  // one round of HTTP requests, not two. Blocks are sent one PUT at a time,
+  // returned Observable trigger exactly one round of HTTP requests, not two. Blocks are sent one PUT at a time,
   // in order (concatMap) — sending two at once would race on the server's
   // "does this chain onto what I have" check.
   private pushToServer(user: LoadedAccount, sk: string): Observable<unknown> {
