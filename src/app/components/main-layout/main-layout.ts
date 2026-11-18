@@ -1,18 +1,13 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive, RouterOutlet, isActive } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { PageReopenerService } from '../../services/page-reopener.service';
 
-/**
- * Shell for the four permanent tabs (Accueil · Paiement · Contacts · Mon
- * compte — renamed from Phase-1.md §7's original "Réglages", now a merged
- * identity+settings hub). Secondary screens reached from within a tab
- * (add-contact, pay-offline, print-papers…) open on top of this, outside the
- * child routes below, so they get a back arrow instead of the bar.
- */
+const PAY_SECTION = ['/pay', '/pay-offline', '/receive-offline', '/cashpapers', '/printpapers', '/transactions'];
+
 @Component({
   selector: 'app-main-layout',
   imports: [RouterOutlet, RouterLink, RouterLinkActive, MatButtonModule, MatIconModule],
@@ -23,6 +18,14 @@ export class MainLayout {
   private userService = inject(ConnectedUserService);
   private pageReopener = inject(PageReopenerService);
   private snackBar = inject(MatSnackBar);
+  private router = inject(Router);
+  private payPagesShown = PAY_SECTION.map((page) =>
+    isActive(page, this.router, { paths: 'exact', queryParams: 'ignored' }),
+  );
+
+  isInThePaySection(): boolean {
+    return this.payPagesShown.some((isShown) => isShown());
+  }
 
   isInUseInAnotherTab(): boolean {
     return this.userService.readOnlyReason() === 'other-tab';

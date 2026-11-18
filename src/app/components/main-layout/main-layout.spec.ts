@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
@@ -5,6 +6,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { MainLayout } from './main-layout';
 import { ConnectedUserService, ReadOnlyReason } from '../../services/connected-user.service';
+
+@Component({ template: '' })
+class SomePage {}
 
 describe('MainLayout', () => {
   let fixture: ComponentFixture<MainLayout>;
@@ -19,7 +23,11 @@ describe('MainLayout', () => {
     await TestBed.configureTestingModule({
       imports: [MainLayout],
       providers: [
-        provideRouter([]),
+        provideRouter([
+          { path: 'pay', component: SomePage },
+          { path: 'transactions', component: SomePage },
+          { path: 'contacts', component: SomePage },
+        ]),
         { provide: ConnectedUserService, useValue: { readOnlyReason: () => readOnlyReason, useThisTab: takeTheAccountBack } },
         { provide: MatSnackBar, useValue: snackBarSpy },
       ],
@@ -57,6 +65,20 @@ describe('MainLayout', () => {
 
     it('should show no such banner while this tab holds the account', () => {
       expect(otherTabBanner()).toBeNull();
+    });
+
+    it('should keep the Pay tab active on a page reached from the payments, such as the history', async () => {
+      await TestBed.inject(Router).navigateByUrl('/transactions');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('nav.bottom-nav a[href="/pay"]').classList).toContain('active');
+    });
+
+    it('should leave the Pay tab inactive on a page of another tab', async () => {
+      await TestBed.inject(Router).navigateByUrl('/contacts');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('nav.bottom-nav a[href="/pay"]').classList).not.toContain('active');
     });
   });
 
