@@ -80,3 +80,8 @@ export function makeDefaultAccount(publickey: string): Account {
     corePk: null,
   }
 }
+
+export function markAsBackedUp(account: Account): void {
+  account.isuptodate = true
+  account.lastBackupAt = new Date().toISOString()
+}

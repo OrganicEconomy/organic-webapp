@@ -14,7 +14,7 @@ import {
 import { BackupService } from './backup.service';
 import { ConnectedUserService } from './connected-user.service';
 import { isDeviceRevoked } from './server-error.util';
-import type { LoadedAccount } from '../models/account';
+import { markAsBackedUp, type LoadedAccount } from '../models/account';
 
 const SERVER_ANSWER_TIMEOUT_MS = 5_000;
 const SERVER_RECEPTION_TIMEOUT_MS = 10_000;
@@ -144,7 +144,7 @@ export class ChainSyncService {
     account.blockchain = serverChain;
     account.status = serverCopy.status;
     account.lastSavedBlockSignature = this.newestSignedBlockSignature(account);
-    account.isuptodate = true;
+    markAsBackedUp(account);
     return this.isStoredOnThisDevice(account);
   }
 
@@ -208,9 +208,21 @@ export class ChainSyncService {
     }
   }
 
+  private confirmTheBackup(account: LoadedAccount): void {
+    if (account.isuptodate) {
+      return;
+    }
+    markAsBackedUp(account);
+    this.localDB.saveUserInBackground(account);
+  }
+
   async syncWithServer(account: LoadedAccount, secretKey: string): Promise<void> {
     const serverCopy = await this.fetchTheServerCopy(account, secretKey);
-    if (serverCopy === null || isTheSameAccountState(account, serverCopy)) {
+    if (serverCopy === null) {
+      return;
+    }
+    if (isTheSameAccountState(account, serverCopy)) {
+      this.confirmTheBackup(account);
       return;
     }
     const deviceChain = account.blockchain.export();

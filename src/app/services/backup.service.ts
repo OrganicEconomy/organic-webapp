@@ -4,7 +4,7 @@ import { LocalDatabaseService } from './local-database.service';
 import { ServerConnexionService } from './server-connection.service';
 import { ConnectedUserService } from './connected-user.service';
 import { isDeviceRevoked } from './server-error.util';
-import type { LoadedAccount, PendingOfflineTx } from '../models/account';
+import { markAsBackedUp, type LoadedAccount, type PendingOfflineTx } from '../models/account';
 import type { TxWire } from 'organic-protocol';
 import { CitizenBlockchain } from 'organic-money/src/index.js';
 
@@ -145,8 +145,7 @@ export class BackupService {
       last(),
       tap({
         next: () => {
-          user.lastBackupAt = new Date().toISOString()
-          user.isuptodate = true
+          markAsBackedUp(user)
           this.localDB.saveUserInBackground(user)
         },
         error: (err: any) => {

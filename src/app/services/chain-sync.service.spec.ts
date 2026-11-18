@@ -55,7 +55,7 @@ function chainWithAnExtraCreation(account: any): any[] {
 describe('ChainSyncService', () => {
   let service: ChainSyncService;
   let serverSpy: jasmine.SpyObj<Pick<ServerConnexionService, 'getMyValidation'>>;
-  let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser'>>;
+  let localDBSpy: jasmine.SpyObj<Pick<LocalDatabaseService, 'saveUser' | 'saveUserInBackground'>>;
   let backupSpy: jasmine.SpyObj<Pick<BackupService, 'pushToServer'>>;
   let snackBarSpy: jasmine.SpyObj<Pick<MatSnackBar, 'open'>>;
   let userServiceStub: {
@@ -75,7 +75,7 @@ describe('ChainSyncService', () => {
 
   beforeEach(() => {
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['getMyValidation']);
-    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
+    localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveUserInBackground']);
     localDBSpy.saveUser.and.callFake(async (account) => account);
     backupSpy = jasmine.createSpyObj('BackupService', ['pushToServer']);
     backupSpy.pushToServer.and.returnValue(of({}));
@@ -108,11 +108,25 @@ describe('ChainSyncService', () => {
   describe('syncWithServer', () => {
     it('should change nothing when the device and the server hold the same chain', async () => {
       const { account, secretKey } = accountWithMoney();
+      account.isuptodate = true;
       serverHolds(account.blockchain.export());
 
       await service.syncWithServer(account, secretKey);
 
       expect(localDBSpy.saveUser).not.toHaveBeenCalled();
+      expect(backupSpy.pushToServer).not.toHaveBeenCalled();
+    });
+
+    it('should note as sent, and store, a chain the server already holds although the device did not know it', async () => {
+      const { account, secretKey } = accountWithMoney();
+      account.isuptodate = false;
+      serverHolds(account.blockchain.export());
+
+      await service.syncWithServer(account, secretKey);
+
+      expect(account.isuptodate).toBeTrue();
+      expect(account.lastBackupAt).toBeDefined();
+      expect(localDBSpy.saveUserInBackground).toHaveBeenCalledWith(account);
       expect(backupSpy.pushToServer).not.toHaveBeenCalled();
     });
 
@@ -127,6 +141,16 @@ describe('ChainSyncService', () => {
       expect(account.blockchain.export()).toEqual(serverChain);
       expect(account.contacts).toEqual([{ name: 'Zoé', pk: 'pk-zoe', url: '', type: 'citizen' }]);
       expect(localDBSpy.saveUser).toHaveBeenCalledWith(account);
+    });
+
+    it('should note as the last backup the moment it takes the chain of the server', async () => {
+      const { account, secretKey } = accountWithMoney();
+      account.lastBackupAt = null;
+      serverHolds(chainAfterAPayment(account, secretKey));
+
+      await service.syncWithServer(account, secretKey);
+
+      expect(account.lastBackupAt).not.toBeNull();
     });
 
     it('should take the status of the server with its chain', async () => {

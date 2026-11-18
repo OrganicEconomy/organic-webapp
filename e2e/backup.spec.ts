@@ -16,14 +16,18 @@ async function payByQr(page: Page, contactName: string): Promise<void> {
   await expect(page.getByText('Faites scanner ce code')).toBeVisible();
 }
 
+async function signUpWithAContact(page: Page, name: string): Promise<void> {
+  const guardian = await ensureCoreGuardian();
+  await signUpApprovedCitizen(page, name);
+  await addContact(page, 'Gardien', guardian.publickey);
+  await expect(page).toHaveURL(/\/contacts$/);
+}
+
 test.describe('backup', () => {
   test('should say a payment made offline is not sent yet, then send it once back online', async ({
     page,
   }) => {
-    const guardian = await ensureCoreGuardian();
-    await signUpApprovedCitizen(page, 'Inès Moreau');
-    await addContact(page, 'Gardien', guardian.publickey);
-    await expect(page).toHaveURL(/\/contacts$/);
+    await signUpWithAContact(page, 'Inès Moreau');
 
     await page.context().setOffline(true);
     await payByQr(page, 'Gardien');
@@ -34,5 +38,20 @@ test.describe('backup', () => {
 
     await expect(page.getByText(NOT_SENT_YET)).toBeHidden();
     await expect(page.getByText(/Dernière sauvegarde/)).toBeVisible();
+  });
+
+  test('should send on a reload what the server could not receive', async ({ page }) => {
+    await signUpWithAContact(page, 'Malik Garnier');
+
+    await page.route('**/users/save', (route) => route.abort());
+    await payByQr(page, 'Gardien');
+    await page.getByRole('link', { name: 'Mon compte' }).click();
+    await expect(page.getByText(NOT_SENT_YET)).toBeVisible();
+
+    await page.unroute('**/users/save');
+    await page.reload();
+
+    await expect(page.getByText(/Dernière sauvegarde/)).toBeVisible();
+    await expect(page.getByText(NOT_SENT_YET)).toBeHidden();
   });
 });
