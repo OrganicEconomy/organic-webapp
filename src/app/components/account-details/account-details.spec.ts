@@ -189,7 +189,7 @@ describe('AccountDetails', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.textContent).toContain(
-        "Des opérations faites ici n'ont pas encore été envoyées au serveur.",
+        "Des opérations n'ont pas encore été envoyées au serveur. Elles partiront dès que le réseau reviendra.",
       );
     });
 

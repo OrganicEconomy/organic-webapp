@@ -81,6 +81,10 @@ export function makeDefaultAccount(publickey: string): Account {
   }
 }
 
+export function isBackedUp(account: Account): boolean {
+  return account.isuptodate
+}
+
 export function markAsNotBackedUpYet(account: Account): void {
   account.isuptodate = false
 }

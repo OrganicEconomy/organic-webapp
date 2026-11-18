@@ -14,7 +14,7 @@ import {
 import { BackupService } from './backup.service';
 import { ConnectedUserService } from './connected-user.service';
 import { isDeviceRevoked } from './server-error.util';
-import { markAsBackedUp, type LoadedAccount } from '../models/account';
+import { isBackedUp, markAsBackedUp, type LoadedAccount } from '../models/account';
 
 const SERVER_ANSWER_TIMEOUT_MS = 5_000;
 const SERVER_RECEPTION_TIMEOUT_MS = 10_000;
@@ -210,7 +210,7 @@ export class ChainSyncService {
   }
 
   private confirmTheBackup(account: LoadedAccount): void {
-    if (account.isuptodate) {
+    if (isBackedUp(account)) {
       return;
     }
     markAsBackedUp(account);

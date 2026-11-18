@@ -325,7 +325,7 @@ describe('BackupService', () => {
       expect(account.sentOfflineTx).toEqual([]);
     });
 
-    it('should say again that everything was sent when this device cannot store the change', async () => {
+    it('should keep the previous sending state when this device cannot store the change', async () => {
       localDBSpy.saveUser.and.rejectWith(new LocalSaveError('device full'));
       const { account, sk } = makeAccountWithMoney();
       account.isuptodate = true;
