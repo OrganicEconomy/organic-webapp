@@ -10,10 +10,14 @@
             <mat-list-item role="listitem">
                 <p>Nom & prénom : {{ name }}</p>
             </mat-list-item>
-            <mat-list-item role="listitem">
-                <p>Clé : {{ publickey }}</p>
-            </mat-list-item>
         </mat-list>
+        <div class="my-key">
+            <span>Clé :</span>
+            <span class="my-key-value">{{ publickey }}</span>
+            <button mat-stroked-button type="button" class="copy-my-key" (click)="copyMyKey()">
+                <i class="bi bi-copy"></i> Copier ma clé
+            </button>
+        </div>
     </mat-card-content>
 
     <qrcode [qrdata]="myContactQr" [width]="256" [errorCorrectionLevel]="'M'"></qrcode>

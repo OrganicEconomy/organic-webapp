@@ -196,7 +196,33 @@ describe('AccountDetails', () => {
     it('should not offer to save by hand, since every operation is pushed and a reload syncs', () => {
       expect(fixture.nativeElement.textContent).not.toContain('Sauvegarder maintenant');
     });
+
+    it('should show my whole key, without hiding any part of it', () => {
+      const wholeKey = '02' + 'c4'.repeat(32);
+      component.publickey = wholeKey;
+      fixture.detectChanges();
+
+      const keyElement = innermostElementShowing(wholeKey);
+
+      expect(keyElement).toBeDefined();
+      expect(keyElement!.scrollWidth).toBeLessThanOrEqual(keyElement!.clientWidth);
+    });
+
+    it('should copy my key from the « Copier ma clé » button', () => {
+      const copyMyKey = spyOn(component, 'copyMyKey').and.resolveTo();
+      const copyButton = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
+        .find((button) => button.textContent?.includes('Copier ma clé'));
+
+      copyButton?.click();
+
+      expect(copyMyKey).toHaveBeenCalled();
+    });
   });
+
+  function innermostElementShowing(text: string): HTMLElement | undefined {
+    const elements = Array.from(fixture.nativeElement.querySelectorAll('*') as NodeListOf<HTMLElement>);
+    return elements.reverse().find((element) => element.textContent?.includes(text));
+  }
 
   describe('copyContactLink', () => {
     it('should copy to the clipboard the link that opens the contact form filled with my card', async () => {
@@ -207,6 +233,30 @@ describe('AccountDetails', () => {
       expect(writeText).toHaveBeenCalledWith(
         contactLink(document.baseURI, { pk: 'alice-pk', url: 'https://trifouillis.fr', name: 'Alice' }),
       );
+    });
+  });
+
+  describe('copyMyKey', () => {
+    it('should copy my whole public key to the clipboard, and say so', async () => {
+      const writeText = spyOn(navigator.clipboard, 'writeText').and.resolveTo();
+      spyOn(component, 'displayMessage');
+
+      await component.copyMyKey();
+
+      expect(writeText).toHaveBeenCalledWith('alice-pk');
+      expect(component.displayMessage).toHaveBeenCalledWith('Clé copiée.');
+    });
+
+    it('should say that the key could not be copied, and log why', async () => {
+      const refusal = new Error('clipboard refused');
+      spyOn(navigator.clipboard, 'writeText').and.rejectWith(refusal);
+      spyOn(component, 'displayMessage');
+      const logError = spyOn(console, 'error');
+
+      await component.copyMyKey();
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Impossible de copier la clé.');
+      expect(logError).toHaveBeenCalledWith(refusal);
     });
   });
 });

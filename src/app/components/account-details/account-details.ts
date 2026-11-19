@@ -80,6 +80,17 @@ export class AccountDetails {
     }
   }
 
+  async copyMyKey(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.publickey)
+    } catch (error) {
+      console.error(error)
+      this.displayMessage('Impossible de copier la clé.')
+      return
+    }
+    this.displayMessage('Clé copiée.')
+  }
+
   private async keepNewKeyOnThisDevice(newEncryptedKey: string): Promise<void> {
     try {
       await this.localDB.saveUser({ ...this.user, secretkey: newEncryptedKey })
