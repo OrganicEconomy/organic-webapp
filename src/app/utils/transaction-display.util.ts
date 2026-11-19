@@ -1,4 +1,5 @@
 import { TxType } from 'organic-protocol'
+import { unitIdToDateInt } from 'organic-money/src/crypto.js'
 
 function abbreviatedKey(pk: string): string {
   return "..." + pk.slice(-8)
@@ -62,10 +63,16 @@ export interface Parties {
   target: Party
 }
 
+export interface Engagement {
+  investsPerDay: number
+  days: number
+}
+
 export interface Amounts {
   money: number
   invests: number
   experience: number
+  engagement: Engagement | null
 }
 
 export interface DisplayRow {
@@ -120,14 +127,8 @@ function moneyOf(tx: any, myPublicKey: string): number {
   return 0
 }
 
-function investsOf(tx: any, myPublicKey: string): number {
-  if (tx.type === TxType.CREATE) {
-    return tx.invests.length
-  }
-  if (tx.type === TxType.ENGAGE && isSignedByMe(tx, myPublicKey)) {
-    return -tx.invests.length
-  }
-  return 0
+function investsOf(tx: any): number {
+  return tx.type === TxType.CREATE ? tx.invests.length : 0
 }
 
 const TYPES_BRINGING_EXPERIENCE = [TxType.PAY, TxType.EARN]
@@ -142,11 +143,20 @@ function experienceOf(tx: any, myPublicKey: string): number {
   return 0
 }
 
+function engagementOf(tx: any): Engagement | null {
+  if (tx.type !== TxType.ENGAGE || tx.invests.length === 0) {
+    return null
+  }
+  const days = new Set(tx.invests.map(unitIdToDateInt)).size
+  return { investsPerDay: tx.invests.length / days, days }
+}
+
 function amountsOf(tx: any, myPublicKey: string): Amounts {
   return {
     money: moneyOf(tx, myPublicKey),
-    invests: investsOf(tx, myPublicKey),
+    invests: investsOf(tx),
     experience: experienceOf(tx, myPublicKey),
+    engagement: engagementOf(tx),
   }
 }
 

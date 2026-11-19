@@ -33,61 +33,69 @@ describe('toDisplayRow', () => {
   it('should count the daily creation as money and invests gained', () => {
     const tx = aTransaction({ type: 2, money: [1, 2], invests: [3] });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: 2, invests: 1, experience: 0 });
+    expect(row.amounts).toEqual({ money: 2, invests: 1, experience: 0, engagement: null });
   });
 
   it('should count a payment to someone else as money spent', () => {
     const tx = aTransaction({ type: 3, target: 'alice-pk', money: [1, 2] });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: -2, invests: 0, experience: 0 });
+    expect(row.amounts).toEqual({ money: -2, invests: 0, experience: 0, engagement: null });
   });
 
   it('should count a payment received as experience gained, not as money', () => {
     const tx = aTransaction({ type: 3, signer: 'alice-pk', target: 'my-pk', money: [1, 2, 3] });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 3 });
+    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 3, engagement: null });
   });
 
-  it('should count an engagement as the invests it engages', () => {
-    const tx = aTransaction({ type: 4, target: 'eco-pk', invests: [1, 2, 3, 4] });
+  it('should count no invests spent for an engagement, which only holds back the creations to come', () => {
+    const twoPerDayForTwoDays = [202601159000, 202601159001, 202601169000, 202601169001];
+    const tx = aTransaction({ type: 4, target: 'eco-pk', invests: twoPerDayForTwoDays });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: 0, invests: -4, experience: 0 });
+    expect(row.amounts.invests).toBe(0);
+  });
+
+  it('should tell how many invests an engagement holds back per day, and for how many days', () => {
+    const twoPerDayForTwoDays = [202601159000, 202601159001, 202601169000, 202601169001];
+    const tx = aTransaction({ type: 4, target: 'eco-pk', invests: twoPerDayForTwoDays });
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts.engagement).toEqual({ investsPerDay: 2, days: 2 });
   });
 
   it('should count no invests of mine for a payer order, which spends those of the ecosystem', () => {
     const tx = aTransaction({ type: 12, target: 'bob-pk', invests: [1, 2] });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 0 });
+    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 0, engagement: null });
   });
 
   it('should count printed bills as money spent', () => {
     const tx = aTransaction({ type: 5, target: 'core-pk', money: [1, 2] });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: -2, invests: 0, experience: 0 });
+    expect(row.amounts).toEqual({ money: -2, invests: 0, experience: 0, engagement: null });
   });
 
   it('should count a cashed bill as experience gained', () => {
     const tx = aTransaction({ type: 5, signer: 'alice-pk', target: 'core-pk', money: [1, 2, 3] });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 3 });
+    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 3, engagement: null });
   });
 
   it('should count an earning from an ecosystem as experience gained', () => {
     const tx = aTransaction({ type: 13, signer: 'eco-pk', target: 'my-pk', money: [1, 2] });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 2 });
+    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 2, engagement: null });
   });
 
   it('should count a payment to oneself as money spent and experience gained', () => {
     const tx = aTransaction({ type: 3, target: 'my-pk', money: [1, 2] });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: -2, invests: 0, experience: 2 });
+    expect(row.amounts).toEqual({ money: -2, invests: 0, experience: 2, engagement: null });
   });
 
   it('should count no amount for a role given in an ecosystem', () => {
     const tx = aTransaction({ type: 7, target: 'bob-pk' });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 0 });
+    expect(row.amounts).toEqual({ money: 0, invests: 0, experience: 0, engagement: null });
   });
 
   it('should tell a printed bill from a cashed one', () => {
