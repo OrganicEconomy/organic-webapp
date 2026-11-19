@@ -233,6 +233,9 @@ describe('PendingValidation', () => {
 
   describe('template', () => {
     it('should log out through the logout page, which forgets the session', () => {
+      createComponent();
+      expectAuthenticated(httpMock, isMyValidationRequest).flush({ status: 'pending-validation' });
+
       const logoutLink = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
         .find((link) => link.textContent?.includes('Déconnexion'));
 
