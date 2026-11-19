@@ -25,6 +25,22 @@ async function openTheHistory(page: Page): Promise<void> {
   await page.getByRole('link', { name: "Voir tout l'historique" }).click();
 }
 
+async function searchTheHistoryFor(page: Page, words: string): Promise<void> {
+  await page.getByLabel('Rechercher').fill(words);
+}
+
+async function chooseTheType(page: Page, type: string): Promise<void> {
+  await page.getByRole('combobox', { name: 'Type' }).click();
+  await page.getByRole('option', { name: type }).click();
+}
+
+async function expectOnlyTheCard(page: Page, text: string): Promise<void> {
+  await expect(page.locator('.transaction-card')).toHaveCount(1);
+  await expect(page.locator('.transaction-card')).toContainText(text);
+}
+
+const BIRTH_MONTH = 'février 1990';
+
 test.describe('history', () => {
   test('should show the account opening and the daily creation with neither sender nor receiver', async ({
     page,
@@ -54,6 +70,26 @@ test.describe('history', () => {
     await expect(cashing).toContainText('+1 XP');
     const opening = page.locator('.transaction-card', { hasText: 'Ouverture du compte' });
     await expect(opening.locator('app-transaction-amounts')).toHaveText('');
+  });
+
+  test('should group the rows by month', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Yanis Perrin');
+
+    await openTheHistory(page);
+
+    await expect(page.getByRole('heading', { name: BIRTH_MONTH })).toBeVisible();
+  });
+
+  test('should find the rows by words without accents, or by type', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Inès Perrin');
+    await openTheHistory(page);
+
+    await searchTheHistoryFor(page, 'creation');
+    await expectOnlyTheCard(page, 'Création du jour');
+
+    await searchTheHistoryFor(page, '');
+    await chooseTheType(page, 'Ouverture du compte');
+    await expectOnlyTheCard(page, 'Ouverture du compte');
   });
 
   test('should keep the title and the back button in sight while the rows scroll', async ({ page }) => {

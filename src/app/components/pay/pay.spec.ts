@@ -562,6 +562,19 @@ describe('Pay', () => {
       expect(component.recentTransactions.length).toBe(5);
     });
 
+    it('should show the most recent transactions, not an engagement carried over with its old date', () => {
+      fakeBlockchain.getHistory = () => [
+        { date: new Date(Date.UTC(2026, 10, 2)), type: 3, signer: MY_PK, target: MY_PK, money: [1], invests: [], signature: 'november' },
+        { date: new Date(Date.UTC(2026, 8, 25)), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: [1], signature: 'engagement' },
+        { date: new Date(Date.UTC(2026, 9, 20)), type: 3, signer: MY_PK, target: MY_PK, money: [1], invests: [], signature: 'october' },
+      ];
+
+      fixture = TestBed.createComponent(Pay);
+      component = fixture.componentInstance;
+
+      expect(component.recentTransactions.map((row) => row.date)).toEqual(['02/11/2026', '20/10/2026', '25/09/2026']);
+    });
+
     it('should show only once an engagement that each new block carries over', () => {
       const engagement = { date: new Date(2026, 0, 10), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: [1], signature: 'engagement-signature' };
       fakeBlockchain.getHistory = () => [engagement, { ...engagement }];

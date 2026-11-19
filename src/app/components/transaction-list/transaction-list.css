@@ -24,6 +24,24 @@ mat-card-content {
     padding: 16px !important;
 }
 
+.history-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.history-filters mat-form-field {
+    flex: 1 1 160px;
+}
+
+.month-heading {
+    margin: 8px 0 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    color: var(--mat-sys-on-surface-variant);
+}
+
 .history-rows {
     overflow-y: auto;
 }
