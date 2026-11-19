@@ -12,7 +12,7 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { BackupService } from '../../services/backup.service';
 import { LocalSaveError } from '../../services/local-database.service';
-import { getContactName } from '../../utils/transaction-display.util';
+import { displayNameOf } from '../../utils/transaction-display.util';
 
 @Component({
   selector: 'app-receive-offline',
@@ -53,7 +53,7 @@ export class ReceiveOffline {
         hash: tx.signature,
         date: tx.date.toLocaleDateString('fr-FR'),
         amount: tx.money.length,
-        source: getContactName(tx.signer, this.user.blockchain.getMyPublicKey(), this.user.contacts),
+        source: displayNameOf(tx.signer, this.user.blockchain.getMyPublicKey(), this.user.contacts),
         status: this.statuses.get(tx.signature) ?? 'pending',
         entry,
       }

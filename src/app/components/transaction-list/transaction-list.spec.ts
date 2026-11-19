@@ -45,7 +45,19 @@ describe('TransactionList', () => {
   });
 
   it('should read the source contact from tx.signer, not the nonexistent tx.source', () => {
-    expect(component.dataSource[0].source).toBe('Alice');
+    expect(component.dataSource[0].parties?.source.label).toBe('Alice');
+  });
+
+  it('should name an ecosystem of mine even when it is not among the contacts', () => {
+    const ecosystemKey = '02' + 'cd'.repeat(32);
+    fakeAccount.myEcosystems = [{ publickey: ecosystemKey, name: 'La Boulange', role: 'actor' }];
+    fakeAccount.blockchain.getHistory = () => [
+      { date: new Date(2026, 0, 16), type: 4, signer: MY_PK, target: ecosystemKey, money: [], invests: [1] },
+    ];
+
+    const list = TestBed.createComponent(TransactionList).componentInstance;
+
+    expect(list.dataSource[0].parties?.target.label).toBe('La Boulange');
   });
 
   describe('template', () => {
@@ -54,6 +66,48 @@ describe('TransactionList', () => {
         .find((link) => link.textContent?.includes('Retour'));
 
       expect(backLink?.getAttribute('href')).toBe('/pay');
+    });
+
+    it('should show the whole key of an unknown party once it is touched', () => {
+      const unknownKey = '03' + 'ab'.repeat(32);
+      fakeAccount.blockchain.getHistory = () => [
+        { date: new Date(2026, 0, 16), type: 3, signer: unknownKey, target: MY_PK, money: [1] },
+      ];
+      fixture = TestBed.createComponent(TransactionList);
+      fixture.detectChanges();
+
+      const abbreviatedKey: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .party-key summary');
+      abbreviatedKey.click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.mobile-list .party-key[open]')?.textContent).toContain(unknownKey);
+    });
+
+    it('should show in the desktop table the whole key of an unknown party once it is touched', () => {
+      const unknownKey = '03' + 'ab'.repeat(32);
+      fakeAccount.blockchain.getHistory = () => [
+        { date: new Date(2026, 0, 16), type: 3, signer: unknownKey, target: MY_PK, money: [1] },
+      ];
+      fixture = TestBed.createComponent(TransactionList);
+      fixture.detectChanges();
+
+      const abbreviatedKey: HTMLElement = fixture.nativeElement.querySelector('.desktop-table .party-key summary');
+      abbreviatedKey.click();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.desktop-table .party-key[open]')?.textContent).toContain(unknownKey);
+    });
+
+    it('should leave the desktop sender and receiver cells empty for the daily creation', () => {
+      fakeAccount.blockchain.getHistory = () => [
+        { date: new Date(2026, 0, 16), type: 2, signer: MY_PK, target: '', money: [1] },
+      ];
+      fixture = TestBed.createComponent(TransactionList);
+      fixture.detectChanges();
+
+      const cells = fixture.nativeElement.querySelectorAll('.desktop-table td');
+      expect(cells[2].textContent.trim()).toBe('');
+      expect(cells[3].textContent.trim()).toBe('');
     });
   });
 });

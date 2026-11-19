@@ -1,40 +1,94 @@
-export function getContactName(pk: string, myPublicKey: string, contacts: any[]): string {
-  if (!pk) return "-"
-  if (pk === myPublicKey) return "Moi"
-  const contact: any = contacts.find((c: any) => c.pk === pk)
-  return contact ? contact.name : "..." + pk.slice(-8)
+import { TxType } from 'organic-protocol'
+
+function abbreviatedKey(pk: string): string {
+  return "..." + pk.slice(-8)
 }
 
-export const TX_TYPE_LABELS: Record<string, string> = {
-  "1": "Initialisation",
-  "2": "Création",
-  "3": "Paiement",
-  "4": "Engagement",
-  "5": "Billet",
-  "6": "Assignation Admin",
-  "7": "Assignation Acteur",
-  "8": "Assignation Payeur",
-  "9": "Suppression Admin",
-  "10": "Suppression Acteur",
-  "11": "Suppression Payeur",
-  "12": "Ordre de paiement",
-  "13": "Gain",
+export function displayNameOf(pk: string, myPublicKey: string, contacts: any[]): string {
+  if (!pk) return "-"
+  if (pk === myPublicKey) return "Moi"
+  const contact: any = contacts.find((contact: any) => contact.pk === pk)
+  return contact ? contact.name : abbreviatedKey(pk)
+}
+
+const TX_TYPE_LABELS: Record<number, string> = {
+  [TxType.INIT]: "Ouverture du compte",
+  [TxType.CREATE]: "Création du jour",
+  [TxType.PAY]: "Paiement",
+  [TxType.ENGAGE]: "Engagement",
+  [TxType.PAPER]: "Billet",
+  [TxType.SETADMIN]: "Assignation Admin",
+  [TxType.SETACTOR]: "Assignation Acteur",
+  [TxType.SETPAYER]: "Assignation Payeur",
+  [TxType.UNSETADMIN]: "Suppression Admin",
+  [TxType.UNSETACTOR]: "Suppression Acteur",
+  [TxType.UNSETPAYER]: "Suppression Payeur",
+  [TxType.PAYERORDER]: "Ordre de paiement",
+  [TxType.EARN]: "Gain",
 }
 
 function isCashing(tx: any): boolean {
-  return String(tx.type) === "3" && tx.signer === tx.target
+  return tx.type === TxType.PAY && tx.signer === tx.target
 }
 
 function typeLabel(tx: any): string {
-  return isCashing(tx) ? "Encaissement" : TX_TYPE_LABELS[tx.type] ?? tx.type
+  return isCashing(tx) ? "Encaissement" : TX_TYPE_LABELS[tx.type] ?? String(tx.type)
 }
 
-export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]) {
+export interface Party {
+  label: string
+  fullKey: string | null
+}
+
+export interface Parties {
+  source: Party
+  target: Party
+}
+
+export interface DisplayRow {
+  date: string
+  type: string
+  parties: Parties | null
+  amount: number
+}
+
+function isUnknownKey(pk: string, myPublicKey: string, contacts: any[]): boolean {
+  return !!pk && pk !== myPublicKey && !contacts.some((contact: any) => contact.pk === pk)
+}
+
+function partyOf(pk: string, myPublicKey: string, contacts: any[]): Party {
+  if (isUnknownKey(pk, myPublicKey, contacts)) {
+    return { label: abbreviatedKey(pk), fullKey: pk }
+  }
+  return { label: displayNameOf(pk, myPublicKey, contacts), fullKey: null }
+}
+
+function receiverKeyOf(tx: any, myPublicKey: string): string {
+  return tx.type === TxType.PAPER ? myPublicKey : tx.target
+}
+
+function partiesOf(tx: any, myPublicKey: string, contacts: any[]): Parties {
+  return {
+    source: partyOf(tx.signer, myPublicKey, contacts),
+    target: partyOf(receiverKeyOf(tx, myPublicKey), myPublicKey, contacts),
+  }
+}
+
+const TYPES_WITHOUT_PARTIES = [TxType.INIT, TxType.CREATE]
+
+function isBillPrintedByMe(tx: any, myPublicKey: string): boolean {
+  return tx.type === TxType.PAPER && tx.signer === myPublicKey
+}
+
+function hasParties(tx: any, myPublicKey: string): boolean {
+  return !TYPES_WITHOUT_PARTIES.includes(tx.type) && !isCashing(tx) && !isBillPrintedByMe(tx, myPublicKey)
+}
+
+export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): DisplayRow {
   return {
     date: tx.date.toLocaleDateString("fr-FR"),
     type: typeLabel(tx),
-    source: getContactName(tx.signer, myPublicKey, contacts),
-    target: getContactName(tx.target, myPublicKey, contacts),
+    parties: hasParties(tx, myPublicKey) ? partiesOf(tx, myPublicKey, contacts) : null,
     amount: tx.money.length,
   }
 }

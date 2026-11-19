@@ -1,15 +1,28 @@
 import { Component, inject } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { toDisplayRow } from '../../utils/transaction-display.util';
+import { DisplayRow, toDisplayRow } from '../../utils/transaction-display.util';
+import type { Contact, LoadedAccount } from '../../models/account';
+
+function partiesKnownBy(user: LoadedAccount): Contact[] {
+  const myEcosystems = (user.myEcosystems ?? []).map((ecosystem): Contact => ({
+    name: ecosystem.name,
+    pk: ecosystem.publickey,
+    url: user.serverUrl,
+    type: 'ecosystem',
+  }))
+  return [...user.contacts, ...myEcosystems]
+}
 
 @Component({
   selector: 'app-transaction-list',
   imports: [
+    NgTemplateOutlet,
     RouterLink,
     MatButtonModule,
     MatTableModule,
@@ -24,7 +37,7 @@ export class TransactionList {
 
   user: any
   displayedColumns: string[] = ['date', 'type', 'source', 'target', 'amount']
-  dataSource: any[] = []
+  dataSource: DisplayRow[] = []
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
@@ -33,7 +46,8 @@ export class TransactionList {
       return
     }
 
+    const knownParties = partiesKnownBy(this.user)
     this.dataSource = this.user.blockchain.getHistory()
-      .map((tx: any) => toDisplayRow(tx, this.user.blockchain.getMyPublicKey(), this.user.contacts))
+      .map((tx: any) => toDisplayRow(tx, this.user.blockchain.getMyPublicKey(), knownParties))
   }
 }
