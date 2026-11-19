@@ -89,11 +89,10 @@ describe('toDisplayRow', () => {
     expect(row.parties).toBeNull();
   });
 
-  it('should send a printed bill to its bearer, not to the core it is checked by', () => {
+  it('should show a printed bill with neither sender nor receiver, as nobody knows yet who will cash it', () => {
     const tx = { date: new Date(2026, 0, 15), type: 5, signer: 'my-pk', target: 'core-pk', money: [1] };
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.parties?.source.label).toBe('Moi');
-    expect(row.parties?.target).toEqual({ label: 'Porteur du billet', fullKey: null });
+    expect(row.parties).toBeNull();
   });
 
   it('should show a cashed bill as received from its issuer', () => {
