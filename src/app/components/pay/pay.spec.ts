@@ -550,6 +550,14 @@ describe('Pay', () => {
     expect(payBtn.disabled).toBeTrue();
   });
 
+  it('should leave to the shared banner the reason why the session is read-only', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    fixture = TestBed.createComponent(Pay);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.read-only-notice')).toBeNull();
+  });
+
   describe('Historique card', () => {
     it('should show at most the 5 most recent transactions', () => {
       const tx = (n: number) => ({ date: new Date(2026, 0, n), type: 3, signer: MY_PK, target: MY_PK, money: [1], invests: [], signature: `tx-${n}` });

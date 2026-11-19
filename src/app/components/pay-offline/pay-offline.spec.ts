@@ -196,6 +196,14 @@ describe('PayOffline', () => {
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
   });
 
+  it('should leave to the shared banner the reason why the session is read-only', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    fixture = TestBed.createComponent(PayOffline);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.read-only-notice')).toBeNull();
+  });
+
   it('"revoir" should redisplay a past QR without calling pay() again', () => {
     fakeAccount.sentOfflineTx = [{ v: 1, d: 20260722, t: 3, p: CONTACT_PK, s: MY_PK, m: '', i: '', h: 'cafebabe' }];
     fixture = TestBed.createComponent(PayOffline);

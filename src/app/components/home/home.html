@@ -1,9 +1,3 @@
-@if (userService.readOnlyReason() === 'other-device') {
-<div class="read-only-banner">
-    ⚠ Ce compte est actif sur un autre appareil — lecture seule.
-</div>
-}
-
 <mat-card appearance="outlined" class="identity-card">
     <mat-card-header>
         <mat-card-title>{{ user.name }} (Niveau {{ level }})</mat-card-title>

@@ -51,7 +51,6 @@ describe('Home', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => 'the-real-decrypted-sk',
       isReadOnlySession: () => false,
-      readOnlyReason: () => null,
     };
     pendingSpy = jasmine.createSpyObj('PendingPaymentsService', ['refresh', 'cash']);
     pendingSpy.dataSource = [];
@@ -148,18 +147,8 @@ describe('Home', () => {
     expect(fakeBlockchain.createMoneyAndInvests).not.toHaveBeenCalled();
   });
 
-  it('should show a banner explaining that another device took the account over', () => {
+  it('should leave to the shared banner the reason why the session is read-only', () => {
     stubConnectedUserService.isReadOnlySession = () => true;
-    stubConnectedUserService.readOnlyReason = () => 'other-device';
-
-    createComponent();
-
-    expect(fixture.nativeElement.textContent).toContain('actif sur un autre appareil');
-  });
-
-  it('should leave to the shared banner an account in use in another tab', () => {
-    stubConnectedUserService.isReadOnlySession = () => true;
-    stubConnectedUserService.readOnlyReason = () => 'other-tab';
 
     createComponent();
 

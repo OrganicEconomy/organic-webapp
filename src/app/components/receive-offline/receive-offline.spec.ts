@@ -127,6 +127,14 @@ describe('ReceiveOffline', () => {
     expect(fakeAccount.pendingOfflineTx.length).toBe(0);
   });
 
+  it('should leave to the shared banner the reason why the session is read-only', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    fixture = TestBed.createComponent(ReceiveOffline);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.read-only-notice')).toBeNull();
+  });
+
   it('verifyAll() should call verifyTransaction for each pending entry using its own payer url', () => {
     fakeAccount.pendingOfflineTx = [{ tx: makePayTxWire(), url: PAYER_URL }];
 

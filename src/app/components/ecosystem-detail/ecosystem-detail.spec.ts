@@ -46,7 +46,7 @@ describe('EcosystemDetail', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => SK,
       isReadOnlySession: () => false,
-      readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
+      readOnlyMessage: () => "Compte ouvert dans un autre onglet : celui-ci est en lecture seule.",
     };
 
     fakeBlockchain = {
@@ -417,7 +417,7 @@ describe('EcosystemDetail', () => {
       await component.addToContacts();
 
       expect(localDBSpy.saveUser).not.toHaveBeenCalled();
-      expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
+      expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : celui-ci est en lecture seule.");
     });
 
     it('should flip isContact to true after adding', async () => {

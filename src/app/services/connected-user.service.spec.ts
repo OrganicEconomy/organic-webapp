@@ -338,7 +338,7 @@ describe('ConnectedUserService', () => {
       service.setConnectedUser(makeDefaultAccount('pk-tab-message') as any, 'sk');
       accountsInUseElsewhere.add('pk-tab-message');
 
-      expect(service.readOnlyMessage()).toBe("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
+      expect(service.readOnlyMessage()).toBe("Compte ouvert dans un autre onglet : celui-ci est en lecture seule.");
     });
 
     it('should name the other device when another device holds the account', () => {

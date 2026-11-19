@@ -35,7 +35,7 @@
   color: var(--mat-sys-primary);
 }
 
-.other-tab-banner {
+.read-only-banner {
   display: flex;
   flex-wrap: wrap;
   align-items: center;

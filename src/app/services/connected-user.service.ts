@@ -13,7 +13,7 @@ const READ_ONLY_MESSAGES: Record<ReadOnlyReason, string> = {
     'other-device': 'Ce compte est actif sur un autre appareil — lecture seule.',
     'out-of-sync':
         "Ce téléphone et le serveur ne sont plus d'accord sur des paiements : lecture seule, rien n'a été effacé. Contactez l'administrateur de votre serveur.",
-    'other-tab': "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
+    'other-tab': 'Compte ouvert dans un autre onglet : celui-ci est en lecture seule.',
     'locked': 'Session verrouillée : entrez votre mot de passe pour continuer.',
 }
 

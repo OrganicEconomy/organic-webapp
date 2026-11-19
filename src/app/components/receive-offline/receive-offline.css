@@ -20,12 +20,6 @@ mat-card-content {
     padding: 16px !important;
 }
 
-.read-only-notice {
-    font-size: 0.85rem;
-    color: var(--mat-sys-error);
-    text-align: center;
-}
-
 mat-card-actions {
     display: flex;
     flex-direction: column;

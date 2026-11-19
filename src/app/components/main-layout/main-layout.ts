@@ -3,7 +3,7 @@ import { Router, RouterLink, RouterLinkActive, RouterOutlet, isActive } from '@a
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { ConnectedUserService } from '../../services/connected-user.service';
+import { ConnectedUserService, ReadOnlyReason } from '../../services/connected-user.service';
 import { PageReopenerService } from '../../services/page-reopener.service';
 
 const PAY_SECTION = ['/pay', '/pay-offline', '/receive-offline', '/cashpapers', '/printpapers', '/transactions'];
@@ -25,6 +25,17 @@ export class MainLayout {
 
   isInThePaySection(): boolean {
     return this.payPagesActive.some((isPageActive) => isPageActive());
+  }
+
+  private isExplainedByTheBanner(reason: ReadOnlyReason | null): boolean {
+    return reason !== null && reason !== 'locked';
+  }
+
+  readOnlyBannerMessage(): string | null {
+    if (!this.isExplainedByTheBanner(this.userService.readOnlyReason())) {
+      return null;
+    }
+    return this.userService.readOnlyMessage();
   }
 
   isInUseInAnotherTab(): boolean {
