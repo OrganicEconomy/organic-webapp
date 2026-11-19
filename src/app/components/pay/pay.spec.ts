@@ -598,6 +598,19 @@ describe('Pay', () => {
       expect(row.querySelector('app-transaction-amounts')?.textContent).toContain('−2');
     });
 
+    it('should show what a recent engagement holds back', () => {
+      const oneADayForTwoDays = [202601169000, 202601179000];
+      fakeBlockchain.getHistory = () => [
+        { date: new Date(2026, 0, 16), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: oneADayForTwoDays },
+      ];
+
+      fixture = TestBed.createComponent(Pay);
+      fixture.detectChanges();
+
+      const row: HTMLElement = fixture.nativeElement.querySelector('.history-card .transaction-row');
+      expect(row.querySelector('app-transaction-amounts')?.textContent?.trim()).toBe('1 investissement/jour pendant 2 jours');
+    });
+
     it('should show an empty message when there is no transaction yet', () => {
       expect(fixture.nativeElement.querySelector('.history-card').textContent).toContain('Aucune transaction pour l\'instant.');
     });

@@ -8,7 +8,8 @@ function aRow(fields: Partial<DisplayRow>): DisplayRow {
     label: 'Paiement',
     icon: 'bi-arrow-up-right',
     parties: null,
-    amounts: { money: 0, invests: 0, experience: 0, engagement: null },
+    amounts: { money: 0, invests: 0, experience: 0 },
+    engagement: null,
     ...fields,
   };
 }
@@ -74,7 +75,7 @@ describe('matchesSearch', () => {
   });
 
   it('should find a row by one of its amounts, with or without the sign shown', () => {
-    const paymentOfSeven = aRow({ amounts: { money: -7, invests: 0, experience: 0, engagement: null } });
+    const paymentOfSeven = aRow({ amounts: { money: -7, invests: 0, experience: 0 } });
 
     expect(matchesSearch(paymentOfSeven, '7')).toBeTrue();
     expect(matchesSearch(paymentOfSeven, '−7')).toBeTrue();
@@ -83,7 +84,7 @@ describe('matchesSearch', () => {
 
   it('should match a number with a whole amount only, not inside a longer amount or a key', () => {
     const paymentOfSeventeenToAKey = aRow({
-      amounts: { money: -17, invests: 0, experience: 0, engagement: null },
+      amounts: { money: -17, invests: 0, experience: 0 },
       parties: {
         source: { label: 'Moi', fullKey: null },
         target: { label: '...7a7a7a7a', fullKey: '037a7a7a7a' },
@@ -94,7 +95,7 @@ describe('matchesSearch', () => {
   });
 
   it('should find no row by zero, as an amount of zero is never shown', () => {
-    const paymentOfSeven = aRow({ amounts: { money: -7, invests: 0, experience: 0, engagement: null } });
+    const paymentOfSeven = aRow({ amounts: { money: -7, invests: 0, experience: 0 } });
 
     expect(matchesSearch(paymentOfSeven, '0')).toBeFalse();
   });
