@@ -14,7 +14,7 @@
     <mat-icon>home</mat-icon>
     <span>Accueil</span>
   </a>
-  <a routerLink="/pay" routerLinkActive="active">
+  <a routerLink="/pay" [class.active]="isInThePaySection()">
     <mat-icon>payments</mat-icon>
     <span>Paiement</span>
   </a>

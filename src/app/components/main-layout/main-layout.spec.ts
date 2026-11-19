@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
@@ -5,6 +6,11 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 import { MainLayout } from './main-layout';
 import { ConnectedUserService, ReadOnlyReason } from '../../services/connected-user.service';
+
+@Component({ template: '' })
+class EmptyPage {}
+
+const PAYMENT_PAGES = ['pay', 'pay-offline', 'receive-offline', 'cashpapers', 'printpapers', 'transactions'];
 
 describe('MainLayout', () => {
   let fixture: ComponentFixture<MainLayout>;
@@ -19,7 +25,10 @@ describe('MainLayout', () => {
     await TestBed.configureTestingModule({
       imports: [MainLayout],
       providers: [
-        provideRouter([]),
+        provideRouter([
+          ...PAYMENT_PAGES.map((path) => ({ path, component: EmptyPage })),
+          { path: 'contacts', component: EmptyPage },
+        ]),
         { provide: ConnectedUserService, useValue: { readOnlyReason: () => readOnlyReason, useThisTab: takeTheAccountBack } },
         { provide: MatSnackBar, useValue: snackBarSpy },
       ],
@@ -57,6 +66,36 @@ describe('MainLayout', () => {
 
     it('should show no such banner while this tab holds the account', () => {
       expect(otherTabBanner()).toBeNull();
+    });
+
+    it('should mark the Pay tab active on the history, a page of the payments', async () => {
+      await TestBed.inject(Router).navigateByUrl('/transactions');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('nav.bottom-nav a[href="/pay"]').classList).toContain('active');
+    });
+
+    it('should leave the Pay tab inactive on a page of another tab', async () => {
+      await TestBed.inject(Router).navigateByUrl('/contacts');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('nav.bottom-nav a[href="/pay"]').classList).not.toContain('active');
+    });
+  });
+
+  describe('isInThePaySection', () => {
+    PAYMENT_PAGES.forEach((page) => {
+      it(`should answer yes on /${page}, a page of the payments`, async () => {
+        await TestBed.inject(Router).navigateByUrl(`/${page}`);
+
+        expect(fixture.componentInstance.isInThePaySection()).toBeTrue();
+      });
+    });
+
+    it('should answer no on a page of another tab', async () => {
+      await TestBed.inject(Router).navigateByUrl('/contacts');
+
+      expect(fixture.componentInstance.isInThePaySection()).toBeFalse();
     });
   });
 

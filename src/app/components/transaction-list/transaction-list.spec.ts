@@ -47,4 +47,13 @@ describe('TransactionList', () => {
   it('should read the source contact from tx.signer, not the nonexistent tx.source', () => {
     expect(component.dataSource[0].source).toBe('Alice');
   });
+
+  describe('template', () => {
+    it('should lead back to the payments', () => {
+      const backLink = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
+        .find((link) => link.textContent?.includes('Retour'));
+
+      expect(backLink?.getAttribute('href')).toBe('/pay');
+    });
+  });
 });
