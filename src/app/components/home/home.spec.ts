@@ -152,7 +152,7 @@ describe('Home', () => {
 
     createComponent();
 
-    expect(fixture.nativeElement.textContent).not.toContain('actif sur un autre appareil');
+    expect(fixture.nativeElement.textContent).not.toContain('lecture seule');
   });
 
   it('should disable the per-row Encaisser button when the session is read-only', () => {

@@ -78,10 +78,21 @@ describe('MainLayout', () => {
       expect(readOnlyBanner()?.textContent).toContain('Read-only because of other-device');
     });
 
+    it('should say on every page that this device and the server no longer agree', () => {
+      readOnlyReason = 'out-of-sync';
+      fixture.detectChanges();
+
+      expect(readOnlyBanner()?.textContent).toContain('Read-only because of out-of-sync');
+    });
+
     it('should offer to use this tab only when the account is in use in another tab', () => {
+      readOnlyReason = 'other-tab';
+      fixture.detectChanges();
+      const buttonForTheOtherTab = readOnlyBanner()?.querySelector('button');
       readOnlyReason = 'other-device';
       fixture.detectChanges();
 
+      expect(buttonForTheOtherTab?.textContent).toContain('Utiliser cet onglet');
       expect(readOnlyBanner()?.querySelector('button')).toBeNull();
     });
 
@@ -92,7 +103,7 @@ describe('MainLayout', () => {
       expect(readOnlyBanner()).toBeNull();
     });
 
-    it('should show no such banner while this tab holds the account', () => {
+    it('should show no read-only banner while this tab can change the account', () => {
       expect(readOnlyBanner()).toBeNull();
     });
 

@@ -174,7 +174,6 @@ export class ChainSyncService {
     );
     if (this.wouldLoseMoneyMovements(account, lostTransactions)) {
       this.userService.markOutOfSync();
-      this.snackBar.open(this.userService.readOnlyMessage(), 'Fermer');
       return;
     }
     const isStored = await this.takeTheServerChain(account, serverCopy);

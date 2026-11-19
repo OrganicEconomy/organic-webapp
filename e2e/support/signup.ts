@@ -4,10 +4,14 @@ import { approveCandidateNamed, ensureCoreGuardian } from './core-guardian';
 
 export const STATUS_POLL_INTERVAL_MS = 30_000;
 
+export function emailOf(name: string): string {
+  return `${name.replace(/\W/g, '').toLowerCase()}@e2e.test`;
+}
+
 export async function signUpThroughApp(page: Page, name: string): Promise<void> {
   await page.goto(`/signup?server=${encodeURIComponent(SERVER_URL)}`);
 
-  await page.getByLabel('Adresse mail').fill(`${name.replace(/\W/g, '').toLowerCase()}@e2e.test`);
+  await page.getByLabel('Adresse mail').fill(emailOf(name));
   await page.getByLabel('Nom & prénom').fill(name);
   await page.getByLabel('Date de naissance').fill('01/02/1990');
   await page.getByRole('textbox', { name: 'Mot de passe' }).fill('secret');

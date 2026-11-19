@@ -58,6 +58,7 @@ describe('EcosystemRoles', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => SK,
       isReadOnlySession: () => false,
+      readOnlyMessage: () => 'Read-only for the reason of this session',
     };
     stubViewedEcosystemService = {
       setViewedEcosystem: jasmine.createSpy('setViewedEcosystem'),
@@ -252,6 +253,15 @@ describe('EcosystemRoles', () => {
       component.removeRole('admin', 'admin-pk');
 
       expect(fakeBlockchain.unsetAdmin).not.toHaveBeenCalled();
+    });
+
+    it('should say why it cannot remove, with the reason of the read-only session', () => {
+      stubConnectedUserService.isReadOnlySession = () => true;
+      spyOn(component, 'displayMessage');
+
+      component.removeRole('admin', 'admin-pk');
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Read-only for the reason of this session');
     });
 
     it('should show a clear message when the exact same role change was already made today', () => {

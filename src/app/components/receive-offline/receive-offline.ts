@@ -89,7 +89,7 @@ export class ReceiveOffline {
       return
     }
     if (this.userService.isReadOnlySession()) {
-      this.scanError = "Ce compte est actif sur un autre appareil — lecture seule."
+      this.scanError = this.userService.readOnlyMessage()
       return
     }
 

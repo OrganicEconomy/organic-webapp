@@ -1,18 +1,6 @@
 import { expect, Page, test } from '@playwright/test';
 import { signUpApprovedCitizen } from './support/signup';
-
-async function payOneself(page: Page, amount: number): Promise<void> {
-  await page.getByRole('navigation').getByRole('link', { name: 'Paiement' }).click();
-  await page.getByRole('combobox').click();
-  await page.getByRole('option', { name: 'Moi-même' }).click();
-  await page.locator('input.amount-input').fill(String(amount));
-  await page.getByRole('button', { name: 'Payer', exact: true }).click();
-  await page.getByRole('button', { name: 'Confirmer' }).click();
-}
-
-async function closeTheLevelUpDialog(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Continuer' }).click();
-}
+import { closeTheLevelUpDialog, payOneself } from './support/payments';
 
 async function expectAboveTheBottomBar(page: Page, name: string): Promise<void> {
   const link = await page.getByRole('link', { name }).boundingBox();

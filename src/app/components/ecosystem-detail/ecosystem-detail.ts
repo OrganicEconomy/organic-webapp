@@ -136,7 +136,7 @@ export class EcosystemDetail {
 
   distributeSalary(): void {
     if (this.userService.isReadOnlySession()) {
-      this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.");
+      this.displayMessage(this.userService.readOnlyMessage());
       return;
     }
     const dialogRef = this.dialog.open(ConfirmDialog, {

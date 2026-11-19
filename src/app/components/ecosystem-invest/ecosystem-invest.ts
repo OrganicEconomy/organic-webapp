@@ -68,7 +68,7 @@ export class EcosystemInvest {
       return;
     }
     if (this.userService.isReadOnlySession()) {
-      this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.");
+      this.displayMessage(this.userService.readOnlyMessage());
       return;
     }
     this.submitting = true;

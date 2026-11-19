@@ -351,6 +351,16 @@ describe('EcosystemDetail', () => {
       httpMock.expectNone(DISTRIBUTE_URL);
     });
 
+    it('should say why it cannot distribute, with the reason of the read-only session', () => {
+      stubConnectedUserService.isReadOnlySession = () => true;
+      spyOn(component, 'displayMessage');
+
+      component.distributeSalary();
+
+      expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : celui-ci est en lecture seule.");
+      expect(dialogSpy.open).not.toHaveBeenCalled();
+    });
+
     it('should call distributeSalary on the server when confirmed', () => {
       component.distributeSalary();
 
