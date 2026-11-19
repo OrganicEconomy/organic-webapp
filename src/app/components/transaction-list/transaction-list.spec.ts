@@ -80,7 +80,7 @@ describe('TransactionList', () => {
     it('should keep the column headers stuck on top while the rows scroll', () => {
       const header: HTMLElement = fixture.nativeElement.querySelector('.desktop-table th');
 
-      expect(header.classList).toContain('mat-mdc-table-sticky');
+      expect(getComputedStyle(header).position).toBe('sticky');
     });
 
     it('should scroll the rows in their own area, leaving the title in place', () => {
@@ -88,7 +88,18 @@ describe('TransactionList', () => {
 
       expect(getComputedStyle(rows).overflowY).toBe('auto');
       expect(rows.querySelector('.mobile-list')).not.toBeNull();
+      expect(rows.querySelector('.desktop-table')).not.toBeNull();
       expect(rows.querySelector('h1')).toBeNull();
+    });
+
+    it('should say that there is no transaction yet, on every screen size', () => {
+      fakeAccount.blockchain.getHistory = () => [];
+      fixture = TestBed.createComponent(TransactionList);
+      fixture.detectChanges();
+
+      const emptyMessage: HTMLElement = fixture.nativeElement.querySelector('.empty');
+      expect(emptyMessage.textContent).toContain('Aucune transaction.');
+      expect(emptyMessage.closest('.mobile-list')).toBeNull();
     });
 
     it('should lead back to the payments', () => {

@@ -14,6 +14,12 @@ async function closeTheLevelUpDialog(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Continuer' }).click();
 }
 
+async function expectAboveTheBottomBar(page: Page, name: string): Promise<void> {
+  const link = await page.getByRole('link', { name }).boundingBox();
+  const bottomBar = await page.getByRole('navigation').boundingBox();
+  expect(link!.y + link!.height).toBeLessThanOrEqual(bottomBar!.y);
+}
+
 async function openTheHistory(page: Page): Promise<void> {
   await page.getByRole('navigation').getByRole('link', { name: 'Paiement' }).click();
   await page.getByRole('link', { name: "Voir tout l'historique" }).click();
@@ -65,5 +71,35 @@ test.describe('history', () => {
     await page.getByRole('option', { name: 'Ouverture du compte' }).click();
     await expect(page.locator('.tx-card')).toHaveCount(1);
     await expect(page.locator('.tx-card')).toContainText('Ouverture du compte');
+  });
+
+  test('should keep the title and the back button in sight while the rows scroll', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Clara Mercier');
+    await page.setViewportSize({ width: 412, height: 340 });
+
+    await openTheHistory(page);
+    const rows = page.getByRole('region', { name: 'Liste des transactions' });
+    await rows.evaluate((area) => area.scrollTo(0, area.scrollHeight));
+
+    expect(await rows.evaluate((area) => area.scrollTop)).toBeGreaterThan(0);
+    await expect(page.getByRole('heading', { name: 'Historique des transactions' })).toBeInViewport();
+    await expectAboveTheBottomBar(page, 'Retour');
+  });
+
+  test('should keep the back button in sight under the banner of another tab', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Hugo Barbier');
+    const secondTab = await page.context().newPage();
+    await secondTab.goto('/user-selection');
+    await secondTab.getByRole('button', { name: 'Hugo Barbier' }).click();
+    await secondTab.getByPlaceholder('Mot de passe').fill('secret');
+    await secondTab.getByRole('button', { name: 'OK' }).click();
+    await expect(page.getByText('Compte ouvert dans un autre onglet')).toBeVisible();
+    await page.setViewportSize({ width: 412, height: 340 });
+
+    await openTheHistory(page);
+    await expect(page.getByText('Compte ouvert dans un autre onglet')).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 0));
+
+    await expectAboveTheBottomBar(page, 'Retour');
   });
 });

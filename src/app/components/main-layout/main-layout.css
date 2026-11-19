@@ -1,25 +1,22 @@
 :host {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
 }
 
 .page-content {
   flex: 1;
-  padding-bottom: 64px; /* leave room for the fixed bottom-nav */
-  box-sizing: border-box;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  flex-shrink: 0;
   height: 64px;
   display: flex;
   background: var(--mat-sys-surface);
   border-top: 1px solid var(--mat-sys-outline-variant);
-  z-index: 10;
 }
 
 .bottom-nav a {
