@@ -4,9 +4,9 @@ import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
 import { ConnectedUserService } from '../../services/connected-user.service';
-import { DisplayRow, toDisplayRow } from '../../utils/transaction-display.util';
+import { DisplayRow, toDisplayRow, withoutRepeats } from '../../utils/transaction-display.util';
+import { TransactionAmounts } from '../transaction-amounts/transaction-amounts';
 import type { Contact, LoadedAccount } from '../../models/account';
 
 function partiesKnownBy(user: LoadedAccount): Contact[] {
@@ -27,7 +27,7 @@ function partiesKnownBy(user: LoadedAccount): Contact[] {
     MatButtonModule,
     MatTableModule,
     MatCardModule,
-    MatIconModule,
+    TransactionAmounts,
   ],
   templateUrl: './transaction-list.html',
   styleUrl: './transaction-list.css',
@@ -47,7 +47,7 @@ export class TransactionList {
     }
 
     const knownParties = partiesKnownBy(this.user)
-    this.dataSource = this.user.blockchain.getHistory()
+    this.dataSource = withoutRepeats(this.user.blockchain.getHistory())
       .map((tx: any) => toDisplayRow(tx, this.user.blockchain.getMyPublicKey(), knownParties))
   }
 }

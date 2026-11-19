@@ -1,0 +1,16 @@
+@if (amounts().money) {
+<span class="amount" [class.gain]="amounts().money > 0" [class.spending]="amounts().money < 0">
+    {{ withSign(amounts().money) }} <mat-icon svgIcon="currency-mark"></mat-icon>
+</span>
+}
+@if (amounts().invests) {
+<span class="amount gain">
+    {{ signedInvests() }}
+</span>
+}
+@if (engagement(); as engagement) {
+<span class="engagement">{{ investsHeldBack(engagement) }}</span>
+}
+@if (amounts().experience) {
+<span class="experience-badge">+{{ amounts().experience }} XP</span>
+}

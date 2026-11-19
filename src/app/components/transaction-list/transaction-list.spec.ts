@@ -18,7 +18,7 @@ describe('TransactionList', () => {
       blockchain: {
         getMyPublicKey: () => MY_PK,
         getHistory: () => [
-          { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: MY_PK, money: [1, 2, 3] },
+          { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: MY_PK, money: [1, 2, 3], invests: [] },
         ],
       },
     };
@@ -48,6 +48,15 @@ describe('TransactionList', () => {
     expect(component.dataSource[0].parties?.source.label).toBe('Alice');
   });
 
+  it('should show only once an engagement that each new block carries over', () => {
+    const engagement = { date: new Date(2026, 0, 10), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: [1, 2], signature: 'engagement-signature' };
+    fakeAccount.blockchain.getHistory = () => [engagement, { ...engagement }];
+
+    const list = TestBed.createComponent(TransactionList).componentInstance;
+
+    expect(list.dataSource.length).toBe(1);
+  });
+
   it('should name an ecosystem of mine even when it is not among the contacts', () => {
     const ecosystemKey = '02' + 'cd'.repeat(32);
     fakeAccount.myEcosystems = [{ publickey: ecosystemKey, name: 'La Boulange', role: 'actor' }];
@@ -61,6 +70,29 @@ describe('TransactionList', () => {
   });
 
   describe('template', () => {
+    it('should show each row with the icon of its kind and its amounts', () => {
+      const card: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .tx-card');
+
+      expect(card.querySelector('i.bi-arrow-down-left')?.getAttribute('aria-hidden')).toBe('true');
+      expect(card.querySelector('app-transaction-amounts')?.textContent).toContain('+3 XP');
+    });
+
+    it('should show on its row, in the table and in the list, what an engagement holds back', () => {
+      const oneADayForTwoDays = [202601169000, 202601179000];
+      fakeAccount.blockchain.getHistory = () => [
+        { date: new Date(2026, 0, 16), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: oneADayForTwoDays },
+      ];
+
+      const list = TestBed.createComponent(TransactionList);
+      list.detectChanges();
+
+      const shownAmounts = Array.from(list.nativeElement.querySelectorAll('app-transaction-amounts') as NodeListOf<HTMLElement>);
+      expect(shownAmounts.map((amounts) => amounts.textContent?.trim())).toEqual([
+        '1 investissement/jour pendant 2 jours',
+        '1 investissement/jour pendant 2 jours',
+      ]);
+    });
+
     it('should lead back to the payments', () => {
       const backLink = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
         .find((link) => link.textContent?.includes('Retour'));
@@ -100,7 +132,7 @@ describe('TransactionList', () => {
 
     it('should leave the desktop sender and receiver cells empty for the daily creation', () => {
       fakeAccount.blockchain.getHistory = () => [
-        { date: new Date(2026, 0, 16), type: 2, signer: MY_PK, target: '', money: [1] },
+        { date: new Date(2026, 0, 16), type: 2, signer: MY_PK, target: '', money: [1], invests: [] },
       ];
       fixture = TestBed.createComponent(TransactionList);
       fixture.detectChanges();

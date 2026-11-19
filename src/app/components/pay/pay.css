@@ -167,10 +167,9 @@ section:last-of-type button {
     text-align: center;
 }
 
-.tx-amount {
-    font-weight: 600;
-    color: var(--mat-sys-primary);
-    flex-shrink: 0;
+.tx-icon {
+    margin-right: 4px;
+    color: var(--mat-sys-on-surface-variant);
 }
 
 .empty {
