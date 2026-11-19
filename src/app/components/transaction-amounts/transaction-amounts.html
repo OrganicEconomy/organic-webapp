@@ -8,7 +8,7 @@
     {{ signedInvests() }}
 </span>
 }
-@if (amounts().engagement; as engagement) {
+@if (engagement(); as engagement) {
 <span class="engagement">{{ investsHeldBack(engagement) }}</span>
 }
 @if (amounts().experience) {

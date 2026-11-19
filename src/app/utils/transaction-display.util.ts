@@ -73,7 +73,6 @@ export interface Amounts {
   money: number
   invests: number
   experience: number
-  engagement: Engagement | null
 }
 
 export interface DisplayRow {
@@ -82,6 +81,7 @@ export interface DisplayRow {
   icon: string
   parties: Parties | null
   amounts: Amounts
+  engagement: Engagement | null
 }
 
 function isUnknownKey(pk: string, myPublicKey: string, contacts: any[]): boolean {
@@ -144,33 +144,11 @@ function experienceOf(tx: any, myPublicKey: string): number {
   return 0
 }
 
-function countsPerDay(unitIds: number[]): number[] {
-  const counts = new Map<number, number>()
-  for (const id of unitIds) {
-    const day = unitIdToDateInt(id)
-    counts.set(day, (counts.get(day) ?? 0) + 1)
-  }
-  return [...counts.values()]
-}
-
-function engagementOf(tx: any): Engagement | null {
-  if (tx.type !== TxType.ENGAGE || tx.invests.length === 0) {
-    return null
-  }
-  const counts = countsPerDay(tx.invests)
-  return {
-    invests: tx.invests.length,
-    days: counts.length,
-    isSpreadEvenly: counts.every((count) => count === counts[0]),
-  }
-}
-
 function amountsOf(tx: any, myPublicKey: string): Amounts {
   return {
     money: moneyOf(tx, myPublicKey),
     invests: investsOf(tx),
     experience: experienceOf(tx, myPublicKey),
-    engagement: engagementOf(tx),
   }
 }
 
@@ -205,6 +183,27 @@ function iconOf(tx: any, myPublicKey: string): string {
   return TX_TYPE_ICONS[tx.type] ?? "bi-question-circle"
 }
 
+function countsPerDay(unitIds: number[]): number[] {
+  const counts = new Map<number, number>()
+  for (const id of unitIds) {
+    const day = unitIdToDateInt(id)
+    counts.set(day, (counts.get(day) ?? 0) + 1)
+  }
+  return [...counts.values()]
+}
+
+function engagementOf(tx: any): Engagement | null {
+  if (tx.type !== TxType.ENGAGE || tx.invests.length === 0) {
+    return null
+  }
+  const counts = countsPerDay(tx.invests)
+  return {
+    invests: tx.invests.length,
+    days: counts.length,
+    isSpreadEvenly: counts.every((count) => count === counts[0]),
+  }
+}
+
 export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): DisplayRow {
   return {
     date: tx.date.toLocaleDateString("fr-FR"),
@@ -212,6 +211,7 @@ export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): Dis
     icon: iconOf(tx, myPublicKey),
     parties: hasParties(tx, myPublicKey) ? partiesOf(tx, myPublicKey, contacts) : null,
     amounts: amountsOf(tx, myPublicKey),
+    engagement: engagementOf(tx),
   }
 }
 

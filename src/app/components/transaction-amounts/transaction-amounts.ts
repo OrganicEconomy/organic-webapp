@@ -18,6 +18,7 @@ function daysUnit(days: number): string {
 })
 export class TransactionAmounts {
   amounts = input.required<Amounts>();
+  engagement = input.required<Engagement | null>();
   withSign = withSign;
 
   signedInvests(): string {
