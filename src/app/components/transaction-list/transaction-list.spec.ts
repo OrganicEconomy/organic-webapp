@@ -101,7 +101,7 @@ describe('TransactionList', () => {
       component.search.set('alice');
       expect(component.entries()).toEqual([
         { heading: 'janvier 2026' },
-        jasmine.objectContaining({ type: 'Paiement' }),
+        jasmine.objectContaining({ label: 'Paiement' }),
       ]);
 
       component.search.set('bob');
@@ -115,7 +115,7 @@ describe('TransactionList', () => {
       component.chosenType.set('Paiement');
       expect(component.entries()).toEqual([
         { heading: 'janvier 2026' },
-        jasmine.objectContaining({ type: 'Paiement' }),
+        jasmine.objectContaining({ label: 'Paiement' }),
       ]);
     });
   });

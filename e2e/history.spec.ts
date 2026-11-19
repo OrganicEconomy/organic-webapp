@@ -25,6 +25,22 @@ async function openTheHistory(page: Page): Promise<void> {
   await page.getByRole('link', { name: "Voir tout l'historique" }).click();
 }
 
+async function searchTheHistoryFor(page: Page, words: string): Promise<void> {
+  await page.getByLabel('Rechercher').fill(words);
+}
+
+async function chooseTheType(page: Page, type: string): Promise<void> {
+  await page.getByRole('combobox', { name: 'Type' }).click();
+  await page.getByRole('option', { name: type }).click();
+}
+
+async function expectOnlyTheCard(page: Page, text: string): Promise<void> {
+  await expect(page.locator('.transaction-card')).toHaveCount(1);
+  await expect(page.locator('.transaction-card')).toContainText(text);
+}
+
+const BIRTH_MONTH = 'février 1990';
+
 test.describe('history', () => {
   test('should show the account opening and the daily creation with neither sender nor receiver', async ({
     page,
@@ -61,22 +77,19 @@ test.describe('history', () => {
 
     await openTheHistory(page);
 
-    await expect(page.getByRole('heading', { name: 'février 1990' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: BIRTH_MONTH })).toBeVisible();
   });
 
   test('should find the rows by words without accents, or by type', async ({ page }) => {
     await signUpApprovedCitizen(page, 'Inès Perrin');
     await openTheHistory(page);
 
-    await page.getByLabel('Rechercher').fill('creation');
-    await expect(page.locator('.tx-card')).toHaveCount(1);
-    await expect(page.locator('.tx-card')).toContainText('Création du jour');
+    await searchTheHistoryFor(page, 'creation');
+    await expectOnlyTheCard(page, 'Création du jour');
 
-    await page.getByLabel('Rechercher').fill('');
-    await page.getByRole('combobox', { name: 'Type' }).click();
-    await page.getByRole('option', { name: 'Ouverture du compte' }).click();
-    await expect(page.locator('.tx-card')).toHaveCount(1);
-    await expect(page.locator('.tx-card')).toContainText('Ouverture du compte');
+    await searchTheHistoryFor(page, '');
+    await chooseTheType(page, 'Ouverture du compte');
+    await expectOnlyTheCard(page, 'Ouverture du compte');
   });
 
   test('should keep the title and the back button in sight while the rows scroll', async ({ page }) => {

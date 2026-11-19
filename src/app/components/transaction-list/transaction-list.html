@@ -97,9 +97,9 @@
                 }
                 }
             </div>
-            @if (rows.length === 0) {
+            @if (hasNoTransactions()) {
             <p class="empty">Aucune transaction.</p>
-            } @else if (entries().length === 0) {
+            } @else if (hasNoMatch()) {
             <p class="empty">Aucune transaction ne correspond à la recherche.</p>
             }
         </div>

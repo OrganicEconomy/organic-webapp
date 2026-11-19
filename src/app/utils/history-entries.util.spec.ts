@@ -1,11 +1,11 @@
 import type { DisplayRow } from './transaction-display.util';
-import { ALL_TYPES, hasType, matchesSearch, withMonthHeadings } from './history-filter.util';
+import { ALL_TYPES, matchesSearch, matchesType, withMonthHeadings } from './history-entries.util';
 
 function aRow(fields: Partial<DisplayRow>): DisplayRow {
   return {
     date: '15/01/2026',
     month: 'janvier 2026',
-    type: 'Paiement',
+    label: 'Paiement',
     icon: 'bi-arrow-up-right',
     parties: null,
     amounts: { money: 0, invests: 0, experience: 0 },
@@ -29,7 +29,7 @@ describe('withMonthHeadings', () => {
 
 describe('matchesSearch', () => {
   const rowWithZoe = aRow({
-    type: 'Création du jour',
+    label: 'Création du jour',
     parties: {
       source: { label: 'Moi', fullKey: null },
       target: { label: 'Zoé', fullKey: null },
@@ -94,13 +94,13 @@ describe('matchesSearch', () => {
   });
 });
 
-describe('hasType', () => {
+describe('matchesType', () => {
   it('should keep every row when no type is chosen', () => {
-    expect(hasType(aRow({ type: 'Paiement' }), ALL_TYPES)).toBeTrue();
+    expect(matchesType(aRow({ label: 'Paiement' }), ALL_TYPES)).toBeTrue();
   });
 
   it('should keep only a row of the chosen type', () => {
-    expect(hasType(aRow({ type: 'Paiement' }), 'Paiement')).toBeTrue();
-    expect(hasType(aRow({ type: 'Paiement' }), 'Création du jour')).toBeFalse();
+    expect(matchesType(aRow({ label: 'Paiement' }), 'Paiement')).toBeTrue();
+    expect(matchesType(aRow({ label: 'Paiement' }), 'Création du jour')).toBeFalse();
   });
 });

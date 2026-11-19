@@ -13,11 +13,11 @@ import { DisplayRow, newestFirst, toDisplayRow, withoutRepeats } from '../../uti
 import {
   ALL_TYPES,
   HistoryEntry,
-  hasType,
   isMonthHeading,
   matchesSearch,
+  matchesType,
   withMonthHeadings,
-} from '../../utils/history-filter.util';
+} from '../../utils/history-entries.util';
 import { TransactionAmounts } from '../transaction-amounts/transaction-amounts';
 import type { Contact, LoadedAccount } from '../../models/account';
 
@@ -32,7 +32,7 @@ function partiesKnownBy(user: LoadedAccount): Contact[] {
 }
 
 function typesFoundIn(rows: DisplayRow[]): string[] {
-  return [...new Set(rows.map((row) => row.type))]
+  return [...new Set(rows.map((row) => row.label))]
 }
 
 @Component({
@@ -63,11 +63,19 @@ export class TransactionList {
   chosenType = signal(ALL_TYPES)
   allTypes = ALL_TYPES
 
-  private isShown(row: DisplayRow): boolean {
-    return matchesSearch(row, this.search()) && hasType(row, this.chosenType())
+  private isVisible(row: DisplayRow): boolean {
+    return matchesSearch(row, this.search()) && matchesType(row, this.chosenType())
   }
 
-  entries = computed(() => withMonthHeadings(this.rows.filter((row) => this.isShown(row))))
+  entries = computed(() => withMonthHeadings(this.rows.filter((row) => this.isVisible(row))))
+
+  hasNoTransactions(): boolean {
+    return this.rows.length === 0
+  }
+
+  hasNoMatch(): boolean {
+    return this.entries().length === 0
+  }
 
   isMonthHeading = isMonthHeading
   isMonthHeadingRow = (_index: number, entry: HistoryEntry) => isMonthHeading(entry)

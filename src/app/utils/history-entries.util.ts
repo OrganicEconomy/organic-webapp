@@ -30,7 +30,7 @@ function partiesWordsOf(row: DisplayRow): string[] {
 }
 
 function searchableTextOf(row: DisplayRow): string {
-  return comparable([row.type, ...partiesWordsOf(row), row.date, row.month].join(' '))
+  return comparable([row.label, ...partiesWordsOf(row), row.date, row.month].join(' '))
 }
 
 const SIGNED_NUMBER = /^[+\-−]?\d+$/
@@ -55,6 +55,6 @@ export function matchesSearch(row: DisplayRow, search: string): boolean {
 
 export const ALL_TYPES = 'Tous les types'
 
-export function hasType(row: DisplayRow, type: string): boolean {
-  return type === ALL_TYPES || row.type === type
+export function matchesType(row: DisplayRow, chosenType: string): boolean {
+  return chosenType === ALL_TYPES || row.label === chosenType
 }

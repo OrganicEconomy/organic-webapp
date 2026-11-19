@@ -25,12 +25,12 @@ function aTransaction(fields: object) {
 
 describe('toDisplayRow', () => {
   it('should tell the month of the transaction, to group the rows by month', () => {
-    const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1], invests: [] };
+    const tx = aTransaction({ type: 3, signer: 'alice-pk', target: 'my-pk', money: [1] });
     expect(toDisplayRow(tx, 'my-pk', []).month).toBe('janvier 2026');
   });
 
   it('should show the day and month organic-money dates in UTC, whatever the time zone of the phone', () => {
-    const tx = { date: new Date(Date.UTC(2026, 9, 31, 23, 30)), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1], invests: [] };
+    const tx = aTransaction({ date: new Date(Date.UTC(2026, 9, 31, 23, 30)), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1] });
     const row = toDisplayRow(tx, 'my-pk', []);
     expect(row.date).toBe('31/10/2026');
     expect(row.month).toBe('octobre 2026');
