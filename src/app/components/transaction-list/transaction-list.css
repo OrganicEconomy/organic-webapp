@@ -44,7 +44,7 @@ h1 {
     gap: 10px;
 }
 
-.tx-card {
+.transaction-card {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -53,30 +53,30 @@ h1 {
     border-radius: 10px;
 }
 
-.tx-top {
+.transaction-top {
     display: flex;
     justify-content: space-between;
     align-items: center;
 }
 
-.tx-type {
+.transaction-type {
     font-weight: 600;
     font-size: 0.95rem;
 }
 
-.tx-icon {
+.transaction-icon {
     margin-right: 4px;
     color: var(--mat-sys-on-surface-variant);
 }
 
-.tx-bottom {
+.transaction-bottom {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 8px;
 }
 
-.tx-parties {
+.transaction-parties {
     font-size: 0.82rem;
     color: var(--mat-sys-on-surface-variant);
     min-width: 0;
@@ -99,7 +99,7 @@ h1 {
     word-break: break-all;
 }
 
-.tx-date {
+.transaction-date {
     margin-left: auto;
     font-size: 0.78rem;
     color: var(--mat-sys-on-surface-variant);

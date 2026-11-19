@@ -71,7 +71,7 @@ describe('TransactionList', () => {
 
   describe('template', () => {
     it('should show each row with the icon of its kind and its amounts', () => {
-      const card: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .tx-card');
+      const card: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .transaction-card');
 
       expect(card.querySelector('i.bi-arrow-down-left')?.getAttribute('aria-hidden')).toBe('true');
       expect(card.querySelector('app-transaction-amounts')?.textContent).toContain('+3 XP');

@@ -33,8 +33,8 @@ test.describe('history', () => {
 
     await openTheHistory(page);
 
-    const accountOpeningCard = page.locator('.tx-card', { hasText: 'Ouverture du compte' });
-    const dailyCreationCard = page.locator('.tx-card', { hasText: 'Création du jour' });
+    const accountOpeningCard = page.locator('.transaction-card', { hasText: 'Ouverture du compte' });
+    const dailyCreationCard = page.locator('.transaction-card', { hasText: 'Création du jour' });
     await expect(accountOpeningCard).toBeVisible();
     await expect(dailyCreationCard).toBeVisible();
     await expect(accountOpeningCard).not.toContainText('→');
@@ -48,11 +48,11 @@ test.describe('history', () => {
 
     await openTheHistory(page);
 
-    await expect(page.locator('.tx-card', { hasText: 'Création du jour' })).toContainText('+1');
-    const cashing = page.locator('.tx-card', { hasText: 'Encaissement' });
+    await expect(page.locator('.transaction-card', { hasText: 'Création du jour' })).toContainText('+1');
+    const cashing = page.locator('.transaction-card', { hasText: 'Encaissement' });
     await expect(cashing).toContainText('−1');
     await expect(cashing).toContainText('+1 XP');
-    const opening = page.locator('.tx-card', { hasText: 'Ouverture du compte' });
+    const opening = page.locator('.transaction-card', { hasText: 'Ouverture du compte' });
     await expect(opening.locator('app-transaction-amounts')).toHaveText('');
   });
 

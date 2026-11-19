@@ -22,7 +22,7 @@
 
                 <ng-container matColumnDef="type">
                     <th mat-header-cell *matHeaderCellDef>Type</th>
-                    <td mat-cell *matCellDef="let element"><i class="bi tx-icon" [class]="element.icon" aria-hidden="true"></i> {{ element.label }}</td>
+                    <td mat-cell *matCellDef="let element"><i class="bi transaction-icon" [class]="element.icon" aria-hidden="true"></i> {{ element.label }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="source">
@@ -54,20 +54,20 @@
 
             <div class="mobile-list">
                 @for (element of dataSource; track $index) {
-                <div class="tx-card">
-                    <div class="tx-top">
-                        <span class="tx-type"><i class="bi tx-icon" [class]="element.icon" aria-hidden="true"></i> {{ element.label }}</span>
+                <div class="transaction-card">
+                    <div class="transaction-top">
+                        <span class="transaction-type"><i class="bi transaction-icon" [class]="element.icon" aria-hidden="true"></i> {{ element.label }}</span>
                         <app-transaction-amounts [amounts]="element.amounts" />
                     </div>
-                    <div class="tx-bottom">
+                    <div class="transaction-bottom">
                         @if (element.parties) {
-                        <div class="tx-parties">
+                        <div class="transaction-parties">
                             <ng-container *ngTemplateOutlet="partyLabel; context: { $implicit: element.parties.source }" />
                             →
                             <ng-container *ngTemplateOutlet="partyLabel; context: { $implicit: element.parties.target }" />
                         </div>
                         }
-                        <span class="tx-date">{{ element.date }}</span>
+                        <span class="transaction-date">{{ element.date }}</span>
                     </div>
                 </div>
                 }

@@ -580,7 +580,7 @@ describe('Pay', () => {
       fixture = TestBed.createComponent(Pay);
       fixture.detectChanges();
 
-      const row: HTMLElement = fixture.nativeElement.querySelector('.history-card .tx-row');
+      const row: HTMLElement = fixture.nativeElement.querySelector('.history-card .transaction-row');
       expect(row.querySelector('i.bi-arrow-up-right')).not.toBeNull();
       expect(row.querySelector('app-transaction-amounts')?.textContent).toContain('−2');
     });
