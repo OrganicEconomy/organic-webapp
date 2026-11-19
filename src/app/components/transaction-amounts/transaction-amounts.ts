@@ -1,6 +1,10 @@
 import { Component, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { type Amounts, withSign } from '../../utils/transaction-display.util';
+import { type Amounts, type Engagement, withSign } from '../../utils/transaction-display.util';
+
+function investsUnit(count: number): string {
+  return count > 1 ? 'investissements' : 'investissement';
+}
 
 @Component({
   selector: 'app-transaction-amounts',
@@ -14,7 +18,11 @@ export class TransactionAmounts {
 
   signedInvests(): string {
     const invests = this.amounts().invests;
-    const unit = Math.abs(invests) > 1 ? 'investissements' : 'investissement';
-    return `${withSign(invests)} ${unit}`;
+    return `${withSign(invests)} ${investsUnit(invests)}`;
+  }
+
+  investsHeldBack({ investsPerDay, days }: Engagement): string {
+    const daysUnit = days > 1 ? 'jours' : 'jour';
+    return `${investsPerDay} ${investsUnit(investsPerDay)}/jour pendant ${days} ${daysUnit}`;
   }
 }

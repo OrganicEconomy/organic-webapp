@@ -22,6 +22,11 @@
     color: #b3261e;
 }
 
+.engagement {
+    font-size: 0.85rem;
+    color: var(--mat-sys-on-surface-variant);
+}
+
 .experience-badge {
     padding: 1px 8px;
     border-radius: 10px;
