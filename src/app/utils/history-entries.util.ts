@@ -39,9 +39,14 @@ function isAnAmount(word: string): boolean {
   return SIGNED_NUMBER.test(word)
 }
 
+function shownAmountsOf(row: DisplayRow): number[] {
+  const { money, invests, experience } = row.amounts
+  return [money, invests, experience].filter((amount) => amount !== 0)
+}
+
 function hasAmount(row: DisplayRow, word: string): boolean {
   const searched = Math.abs(Number(word.replace('−', '-')))
-  return Object.values(row.amounts).some((amount) => amount !== 0 && Math.abs(amount) === searched)
+  return shownAmountsOf(row).some((amount) => Math.abs(amount) === searched)
 }
 
 function wordsSearched(search: string): string[] {

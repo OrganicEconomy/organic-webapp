@@ -92,6 +92,12 @@ describe('matchesSearch', () => {
 
     expect(matchesSearch(paymentOfSeventeenToAKey, '7')).toBeFalse();
   });
+
+  it('should find no row by zero, as an amount of zero is never shown', () => {
+    const paymentOfSeven = aRow({ amounts: { money: -7, invests: 0, experience: 0, engagement: null } });
+
+    expect(matchesSearch(paymentOfSeven, '0')).toBeFalse();
+  });
 });
 
 describe('matchesType', () => {
