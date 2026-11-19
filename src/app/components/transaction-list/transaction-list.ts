@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { MatTableModule } from '@angular/material/table';
@@ -7,6 +7,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { DisplayRow, toDisplayRow, withoutRepeats } from '../../utils/transaction-display.util';
 import { TransactionAmounts } from '../transaction-amounts/transaction-amounts';
+import { HistoryEntry, MonthHeading, hasType, matchesSearch, withMonthHeadings } from '../../utils/history-filter.util';
+import { MatSelectModule } from '@angular/material/select';
+import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import type { Contact, LoadedAccount } from '../../models/account';
 
 function partiesKnownBy(user: LoadedAccount): Contact[] {
@@ -28,6 +33,10 @@ function partiesKnownBy(user: LoadedAccount): Contact[] {
     MatTableModule,
     MatCardModule,
     TransactionAmounts,
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
   ],
   templateUrl: './transaction-list.html',
   styleUrl: './transaction-list.css',
@@ -37,7 +46,18 @@ export class TransactionList {
 
   user: any
   displayedColumns: string[] = ['date', 'type', 'source', 'target', 'amount']
-  dataSource: DisplayRow[] = []
+  rows: DisplayRow[] = []
+  typeChoices: string[] = []
+  search = signal('')
+  chosenType = signal<string | null>(null)
+
+  private isShown(row: DisplayRow): boolean {
+    return matchesSearch(row, this.search()) && hasType(row, this.chosenType())
+  }
+
+  entries = computed(() => withMonthHeadings(this.rows.filter((row) => this.isShown(row))))
+
+  isMonthHeading = (_index: number, entry: HistoryEntry): entry is MonthHeading => 'heading' in entry
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
@@ -47,7 +67,8 @@ export class TransactionList {
     }
 
     const knownParties = partiesKnownBy(this.user)
-    this.dataSource = withoutRepeats(this.user.blockchain.getHistory())
+    this.rows = withoutRepeats(this.user.blockchain.getHistory())
       .map((tx: any) => toDisplayRow(tx, this.user.blockchain.getMyPublicKey(), knownParties))
+    this.typeChoices = [...new Set(this.rows.map((row) => row.type))]
   }
 }

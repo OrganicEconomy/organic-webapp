@@ -45,7 +45,7 @@ describe('TransactionList', () => {
   });
 
   it('should read the source contact from tx.signer, not the nonexistent tx.source', () => {
-    expect(component.dataSource[0].parties?.source.label).toBe('Alice');
+    expect(component.rows[0].parties?.source.label).toBe('Alice');
   });
 
   it('should show only once an engagement that each new block carries over', () => {
@@ -54,7 +54,7 @@ describe('TransactionList', () => {
 
     const list = TestBed.createComponent(TransactionList).componentInstance;
 
-    expect(list.dataSource.length).toBe(1);
+    expect(list.rows.length).toBe(1);
   });
 
   it('should name an ecosystem of mine even when it is not among the contacts', () => {
@@ -66,7 +66,39 @@ describe('TransactionList', () => {
 
     const list = TestBed.createComponent(TransactionList).componentInstance;
 
-    expect(list.dataSource[0].parties?.target.label).toBe('La Boulange');
+    expect(list.rows[0].parties?.target.label).toBe('La Boulange');
+  });
+
+  describe('typeChoices', () => {
+    it('should offer once each type found in the history', () => {
+      fakeAccount.blockchain.getHistory = () => [
+        { date: new Date(2026, 0, 17), type: 3, signer: 'alice-pk', target: MY_PK, money: [1], invests: [], signature: 'a' },
+        { date: new Date(2026, 0, 16), type: 2, signer: MY_PK, target: '', money: [1], invests: [1], signature: 'b' },
+        { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: MY_PK, money: [1], invests: [], signature: 'c' },
+      ];
+
+      const list = TestBed.createComponent(TransactionList).componentInstance;
+
+      expect(list.typeChoices).toEqual(['Paiement', 'Création du jour']);
+    });
+  });
+
+  describe('entries', () => {
+    it('should keep only the rows that match the search', () => {
+      component.search.set('alice');
+      expect(component.entries().length).toBe(2);
+
+      component.search.set('bob');
+      expect(component.entries()).toEqual([]);
+    });
+
+    it('should keep only the rows of the chosen type', () => {
+      component.chosenType.set('Création du jour');
+      expect(component.entries()).toEqual([]);
+
+      component.chosenType.set('Paiement');
+      expect(component.entries().length).toBe(2);
+    });
   });
 
   describe('template', () => {
@@ -100,6 +132,20 @@ describe('TransactionList', () => {
       const emptyMessage: HTMLElement = fixture.nativeElement.querySelector('.empty');
       expect(emptyMessage.textContent).toContain('Aucune transaction.');
       expect(emptyMessage.closest('.mobile-list')).toBeNull();
+    });
+
+    it('should name the month above its rows, on every screen size', () => {
+      const headings = Array.from(fixture.nativeElement.querySelectorAll('.month-heading') as NodeListOf<HTMLElement>)
+        .map((heading) => heading.textContent?.trim());
+
+      expect(headings).toEqual(['janvier 2026', 'janvier 2026']);
+    });
+
+    it('should say that no transaction matches the search', () => {
+      component.search.set('bob');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.empty')?.textContent).toContain('Aucune transaction ne correspond à la recherche.');
     });
 
     it('should lead back to the payments', () => {
@@ -146,7 +192,7 @@ describe('TransactionList', () => {
       fixture = TestBed.createComponent(TransactionList);
       fixture.detectChanges();
 
-      const cells = fixture.nativeElement.querySelectorAll('.desktop-table td');
+      const cells = fixture.nativeElement.querySelectorAll('.desktop-table .transaction-row td');
       expect(cells[2].textContent.trim()).toBe('');
       expect(cells[3].textContent.trim()).toBe('');
     });

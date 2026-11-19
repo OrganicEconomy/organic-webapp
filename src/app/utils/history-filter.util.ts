@@ -1,4 +1,4 @@
-import type { DisplayRow } from './transaction-display.util'
+import type { DisplayRow, Party } from './transaction-display.util'
 
 export interface MonthHeading {
   heading: string
@@ -20,10 +20,25 @@ function searchableText(text: string): string {
   return text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
 }
 
+function partyWordsOf(party: Party): string[] {
+  return party.fullKey ? [party.label, party.fullKey] : [party.label]
+}
+
+function amountWordsOf(row: DisplayRow): string[] {
+  return Object.values(row.amounts)
+    .filter((amount) => amount !== 0)
+    .map((amount) => String(Math.abs(amount)))
+}
+
 function wordsOf(row: DisplayRow): string {
-  return searchableText(row.type)
+  const partyWords = row.parties ? [...partyWordsOf(row.parties.source), ...partyWordsOf(row.parties.target)] : []
+  return searchableText([row.type, ...partyWords, ...amountWordsOf(row)].join(' '))
 }
 
 export function matchesSearch(row: DisplayRow, search: string): boolean {
   return wordsOf(row).includes(searchableText(search))
+}
+
+export function hasType(row: DisplayRow, type: string | null): boolean {
+  return type === null || row.type === type
 }

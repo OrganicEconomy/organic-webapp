@@ -60,7 +60,7 @@ test.describe('history', () => {
     await signUpApprovedCitizen(page, 'Yanis Perrin');
 
     await openTheHistory(page);
-    await expect(page.locator('.month-heading', { hasText: 'février 1990' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'février 1990' })).toBeVisible();
 
     await page.getByLabel('Rechercher').fill('creation');
     await expect(page.locator('.tx-card')).toHaveCount(1);
