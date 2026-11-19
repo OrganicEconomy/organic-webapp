@@ -2,7 +2,7 @@
     display: flex;
     justify-content: center;
     align-items: flex-start;
-    height: calc(100dvh - 64px);
+    height: 100%;
     padding: 24px 16px;
     box-sizing: border-box;
 }
@@ -25,7 +25,6 @@ mat-card-content {
 }
 
 .history-rows {
-    min-height: 0;
     overflow-y: auto;
 }
 
@@ -35,12 +34,10 @@ h1 {
     margin: 0;
 }
 
-/* === TABLE (desktop) === */
 .desktop-table {
     width: 100%;
 }
 
-/* === MOBILE LIST === */
 .mobile-list {
     display: none;
     flex-direction: column;
