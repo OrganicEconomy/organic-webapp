@@ -1,17 +1,24 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
-import { MatTableModule } from '@angular/material/table';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { ConnectedUserService } from '../../services/connected-user.service';
-import { DisplayRow, toDisplayRow, withoutRepeats } from '../../utils/transaction-display.util';
-import { TransactionAmounts } from '../transaction-amounts/transaction-amounts';
-import { HistoryEntry, MonthHeading, hasType, matchesSearch, withMonthHeadings } from '../../utils/history-filter.util';
-import { MatSelectModule } from '@angular/material/select';
 import { FormsModule } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
+import { ConnectedUserService } from '../../services/connected-user.service';
+import { DisplayRow, newestFirst, toDisplayRow, withoutRepeats } from '../../utils/transaction-display.util';
+import {
+  ALL_TYPES,
+  HistoryEntry,
+  hasType,
+  isMonthHeading,
+  matchesSearch,
+  withMonthHeadings,
+} from '../../utils/history-filter.util';
+import { TransactionAmounts } from '../transaction-amounts/transaction-amounts';
 import type { Contact, LoadedAccount } from '../../models/account';
 
 function partiesKnownBy(user: LoadedAccount): Contact[] {
@@ -22,6 +29,10 @@ function partiesKnownBy(user: LoadedAccount): Contact[] {
     type: 'ecosystem',
   }))
   return [...user.contacts, ...myEcosystems]
+}
+
+function typesFoundIn(rows: DisplayRow[]): string[] {
+  return [...new Set(rows.map((row) => row.type))]
 }
 
 @Component({
@@ -49,7 +60,8 @@ export class TransactionList {
   rows: DisplayRow[] = []
   typeChoices: string[] = []
   search = signal('')
-  chosenType = signal<string | null>(null)
+  chosenType = signal(ALL_TYPES)
+  allTypes = ALL_TYPES
 
   private isShown(row: DisplayRow): boolean {
     return matchesSearch(row, this.search()) && hasType(row, this.chosenType())
@@ -57,7 +69,8 @@ export class TransactionList {
 
   entries = computed(() => withMonthHeadings(this.rows.filter((row) => this.isShown(row))))
 
-  isMonthHeading = (_index: number, entry: HistoryEntry): entry is MonthHeading => 'heading' in entry
+  isMonthHeading = isMonthHeading
+  isMonthHeadingRow = (_index: number, entry: HistoryEntry) => isMonthHeading(entry)
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
@@ -67,8 +80,8 @@ export class TransactionList {
     }
 
     const knownParties = partiesKnownBy(this.user)
-    this.rows = withoutRepeats(this.user.blockchain.getHistory())
+    this.rows = newestFirst(withoutRepeats(this.user.blockchain.getHistory()))
       .map((tx: any) => toDisplayRow(tx, this.user.blockchain.getMyPublicKey(), knownParties))
-    this.typeChoices = [...new Set(this.rows.map((row) => row.type))]
+    this.typeChoices = typesFoundIn(this.rows)
   }
 }

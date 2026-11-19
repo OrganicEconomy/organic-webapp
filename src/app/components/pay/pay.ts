@@ -17,7 +17,7 @@ import { LevelUpService } from '../../services/level-up.service';
 import { BackupService, UndoNotStoredError } from '../../services/backup.service';
 import { LocalSaveError } from '../../services/local-database.service';
 import { isDeviceRevoked } from '../../services/server-error.util';
-import { DisplayRow, toDisplayRow, getContactName, withoutRepeats } from '../../utils/transaction-display.util';
+import { DisplayRow, toDisplayRow, getContactName, newestFirst, withoutRepeats } from '../../utils/transaction-display.util';
 import { TransactionAmounts } from '../transaction-amounts/transaction-amounts';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { Observable, catchError, finalize, map, of } from 'rxjs';
@@ -78,7 +78,7 @@ export class Pay {
     this.max = this.user.blockchain.getAvailableMoneyAmount()
 
     const bc = this.user.blockchain
-    this.recentTransactions = withoutRepeats(bc.getHistory()).slice(0, 5)
+    this.recentTransactions = newestFirst(withoutRepeats(bc.getHistory())).slice(0, 5)
       .map((tx: any) => toDisplayRow(tx, bc.getMyPublicKey(), this.user.contacts))
   }
 

@@ -177,8 +177,8 @@ function iconOf(tx: any, myPublicKey: string): string {
 
 export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): DisplayRow {
   return {
-    date: tx.date.toLocaleDateString("fr-FR"),
-    month: tx.date.toLocaleDateString("fr-FR", { month: "long", year: "numeric" }),
+    date: tx.date.toLocaleDateString("fr-FR", { timeZone: "UTC" }),
+    month: tx.date.toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" }),
     type: typeLabel(tx, myPublicKey),
     icon: iconOf(tx, myPublicKey),
     parties: hasParties(tx) ? partiesOf(tx, myPublicKey, contacts) : null,
@@ -202,4 +202,8 @@ export function withoutRepeats(history: any[]): any[] {
     seen.add(tx.signature)
     return true
   })
+}
+
+export function newestFirst(history: any[]): any[] {
+  return [...history].sort((newer, older) => older.date.getTime() - newer.date.getTime())
 }

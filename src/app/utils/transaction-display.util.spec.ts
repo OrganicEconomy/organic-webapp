@@ -25,6 +25,13 @@ describe('toDisplayRow', () => {
     expect(toDisplayRow(tx, 'my-pk', []).month).toBe('janvier 2026');
   });
 
+  it('should show the day and month organic-money dates in UTC, whatever the time zone of the phone', () => {
+    const tx = { date: new Date(Date.UTC(2026, 9, 31, 23, 30)), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1], invests: [] };
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.date).toBe('31/10/2026');
+    expect(row.month).toBe('octobre 2026');
+  });
+
   it('should map the numeric type to its French label', () => {
     const tx = { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: 'my-pk', money: [1, 2, 3] };
     const row = toDisplayRow(tx, 'my-pk', []);

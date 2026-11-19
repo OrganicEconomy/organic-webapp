@@ -1,5 +1,5 @@
 import type { DisplayRow } from './transaction-display.util';
-import { hasType, matchesSearch, withMonthHeadings } from './history-filter.util';
+import { ALL_TYPES, hasType, matchesSearch, withMonthHeadings } from './history-filter.util';
 
 function aRow(fields: Partial<DisplayRow>): DisplayRow {
   return {
@@ -44,20 +44,59 @@ describe('matchesSearch', () => {
     expect(matchesSearch(rowWithZoe, 'zoe')).toBeTrue();
   });
 
+  it('should ignore the space a phone keyboard adds after a word', () => {
+    expect(matchesSearch(rowWithZoe, 'zoé ')).toBeTrue();
+  });
+
+  it('should find a row by several words, in any order', () => {
+    expect(matchesSearch(rowWithZoe, 'zoe creation')).toBeTrue();
+    expect(matchesSearch(rowWithZoe, 'zoe paiement')).toBeFalse();
+  });
+
+  it('should find a row by its day or its month, as shown', () => {
+    expect(matchesSearch(rowWithZoe, '15/01')).toBeTrue();
+    expect(matchesSearch(rowWithZoe, 'janvier')).toBeTrue();
+  });
+
+  it('should find a row by a part of the whole key of an unknown party', () => {
+    const paymentToAKey = aRow({
+      parties: {
+        source: { label: 'Moi', fullKey: null },
+        target: { label: '...cdcdcdcd', fullKey: '03abcdcdcdcd' },
+      },
+    });
+
+    expect(matchesSearch(paymentToAKey, '03ab')).toBeTrue();
+  });
+
   it('should leave out a row that has none of the words searched', () => {
     expect(matchesSearch(rowWithZoe, 'bob')).toBeFalse();
   });
 
-  it('should find a row by one of its amounts', () => {
+  it('should find a row by one of its amounts, with or without the sign shown', () => {
     const paymentOfSeven = aRow({ amounts: { money: -7, invests: 0, experience: 0 } });
 
     expect(matchesSearch(paymentOfSeven, '7')).toBeTrue();
+    expect(matchesSearch(paymentOfSeven, '−7')).toBeTrue();
+    expect(matchesSearch(paymentOfSeven, '-7')).toBeTrue();
+  });
+
+  it('should match a number with a whole amount only, not inside a longer amount or a key', () => {
+    const paymentOfSeventeenToAKey = aRow({
+      amounts: { money: -17, invests: 0, experience: 0 },
+      parties: {
+        source: { label: 'Moi', fullKey: null },
+        target: { label: '...7a7a7a7a', fullKey: '037a7a7a7a' },
+      },
+    });
+
+    expect(matchesSearch(paymentOfSeventeenToAKey, '7')).toBeFalse();
   });
 });
 
 describe('hasType', () => {
   it('should keep every row when no type is chosen', () => {
-    expect(hasType(aRow({ type: 'Paiement' }), null)).toBeTrue();
+    expect(hasType(aRow({ type: 'Paiement' }), ALL_TYPES)).toBeTrue();
   });
 
   it('should keep only a row of the chosen type', () => {

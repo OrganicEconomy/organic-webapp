@@ -57,6 +57,19 @@ describe('TransactionList', () => {
     expect(list.rows.length).toBe(1);
   });
 
+  it('should show the newest rows first, even an engagement carried over with its old date', () => {
+    fakeAccount.blockchain.getHistory = () => [
+      { date: new Date(2026, 10, 2), type: 3, signer: MY_PK, target: 'alice-pk', money: [1], invests: [], signature: 'november' },
+      { date: new Date(2026, 8, 25), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: [1], signature: 'engagement' },
+      { date: new Date(2026, 9, 20), type: 3, signer: MY_PK, target: 'alice-pk', money: [1], invests: [], signature: 'october' },
+      { date: new Date(2026, 8, 25), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: [1], signature: 'engagement' },
+    ];
+
+    const list = TestBed.createComponent(TransactionList).componentInstance;
+
+    expect(list.rows.map((row) => row.month)).toEqual(['novembre 2026', 'octobre 2026', 'septembre 2026']);
+  });
+
   it('should name an ecosystem of mine even when it is not among the contacts', () => {
     const ecosystemKey = '02' + 'cd'.repeat(32);
     fakeAccount.myEcosystems = [{ publickey: ecosystemKey, name: 'La Boulange', role: 'actor' }];
@@ -86,7 +99,10 @@ describe('TransactionList', () => {
   describe('entries', () => {
     it('should keep only the rows that match the search', () => {
       component.search.set('alice');
-      expect(component.entries().length).toBe(2);
+      expect(component.entries()).toEqual([
+        { heading: 'janvier 2026' },
+        jasmine.objectContaining({ type: 'Paiement' }),
+      ]);
 
       component.search.set('bob');
       expect(component.entries()).toEqual([]);
@@ -97,7 +113,10 @@ describe('TransactionList', () => {
       expect(component.entries()).toEqual([]);
 
       component.chosenType.set('Paiement');
-      expect(component.entries().length).toBe(2);
+      expect(component.entries()).toEqual([
+        { heading: 'janvier 2026' },
+        jasmine.objectContaining({ type: 'Paiement' }),
+      ]);
     });
   });
 
@@ -135,10 +154,11 @@ describe('TransactionList', () => {
     });
 
     it('should name the month above its rows, on every screen size', () => {
-      const headings = Array.from(fixture.nativeElement.querySelectorAll('.month-heading') as NodeListOf<HTMLElement>)
-        .map((heading) => heading.textContent?.trim());
+      const desktopHeading: HTMLElement = fixture.nativeElement.querySelector('.desktop-table .month-heading');
+      const mobileHeading: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .month-heading');
 
-      expect(headings).toEqual(['janvier 2026', 'janvier 2026']);
+      expect(desktopHeading.textContent?.trim()).toBe('janvier 2026');
+      expect(mobileHeading.textContent?.trim()).toBe('janvier 2026');
     });
 
     it('should say that no transaction matches the search', () => {
@@ -146,6 +166,20 @@ describe('TransactionList', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('.empty')?.textContent).toContain('Aucune transaction ne correspond à la recherche.');
+    });
+
+    it('should announce the month of the desktop table as a heading', () => {
+      const heading: HTMLElement = fixture.nativeElement.querySelector('.desktop-table .month-heading [role]');
+
+      expect(heading.getAttribute('role')).toBe('heading');
+      expect(heading.getAttribute('aria-level')).toBe('2');
+    });
+
+    it('should show that every type is shown until one is chosen', async () => {
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.history-filters mat-select').textContent).toContain('Tous les types');
     });
 
     it('should lead back to the payments', () => {

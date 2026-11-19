@@ -56,11 +56,17 @@ test.describe('history', () => {
     await expect(opening.locator('app-transaction-amounts')).toHaveText('');
   });
 
-  test('should group the rows by month, and find them by words without accents or by type', async ({ page }) => {
+  test('should group the rows by month', async ({ page }) => {
     await signUpApprovedCitizen(page, 'Yanis Perrin');
 
     await openTheHistory(page);
+
     await expect(page.getByRole('heading', { name: 'février 1990' })).toBeVisible();
+  });
+
+  test('should find the rows by words without accents, or by type', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Inès Perrin');
+    await openTheHistory(page);
 
     await page.getByLabel('Rechercher').fill('creation');
     await expect(page.locator('.tx-card')).toHaveCount(1);
