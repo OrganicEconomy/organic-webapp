@@ -77,6 +77,22 @@ describe('TransactionList', () => {
       expect(card.querySelector('app-transaction-amounts')?.textContent).toContain('+3 XP');
     });
 
+    it('should show on its row, in the table and in the list, what an engagement holds back', () => {
+      const oneADayForTwoDays = [202601169000, 202601179000];
+      fakeAccount.blockchain.getHistory = () => [
+        { date: new Date(2026, 0, 16), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: oneADayForTwoDays },
+      ];
+
+      const list = TestBed.createComponent(TransactionList);
+      list.detectChanges();
+
+      const shownAmounts = Array.from(list.nativeElement.querySelectorAll('app-transaction-amounts') as NodeListOf<HTMLElement>);
+      expect(shownAmounts.map((amounts) => amounts.textContent?.trim())).toEqual([
+        '1 investissement/jour pendant 2 jours',
+        '1 investissement/jour pendant 2 jours',
+      ]);
+    });
+
     it('should lead back to the payments', () => {
       const backLink = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
         .find((link) => link.textContent?.includes('Retour'));

@@ -66,7 +66,7 @@
         <div class="tx-row">
             <span class="tx-date">{{ tx.date }}</span>
             <span class="tx-type"><i class="bi tx-icon" [class]="tx.icon" aria-hidden="true"></i> {{ tx.label }}</span>
-            <app-transaction-amounts [amounts]="tx.amounts" />
+            <app-transaction-amounts [amounts]="tx.amounts" [engagement]="tx.engagement" />
         </div>
         }
         }
