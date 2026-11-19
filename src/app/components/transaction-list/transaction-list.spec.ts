@@ -70,7 +70,7 @@ describe('TransactionList', () => {
   });
 
   describe('template', () => {
-    it('should show each row with the icon of its kind and its signed amounts', () => {
+    it('should show each row with the icon of its kind and its amounts', () => {
       const card: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .tx-card');
 
       expect(card.querySelector('i.bi-arrow-down-left')?.getAttribute('aria-hidden')).toBe('true');

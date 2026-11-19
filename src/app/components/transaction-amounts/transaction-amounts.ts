@@ -11,4 +11,10 @@ import { type Amounts, withSign } from '../../utils/transaction-display.util';
 export class TransactionAmounts {
   amounts = input.required<Amounts>();
   withSign = withSign;
+
+  signedInvests(): string {
+    const invests = this.amounts().invests;
+    const unit = Math.abs(invests) > 1 ? 'investissements' : 'investissement';
+    return `${withSign(invests)} ${unit}`;
+  }
 }

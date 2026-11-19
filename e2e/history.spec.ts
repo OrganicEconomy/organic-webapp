@@ -33,12 +33,12 @@ test.describe('history', () => {
 
     await openTheHistory(page);
 
-    const opening = page.locator('.tx-card', { hasText: 'Ouverture du compte' });
-    const creation = page.locator('.tx-card', { hasText: 'Création du jour' });
-    await expect(opening).toBeVisible();
-    await expect(creation).toBeVisible();
-    await expect(opening).not.toContainText('→');
-    await expect(creation).not.toContainText('→');
+    const accountOpeningCard = page.locator('.tx-card', { hasText: 'Ouverture du compte' });
+    const dailyCreationCard = page.locator('.tx-card', { hasText: 'Création du jour' });
+    await expect(accountOpeningCard).toBeVisible();
+    await expect(dailyCreationCard).toBeVisible();
+    await expect(accountOpeningCard).not.toContainText('→');
+    await expect(dailyCreationCard).not.toContainText('→');
   });
 
   test('should sign each amount, and show the experience a payment brings', async ({ page }) => {

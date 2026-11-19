@@ -5,7 +5,7 @@
 }
 @if (amounts().invests) {
 <span class="amount" [class.gain]="amounts().invests > 0" [class.spending]="amounts().invests < 0">
-    {{ withSign(amounts().invests) }} invest.
+    {{ signedInvests() }}
 </span>
 }
 @if (amounts().experience) {
