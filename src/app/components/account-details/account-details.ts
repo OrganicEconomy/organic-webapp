@@ -74,10 +74,12 @@ export class AccountDetails {
     const link = contactLink(document.baseURI, { pk: this.publickey, url: this.user.serverUrl, name: this.name })
     try {
       await navigator.clipboard.writeText(link)
-      this.displayMessage('Lien copié : envoie-le à ton contact.')
-    } catch {
+    } catch (error) {
+      console.error(error)
       this.displayMessage("Impossible de copier le lien.")
+      return
     }
+    this.displayMessage('Lien copié : envoie-le à ton contact.')
   }
 
   async copyMyKey(): Promise<void> {

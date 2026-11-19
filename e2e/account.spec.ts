@@ -1,26 +1,24 @@
 import { expect, Page, test } from '@playwright/test';
 import { signUpApprovedCitizen } from './support/signup';
+import { storedAccounts } from './support/device-storage';
+import { openTheTab } from './support/navigation';
 
-async function myPublicKey(page: Page): Promise<string> {
-  return page.evaluate(() => JSON.parse(sessionStorage.getItem('organic-session')!).publickey);
-}
-
-async function openMyAccount(page: Page): Promise<void> {
-  await page.getByRole('navigation').getByRole('link', { name: 'Mon compte' }).click();
+async function scrollsSideways(page: Page): Promise<boolean> {
+  return page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
 }
 
 test.describe('my account', () => {
   test('should show my whole key, and copy it for me', async ({ page, context }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await signUpApprovedCitizen(page, 'Romane Leclerc');
-    const myKey = await myPublicKey(page);
+    const [myAccount] = await storedAccounts(page);
 
-    await openMyAccount(page);
-    const shownKey = page.getByText(myKey, { exact: true });
-    await expect(shownKey).toBeVisible();
-    expect(await shownKey.evaluate((element) => element.scrollWidth <= element.clientWidth)).toBe(true);
+    await openTheTab(page, 'Mon compte');
+    await expect(page.getByText(myAccount.publickey, { exact: true })).toBeVisible();
+    expect(await scrollsSideways(page)).toBe(false);
 
     await page.getByRole('button', { name: 'Copier ma clé' }).click();
-    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(myKey);
+    await expect(page.getByText('Clé copiée.')).toBeVisible();
+    expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(myAccount.publickey);
   });
 });

@@ -2,6 +2,7 @@ import { Browser, expect, Page, test } from '@playwright/test';
 import { SERVER_URL } from '../playwright.config';
 import { emailOf, signUpApprovedCitizen } from './support/signup';
 import { closeTheLevelUpDialog, payOneself } from './support/payments';
+import { openTheTab } from './support/navigation';
 
 const OTHER_DEVICE_BANNER = 'Ce compte est actif sur un autre appareil — lecture seule.';
 
@@ -19,10 +20,6 @@ async function restoreOnAnotherDevice(browser: Browser, name: string): Promise<v
 async function discoverTheTakeoverBySaving(page: Page): Promise<void> {
   await payOneself(page, 1);
   await closeTheLevelUpDialog(page);
-}
-
-async function openTheTab(page: Page, name: string): Promise<void> {
-  await page.getByRole('navigation').getByRole('link', { name }).click();
 }
 
 test.describe('read-only banner', () => {
