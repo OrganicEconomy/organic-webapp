@@ -76,8 +76,6 @@ export interface DisplayRow {
   amounts: Amounts
 }
 
-const PAPER_BEARER: Party = { label: "Porteur du billet", fullKey: null }
-
 function isUnknownKey(pk: string, myPublicKey: string, contacts: any[]): boolean {
   return !!pk && pk !== myPublicKey && !contacts.some((contact: any) => contact.pk === pk)
 }
@@ -89,24 +87,25 @@ function partyOf(pk: string, myPublicKey: string, contacts: any[]): Party {
   return { label: displayNameOf(pk, myPublicKey, contacts), fullKey: null }
 }
 
-function receiverOf(tx: any, myPublicKey: string, contacts: any[]): Party {
-  if (tx.type !== TxType.PAPER) {
-    return partyOf(tx.target, myPublicKey, contacts)
-  }
-  return isSignedByMe(tx, myPublicKey) ? PAPER_BEARER : partyOf(myPublicKey, myPublicKey, contacts)
+function receiverKeyOf(tx: any, myPublicKey: string): string {
+  return tx.type === TxType.PAPER ? myPublicKey : tx.target
 }
 
 function partiesOf(tx: any, myPublicKey: string, contacts: any[]): Parties {
   return {
     source: partyOf(tx.signer, myPublicKey, contacts),
-    target: receiverOf(tx, myPublicKey, contacts),
+    target: partyOf(receiverKeyOf(tx, myPublicKey), myPublicKey, contacts),
   }
 }
 
 const TYPES_WITHOUT_PARTIES = [TxType.INIT, TxType.CREATE]
 
-function hasParties(tx: any): boolean {
-  return !TYPES_WITHOUT_PARTIES.includes(tx.type) && !isPaymentToOneself(tx)
+function isBillPrintedByMe(tx: any, myPublicKey: string): boolean {
+  return tx.type === TxType.PAPER && isSignedByMe(tx, myPublicKey)
+}
+
+function hasParties(tx: any, myPublicKey: string): boolean {
+  return !TYPES_WITHOUT_PARTIES.includes(tx.type) && !isPaymentToOneself(tx) && !isBillPrintedByMe(tx, myPublicKey)
 }
 
 const TYPES_SPENDING_MONEY = [TxType.PAY, TxType.PAPER]
@@ -187,7 +186,7 @@ export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): Dis
     date: tx.date.toLocaleDateString("fr-FR"),
     label: typeLabel(tx, myPublicKey),
     icon: iconOf(tx, myPublicKey),
-    parties: hasParties(tx) ? partiesOf(tx, myPublicKey, contacts) : null,
+    parties: hasParties(tx, myPublicKey) ? partiesOf(tx, myPublicKey, contacts) : null,
     amounts: amountsOf(tx, myPublicKey),
   }
 }
