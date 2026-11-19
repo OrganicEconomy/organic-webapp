@@ -11,6 +11,14 @@ export function displayNameOf(pk: string, myPublicKey: string, contacts: any[]):
   return contact ? contact.name : abbreviatedKey(pk)
 }
 
+function isSignedByMe(tx: any, myPublicKey: string): boolean {
+  return tx.signer === myPublicKey
+}
+
+function isReceivedByMe(tx: any, myPublicKey: string): boolean {
+  return tx.target === myPublicKey
+}
+
 const TX_TYPE_LABELS: Record<number, string> = {
   [TxType.INIT]: "Ouverture du compte",
   [TxType.CREATE]: "Création du jour",
@@ -26,20 +34,20 @@ const TX_TYPE_LABELS: Record<number, string> = {
   [TxType.EARN]: "Gain",
 }
 
-function isCashing(tx: any): boolean {
+function isPaymentToOneself(tx: any): boolean {
   return tx.type === TxType.PAY && tx.signer === tx.target
 }
 
-function isCashedBill(tx: any, myPublicKey: string): boolean {
-  return tx.type === TxType.PAPER && tx.signer !== myPublicKey
+function isBillCashedByMe(tx: any, myPublicKey: string): boolean {
+  return tx.type === TxType.PAPER && !isSignedByMe(tx, myPublicKey)
 }
 
 function typeLabel(tx: any, myPublicKey: string): string {
-  if (isCashing(tx)) {
+  if (isPaymentToOneself(tx)) {
     return "Encaissement"
   }
   if (tx.type === TxType.PAPER) {
-    return isCashedBill(tx, myPublicKey) ? "Billet encaissé" : "Billet imprimé"
+    return isBillCashedByMe(tx, myPublicKey) ? "Billet encaissé" : "Billet imprimé"
   }
   return TX_TYPE_LABELS[tx.type] ?? String(tx.type)
 }
@@ -62,7 +70,7 @@ export interface Amounts {
 
 export interface DisplayRow {
   date: string
-  type: string
+  label: string
   icon: string
   parties: Parties | null
   amounts: Amounts
@@ -85,7 +93,7 @@ function receiverOf(tx: any, myPublicKey: string, contacts: any[]): Party {
   if (tx.type !== TxType.PAPER) {
     return partyOf(tx.target, myPublicKey, contacts)
   }
-  return tx.signer === myPublicKey ? PAPER_BEARER : partyOf(myPublicKey, myPublicKey, contacts)
+  return isSignedByMe(tx, myPublicKey) ? PAPER_BEARER : partyOf(myPublicKey, myPublicKey, contacts)
 }
 
 function partiesOf(tx: any, myPublicKey: string, contacts: any[]): Parties {
@@ -98,16 +106,16 @@ function partiesOf(tx: any, myPublicKey: string, contacts: any[]): Parties {
 const TYPES_WITHOUT_PARTIES = [TxType.INIT, TxType.CREATE]
 
 function hasParties(tx: any): boolean {
-  return !TYPES_WITHOUT_PARTIES.includes(tx.type) && !isCashing(tx)
+  return !TYPES_WITHOUT_PARTIES.includes(tx.type) && !isPaymentToOneself(tx)
 }
 
-const MONEY_SPENDINGS = [TxType.PAY, TxType.PAPER]
+const TYPES_SPENDING_MONEY = [TxType.PAY, TxType.PAPER]
 
 function moneyOf(tx: any, myPublicKey: string): number {
   if (tx.type === TxType.CREATE) {
     return tx.money.length
   }
-  if (MONEY_SPENDINGS.includes(tx.type) && tx.signer === myPublicKey) {
+  if (TYPES_SPENDING_MONEY.includes(tx.type) && isSignedByMe(tx, myPublicKey)) {
     return -tx.money.length
   }
   return 0
@@ -117,19 +125,19 @@ function investsOf(tx: any, myPublicKey: string): number {
   if (tx.type === TxType.CREATE) {
     return tx.invests.length
   }
-  if (tx.type === TxType.ENGAGE && tx.signer === myPublicKey) {
+  if (tx.type === TxType.ENGAGE && isSignedByMe(tx, myPublicKey)) {
     return -tx.invests.length
   }
   return 0
 }
 
-const EXPERIENCE_GAINS = [TxType.PAY, TxType.EARN]
+const TYPES_BRINGING_EXPERIENCE = [TxType.PAY, TxType.EARN]
 
 function experienceOf(tx: any, myPublicKey: string): number {
-  if (EXPERIENCE_GAINS.includes(tx.type) && tx.target === myPublicKey) {
+  if (TYPES_BRINGING_EXPERIENCE.includes(tx.type) && isReceivedByMe(tx, myPublicKey)) {
     return tx.money.length
   }
-  if (isCashedBill(tx, myPublicKey)) {
+  if (isBillCashedByMe(tx, myPublicKey)) {
     return tx.money.length
   }
   return 0
@@ -158,10 +166,10 @@ const TX_TYPE_ICONS: Record<number, string> = {
 }
 
 function paymentIcon(tx: any, myPublicKey: string): string {
-  if (isCashing(tx)) {
+  if (isPaymentToOneself(tx)) {
     return "bi-arrow-repeat"
   }
-  return tx.signer === myPublicKey ? "bi-arrow-up-right" : "bi-arrow-down-left"
+  return isSignedByMe(tx, myPublicKey) ? "bi-arrow-up-right" : "bi-arrow-down-left"
 }
 
 function iconOf(tx: any, myPublicKey: string): string {
@@ -169,7 +177,7 @@ function iconOf(tx: any, myPublicKey: string): string {
     return paymentIcon(tx, myPublicKey)
   }
   if (tx.type === TxType.PAPER) {
-    return isCashedBill(tx, myPublicKey) ? "bi-qr-code-scan" : "bi-printer"
+    return isBillCashedByMe(tx, myPublicKey) ? "bi-qr-code-scan" : "bi-printer"
   }
   return TX_TYPE_ICONS[tx.type] ?? "bi-question-circle"
 }
@@ -177,18 +185,20 @@ function iconOf(tx: any, myPublicKey: string): string {
 export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): DisplayRow {
   return {
     date: tx.date.toLocaleDateString("fr-FR"),
-    type: typeLabel(tx, myPublicKey),
+    label: typeLabel(tx, myPublicKey),
     icon: iconOf(tx, myPublicKey),
     parties: hasParties(tx) ? partiesOf(tx, myPublicKey, contacts) : null,
     amounts: amountsOf(tx, myPublicKey),
   }
 }
 
+const MINUS_SIGN = "−"
+
 export function withSign(amount: number): string {
   if (amount > 0) {
     return `+${amount}`
   }
-  return amount < 0 ? `−${-amount}` : "0"
+  return amount < 0 ? `${MINUS_SIGN}${-amount}` : "0"
 }
 
 export function withoutRepeats(history: any[]): any[] {
