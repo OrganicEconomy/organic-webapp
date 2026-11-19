@@ -77,6 +77,7 @@ export interface Amounts {
 
 export interface DisplayRow {
   date: string
+  month: string
   label: string
   icon: string
   parties: Parties | null
@@ -206,7 +207,8 @@ function engagementOf(tx: any): Engagement | null {
 
 export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): DisplayRow {
   return {
-    date: tx.date.toLocaleDateString("fr-FR"),
+    date: tx.date.toLocaleDateString("fr-FR", { timeZone: "UTC" }),
+    month: tx.date.toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" }),
     label: typeLabel(tx, myPublicKey),
     icon: iconOf(tx, myPublicKey),
     parties: hasParties(tx, myPublicKey) ? partiesOf(tx, myPublicKey, contacts) : null,
@@ -233,4 +235,8 @@ export function withoutRepeats(history: any[]): any[] {
     seen.add(tx.signature)
     return true
   })
+}
+
+export function newestFirst(history: any[]): any[] {
+  return [...history].sort((newer, older) => older.date.getTime() - newer.date.getTime())
 }

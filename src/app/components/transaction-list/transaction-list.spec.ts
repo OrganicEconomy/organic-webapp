@@ -45,7 +45,7 @@ describe('TransactionList', () => {
   });
 
   it('should read the source contact from tx.signer, not the nonexistent tx.source', () => {
-    expect(component.dataSource[0].parties?.source.label).toBe('Alice');
+    expect(component.rows[0].parties?.source.label).toBe('Alice');
   });
 
   it('should show only once an engagement that each new block carries over', () => {
@@ -54,7 +54,20 @@ describe('TransactionList', () => {
 
     const list = TestBed.createComponent(TransactionList).componentInstance;
 
-    expect(list.dataSource.length).toBe(1);
+    expect(list.rows.length).toBe(1);
+  });
+
+  it('should show the newest rows first, even an engagement carried over with its old date', () => {
+    fakeAccount.blockchain.getHistory = () => [
+      { date: new Date(2026, 10, 2), type: 3, signer: MY_PK, target: 'alice-pk', money: [1], invests: [], signature: 'november' },
+      { date: new Date(2026, 8, 25), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: [1], signature: 'engagement' },
+      { date: new Date(2026, 9, 20), type: 3, signer: MY_PK, target: 'alice-pk', money: [1], invests: [], signature: 'october' },
+      { date: new Date(2026, 8, 25), type: 4, signer: MY_PK, target: 'eco-pk', money: [], invests: [1], signature: 'engagement' },
+    ];
+
+    const list = TestBed.createComponent(TransactionList).componentInstance;
+
+    expect(list.rows.map((row) => row.month)).toEqual(['novembre 2026', 'octobre 2026', 'septembre 2026']);
   });
 
   it('should name an ecosystem of mine even when it is not among the contacts', () => {
@@ -66,15 +79,107 @@ describe('TransactionList', () => {
 
     const list = TestBed.createComponent(TransactionList).componentInstance;
 
-    expect(list.dataSource[0].parties?.target.label).toBe('La Boulange');
+    expect(list.rows[0].parties?.target.label).toBe('La Boulange');
+  });
+
+  describe('typeChoices', () => {
+    it('should offer once each type found in the history', () => {
+      fakeAccount.blockchain.getHistory = () => [
+        { date: new Date(2026, 0, 17), type: 3, signer: 'alice-pk', target: MY_PK, money: [1], invests: [], signature: 'a' },
+        { date: new Date(2026, 0, 16), type: 2, signer: MY_PK, target: '', money: [1], invests: [1], signature: 'b' },
+        { date: new Date(2026, 0, 15), type: 3, signer: 'alice-pk', target: MY_PK, money: [1], invests: [], signature: 'c' },
+      ];
+
+      const list = TestBed.createComponent(TransactionList).componentInstance;
+
+      expect(list.typeChoices).toEqual(['Paiement', 'Création du jour']);
+    });
+  });
+
+  describe('entries', () => {
+    it('should keep only the rows that match the search', () => {
+      component.search.set('alice');
+      expect(component.entries()).toEqual([
+        { heading: 'janvier 2026' },
+        jasmine.objectContaining({ label: 'Paiement' }),
+      ]);
+
+      component.search.set('bob');
+      expect(component.entries()).toEqual([]);
+    });
+
+    it('should keep only the rows of the chosen type', () => {
+      component.chosenType.set('Création du jour');
+      expect(component.entries()).toEqual([]);
+
+      component.chosenType.set('Paiement');
+      expect(component.entries()).toEqual([
+        { heading: 'janvier 2026' },
+        jasmine.objectContaining({ label: 'Paiement' }),
+      ]);
+    });
   });
 
   describe('template', () => {
     it('should show each row with the icon of its kind and its amounts', () => {
-      const card: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .tx-card');
+      const card: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .transaction-card');
 
       expect(card.querySelector('i.bi-arrow-down-left')?.getAttribute('aria-hidden')).toBe('true');
       expect(card.querySelector('app-transaction-amounts')?.textContent).toContain('+3 XP');
+    });
+
+    it('should keep the column headers stuck on top while the rows scroll', () => {
+      const header: HTMLElement = fixture.nativeElement.querySelector('.desktop-table th');
+
+      expect(getComputedStyle(header).position).toBe('sticky');
+    });
+
+    it('should scroll the rows in their own area, leaving the title in place', () => {
+      const rows: HTMLElement = fixture.nativeElement.querySelector('.history-rows');
+
+      expect(getComputedStyle(rows).overflowY).toBe('auto');
+      expect(rows.querySelector('.mobile-list')).not.toBeNull();
+      expect(rows.querySelector('.desktop-table')).not.toBeNull();
+      expect(rows.querySelector('h1')).toBeNull();
+    });
+
+    it('should say that there is no transaction yet, on every screen size', () => {
+      fakeAccount.blockchain.getHistory = () => [];
+      fixture = TestBed.createComponent(TransactionList);
+      fixture.detectChanges();
+
+      const emptyMessage: HTMLElement = fixture.nativeElement.querySelector('.empty');
+      expect(emptyMessage.textContent).toContain('Aucune transaction.');
+      expect(emptyMessage.closest('.mobile-list')).toBeNull();
+    });
+
+    it('should name the month above its rows, on every screen size', () => {
+      const desktopHeading: HTMLElement = fixture.nativeElement.querySelector('.desktop-table .month-heading');
+      const mobileHeading: HTMLElement = fixture.nativeElement.querySelector('.mobile-list .month-heading');
+
+      expect(desktopHeading.textContent?.trim()).toBe('janvier 2026');
+      expect(mobileHeading.textContent?.trim()).toBe('janvier 2026');
+    });
+
+    it('should say that no transaction matches the search', () => {
+      component.search.set('bob');
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.empty')?.textContent).toContain('Aucune transaction ne correspond à la recherche.');
+    });
+
+    it('should announce the month of the desktop table as a heading', () => {
+      const heading: HTMLElement = fixture.nativeElement.querySelector('.desktop-table .month-heading [role]');
+
+      expect(heading.getAttribute('role')).toBe('heading');
+      expect(heading.getAttribute('aria-level')).toBe('2');
+    });
+
+    it('should show that every type is shown until one is chosen', async () => {
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.history-filters mat-select').textContent).toContain('Tous les types');
     });
 
     it('should show on its row, in the table and in the list, what an engagement holds back', () => {
@@ -130,16 +235,24 @@ describe('TransactionList', () => {
       expect(fixture.nativeElement.querySelector('.desktop-table .party-key[open]')?.textContent).toContain(unknownKey);
     });
 
-    it('should leave the desktop sender and receiver cells empty for the daily creation', () => {
+    it('should spread the type of the daily creation over the sender and receiver columns of the desktop table', () => {
       fakeAccount.blockchain.getHistory = () => [
         { date: new Date(2026, 0, 16), type: 2, signer: MY_PK, target: '', money: [1], invests: [] },
       ];
       fixture = TestBed.createComponent(TransactionList);
       fixture.detectChanges();
 
-      const cells = fixture.nativeElement.querySelectorAll('.desktop-table td');
-      expect(cells[2].textContent.trim()).toBe('');
-      expect(cells[3].textContent.trim()).toBe('');
+      const cells = fixture.nativeElement.querySelectorAll('.desktop-table .transaction-row td');
+      expect(cells.length).toBe(3);
+      expect(cells[1].textContent).toContain('Création du jour');
+      expect(cells[1].getAttribute('colspan')).toBe('3');
+    });
+
+    it('should keep the sender and receiver columns of the desktop table for a payment', () => {
+      const cells = fixture.nativeElement.querySelectorAll('.desktop-table .transaction-row td');
+
+      expect(cells.length).toBe(5);
+      expect(cells[1].getAttribute('colspan')).toBeNull();
     });
   });
 });

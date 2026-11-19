@@ -25,13 +25,13 @@
         <p class="empty">Aucun paiement en attente.</p>
         } @else {
         @for (row of displayRows; track row.hash) {
-        <div class="tx-row" [class.flagged]="row.status === 'invalid' || row.status === 'unknown-sender'">
-            <div class="tx-info">
-                <span class="tx-source">{{ row.source }}</span>
-                <span class="tx-meta">{{ row.date }}</span>
+        <div class="transaction-row" [class.flagged]="row.status === 'invalid' || row.status === 'unknown-sender'">
+            <div class="transaction-info">
+                <span class="transaction-source">{{ row.source }}</span>
+                <span class="transaction-meta">{{ row.date }}</span>
             </div>
-            <div class="tx-right">
-                <span class="tx-amount">{{ row.amount }} <mat-icon svgIcon="currency-mark"></mat-icon></span>
+            <div class="transaction-right">
+                <span class="transaction-amount">{{ row.amount }} <mat-icon svgIcon="currency-mark"></mat-icon></span>
                 @switch (row.status) {
                 @case ('confirmed') {
                 <span class="status confirmed">✓ confirmé</span>
