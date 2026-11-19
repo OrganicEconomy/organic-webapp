@@ -8,7 +8,7 @@ import { MainLayout } from './main-layout';
 import { ConnectedUserService, ReadOnlyReason } from '../../services/connected-user.service';
 
 @Component({ template: '' })
-class SomePage {}
+class EmptyPage {}
 
 const PAYMENT_PAGES = ['pay', 'pay-offline', 'receive-offline', 'cashpapers', 'printpapers', 'transactions'];
 
@@ -26,8 +26,8 @@ describe('MainLayout', () => {
       imports: [MainLayout],
       providers: [
         provideRouter([
-          ...PAYMENT_PAGES.map((path) => ({ path, component: SomePage })),
-          { path: 'contacts', component: SomePage },
+          ...PAYMENT_PAGES.map((path) => ({ path, component: EmptyPage })),
+          { path: 'contacts', component: EmptyPage },
         ]),
         { provide: ConnectedUserService, useValue: { readOnlyReason: () => readOnlyReason, useThisTab: takeTheAccountBack } },
         { provide: MatSnackBar, useValue: snackBarSpy },
@@ -68,7 +68,7 @@ describe('MainLayout', () => {
       expect(otherTabBanner()).toBeNull();
     });
 
-    it('should keep the Pay tab active on a page reached from the payments, such as the history', async () => {
+    it('should mark the Pay tab active on the history, a page of the payments', async () => {
       await TestBed.inject(Router).navigateByUrl('/transactions');
       fixture.detectChanges();
 
