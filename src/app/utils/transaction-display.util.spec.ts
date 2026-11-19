@@ -1,21 +1,21 @@
-import { getContactName, toDisplayRow, withSign } from './transaction-display.util';
+import { displayNameOf, toDisplayRow, withSign } from './transaction-display.util';
 
-describe('getContactName', () => {
+describe('displayNameOf', () => {
   it('should return "Moi" when the key is the account\'s own public key', () => {
-    expect(getContactName('my-pk', 'my-pk', [])).toBe('Moi');
+    expect(displayNameOf('my-pk', 'my-pk', [])).toBe('Moi');
   });
 
   it('should return the contact\'s name when the key matches a known contact', () => {
     const contacts = [{ pk: 'alice-pk', name: 'Alice' }];
-    expect(getContactName('alice-pk', 'my-pk', contacts)).toBe('Alice');
+    expect(displayNameOf('alice-pk', 'my-pk', contacts)).toBe('Alice');
   });
 
   it('should return a truncated key when the key matches no known contact', () => {
-    expect(getContactName('some-unknown-public-key', 'my-pk', [])).toBe('...blic-key');
+    expect(displayNameOf('some-unknown-public-key', 'my-pk', [])).toBe('...blic-key');
   });
 
   it('should return "-" for an empty/falsy key', () => {
-    expect(getContactName('', 'my-pk', [])).toBe('-');
+    expect(displayNameOf('', 'my-pk', [])).toBe('-');
   });
 });
 

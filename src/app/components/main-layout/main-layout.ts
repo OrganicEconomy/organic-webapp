@@ -19,12 +19,12 @@ export class MainLayout {
   private pageReopener = inject(PageReopenerService);
   private snackBar = inject(MatSnackBar);
   private router = inject(Router);
-  private payPagesShown = PAY_SECTION.map((page) =>
+  private payPagesActive = PAY_SECTION.map((page) =>
     isActive(page, this.router, { paths: 'exact', queryParams: 'ignored' }),
   );
 
   isInThePaySection(): boolean {
-    return this.payPagesShown.some((isShown) => isShown());
+    return this.payPagesActive.some((isPageActive) => isPageActive());
   }
 
   isInUseInAnotherTab(): boolean {

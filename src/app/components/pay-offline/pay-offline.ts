@@ -17,7 +17,7 @@ import { TransactionMaker } from 'organic-money/src/index.js';
 import { ConnectedUserService } from '../../services/connected-user.service';
 import { BackupService } from '../../services/backup.service';
 import { LocalSaveError } from '../../services/local-database.service';
-import { getContactName } from '../../utils/transaction-display.util';
+import { displayNameOf } from '../../utils/transaction-display.util';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
 import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
 
@@ -92,7 +92,7 @@ export class PayOffline {
       return
     }
 
-    const recipient = getContactName(this.target, this.user.blockchain.getMyPublicKey(), this.contacts)
+    const recipient = displayNameOf(this.target, this.user.blockchain.getMyPublicKey(), this.contacts)
     const dialogRef = this.dialog.open(ConfirmDialog, {
       data: { title: 'Payer par QR', message: `Payer ${this.amount} à ${recipient} par QR ? Les unités seront immédiatement retirées de votre solde.` },
     });

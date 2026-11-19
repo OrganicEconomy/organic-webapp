@@ -4,7 +4,7 @@ function abbreviatedKey(pk: string): string {
   return "..." + pk.slice(-8)
 }
 
-export function getContactName(pk: string, myPublicKey: string, contacts: any[]): string {
+export function displayNameOf(pk: string, myPublicKey: string, contacts: any[]): string {
   if (!pk) return "-"
   if (pk === myPublicKey) return "Moi"
   const contact: any = contacts.find((contact: any) => contact.pk === pk)
@@ -78,7 +78,7 @@ function partyOf(pk: string, myPublicKey: string, contacts: any[]): Party {
   if (isUnknownKey(pk, myPublicKey, contacts)) {
     return { label: abbreviatedKey(pk), fullKey: pk }
   }
-  return { label: getContactName(pk, myPublicKey, contacts), fullKey: null }
+  return { label: displayNameOf(pk, myPublicKey, contacts), fullKey: null }
 }
 
 function receiverOf(tx: any, myPublicKey: string, contacts: any[]): Party {
