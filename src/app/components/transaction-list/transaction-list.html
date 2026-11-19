@@ -1,4 +1,4 @@
-<ng-template #partyView let-party>
+<ng-template #partyLabel let-party>
     @if (party.fullKey) {
     <details class="party-key">
         <summary [attr.aria-label]="'Clé inconnue ' + party.label + ', toucher pour la voir en entier'">{{ party.label }}</summary>
@@ -42,14 +42,14 @@
 
                 <ng-container matColumnDef="type">
                     <th mat-header-cell *matHeaderCellDef>Type</th>
-                    <td mat-cell *matCellDef="let element"><i class="bi tx-icon" [class]="element.icon" aria-hidden="true"></i> {{ element.type }}</td>
+                    <td mat-cell *matCellDef="let element"><i class="bi transaction-icon" [class]="element.icon" aria-hidden="true"></i> {{ element.label }}</td>
                 </ng-container>
 
                 <ng-container matColumnDef="source">
                     <th mat-header-cell *matHeaderCellDef>Émetteur</th>
                     <td mat-cell *matCellDef="let element">
                         @if (element.parties) {
-                        <ng-container *ngTemplateOutlet="partyView; context: { $implicit: element.parties.source }" />
+                        <ng-container *ngTemplateOutlet="partyLabel; context: { $implicit: element.parties.source }" />
                         }
                     </td>
                 </ng-container>
@@ -58,7 +58,7 @@
                     <th mat-header-cell *matHeaderCellDef>Receveur</th>
                     <td mat-cell *matCellDef="let element">
                         @if (element.parties) {
-                        <ng-container *ngTemplateOutlet="partyView; context: { $implicit: element.parties.target }" />
+                        <ng-container *ngTemplateOutlet="partyLabel; context: { $implicit: element.parties.target }" />
                         }
                     </td>
                 </ng-container>
@@ -78,20 +78,20 @@
                 @if (isMonthHeading(entry)) {
                 <h2 class="month-heading">{{ entry.heading }}</h2>
                 } @else {
-                <div class="tx-card">
-                    <div class="tx-top">
-                        <span class="tx-type"><i class="bi tx-icon" [class]="entry.icon" aria-hidden="true"></i> {{ entry.type }}</span>
+                <div class="transaction-card">
+                    <div class="transaction-top">
+                        <span class="transaction-type"><i class="bi transaction-icon" [class]="entry.icon" aria-hidden="true"></i> {{ entry.label }}</span>
                         <app-transaction-amounts [amounts]="entry.amounts" />
                     </div>
-                    <div class="tx-bottom">
+                    <div class="transaction-bottom">
                         @if (entry.parties) {
-                        <div class="tx-parties">
-                            <ng-container *ngTemplateOutlet="partyView; context: { $implicit: entry.parties.source }" />
+                        <div class="transaction-parties">
+                            <ng-container *ngTemplateOutlet="partyLabel; context: { $implicit: entry.parties.source }" />
                             →
-                            <ng-container *ngTemplateOutlet="partyView; context: { $implicit: entry.parties.target }" />
+                            <ng-container *ngTemplateOutlet="partyLabel; context: { $implicit: entry.parties.target }" />
                         </div>
                         }
-                        <span class="tx-date">{{ entry.date }}</span>
+                        <span class="transaction-date">{{ entry.date }}</span>
                     </div>
                 </div>
                 }

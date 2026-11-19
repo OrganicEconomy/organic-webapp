@@ -20,17 +20,23 @@ describe('TransactionAmounts', () => {
       expect(shown.querySelector('.spending')?.textContent).toContain('−2');
     });
 
-    it('should show invests engaged apart from money', () => {
+    it('should show invests engaged with their own unit', () => {
       const shown = showAmounts({ money: 0, invests: -4, experience: 0 });
 
-      expect(shown.querySelector('.spending')?.textContent).toContain('−4 invest.');
+      expect(shown.querySelector('.spending')?.textContent?.trim()).toBe('−4 investissements');
+    });
+
+    it('should write a single invest in the singular', () => {
+      const shown = showAmounts({ money: 0, invests: 1, experience: 0 });
+
+      expect(shown.querySelector('.gain')?.textContent?.trim()).toBe('+1 investissement');
     });
 
     it('should show the money and invests of a creation as gains', () => {
       const shown = showAmounts({ money: 3, invests: 3, experience: 0 });
 
       const gains = Array.from(shown.querySelectorAll('.gain')).map((gain) => gain.textContent?.trim());
-      expect(gains).toEqual(['+3', '+3 invest.']);
+      expect(gains).toEqual(['+3', '+3 investissements']);
     });
 
     it('should show the experience gained as a badge', () => {

@@ -143,7 +143,7 @@ section:last-of-type button {
     justify-content: flex-end;
 }
 
-.tx-row {
+.transaction-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -153,21 +153,21 @@ section:last-of-type button {
     font-size: 0.9rem;
 }
 
-.tx-row:last-child {
+.transaction-row:last-child {
     border-bottom: none;
 }
 
-.tx-date {
+.transaction-date {
     color: var(--mat-sys-on-surface-variant);
     flex-shrink: 0;
 }
 
-.tx-type {
+.transaction-type {
     flex: 1;
     text-align: center;
 }
 
-.tx-icon {
+.transaction-icon {
     margin-right: 4px;
     color: var(--mat-sys-on-surface-variant);
 }
