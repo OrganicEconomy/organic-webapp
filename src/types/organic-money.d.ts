@@ -6,6 +6,7 @@ declare module 'organic-money/src/index.js' {
   export function publicFromPrivate(secretkey: string): string
   export function dateToInt(date: Date): number
   export function intToDate(intdate: number): Date
+  export function unitIdToDateInt(unitId: number): number
   export const BlockMaker: any
   export const TransactionMaker: any
   export const Blockchain: any
@@ -68,6 +69,7 @@ declare module 'organic-money/src/crypto.js' {
   export function randomPrivateKey(): string
   export function dateToInt(date: Date): number
   export function intToDate(intdate: number): Date
+  export function unitIdToDateInt(unitId: number): number
 
   /** AES-encrypted payload — each field is raw bytes, never assume a string shape. */
   export interface AesEncrypted {

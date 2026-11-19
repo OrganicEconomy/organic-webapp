@@ -1,4 +1,5 @@
 import { TxType } from 'organic-protocol'
+import { unitIdToDateInt } from 'organic-money/src/crypto.js'
 
 function abbreviatedKey(pk: string): string {
   return "..." + pk.slice(-8)
@@ -62,10 +63,16 @@ export interface Parties {
   target: Party
 }
 
+export interface Engagement {
+  investsPerDay: number
+  days: number
+}
+
 export interface Amounts {
   money: number
   invests: number
   experience: number
+  engagement: Engagement | null
 }
 
 export interface DisplayRow {
@@ -76,8 +83,6 @@ export interface DisplayRow {
   parties: Parties | null
   amounts: Amounts
 }
-
-const PAPER_BEARER: Party = { label: "Porteur du billet", fullKey: null }
 
 function isUnknownKey(pk: string, myPublicKey: string, contacts: any[]): boolean {
   return !!pk && pk !== myPublicKey && !contacts.some((contact: any) => contact.pk === pk)
@@ -90,24 +95,25 @@ function partyOf(pk: string, myPublicKey: string, contacts: any[]): Party {
   return { label: displayNameOf(pk, myPublicKey, contacts), fullKey: null }
 }
 
-function receiverOf(tx: any, myPublicKey: string, contacts: any[]): Party {
-  if (tx.type !== TxType.PAPER) {
-    return partyOf(tx.target, myPublicKey, contacts)
-  }
-  return isSignedByMe(tx, myPublicKey) ? PAPER_BEARER : partyOf(myPublicKey, myPublicKey, contacts)
+function receiverKeyOf(tx: any, myPublicKey: string): string {
+  return tx.type === TxType.PAPER ? myPublicKey : tx.target
 }
 
 function partiesOf(tx: any, myPublicKey: string, contacts: any[]): Parties {
   return {
     source: partyOf(tx.signer, myPublicKey, contacts),
-    target: receiverOf(tx, myPublicKey, contacts),
+    target: partyOf(receiverKeyOf(tx, myPublicKey), myPublicKey, contacts),
   }
 }
 
 const TYPES_WITHOUT_PARTIES = [TxType.INIT, TxType.CREATE]
 
-function hasParties(tx: any): boolean {
-  return !TYPES_WITHOUT_PARTIES.includes(tx.type) && !isPaymentToOneself(tx)
+function isBillPrintedByMe(tx: any, myPublicKey: string): boolean {
+  return tx.type === TxType.PAPER && isSignedByMe(tx, myPublicKey)
+}
+
+function hasParties(tx: any, myPublicKey: string): boolean {
+  return !TYPES_WITHOUT_PARTIES.includes(tx.type) && !isPaymentToOneself(tx) && !isBillPrintedByMe(tx, myPublicKey)
 }
 
 const TYPES_SPENDING_MONEY = [TxType.PAY, TxType.PAPER]
@@ -122,14 +128,8 @@ function moneyOf(tx: any, myPublicKey: string): number {
   return 0
 }
 
-function investsOf(tx: any, myPublicKey: string): number {
-  if (tx.type === TxType.CREATE) {
-    return tx.invests.length
-  }
-  if (tx.type === TxType.ENGAGE && isSignedByMe(tx, myPublicKey)) {
-    return -tx.invests.length
-  }
-  return 0
+function investsOf(tx: any): number {
+  return tx.type === TxType.CREATE ? tx.invests.length : 0
 }
 
 const TYPES_BRINGING_EXPERIENCE = [TxType.PAY, TxType.EARN]
@@ -144,11 +144,20 @@ function experienceOf(tx: any, myPublicKey: string): number {
   return 0
 }
 
+function engagementOf(tx: any): Engagement | null {
+  if (tx.type !== TxType.ENGAGE || tx.invests.length === 0) {
+    return null
+  }
+  const days = new Set(tx.invests.map(unitIdToDateInt)).size
+  return { investsPerDay: tx.invests.length / days, days }
+}
+
 function amountsOf(tx: any, myPublicKey: string): Amounts {
   return {
     money: moneyOf(tx, myPublicKey),
-    invests: investsOf(tx, myPublicKey),
+    invests: investsOf(tx),
     experience: experienceOf(tx, myPublicKey),
+    engagement: engagementOf(tx),
   }
 }
 
@@ -189,7 +198,7 @@ export function toDisplayRow(tx: any, myPublicKey: string, contacts: any[]): Dis
     month: tx.date.toLocaleDateString("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" }),
     label: typeLabel(tx, myPublicKey),
     icon: iconOf(tx, myPublicKey),
-    parties: hasParties(tx) ? partiesOf(tx, myPublicKey, contacts) : null,
+    parties: hasParties(tx, myPublicKey) ? partiesOf(tx, myPublicKey, contacts) : null,
     amounts: amountsOf(tx, myPublicKey),
   }
 }

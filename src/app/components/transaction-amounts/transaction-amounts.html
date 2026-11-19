@@ -4,9 +4,12 @@
 </span>
 }
 @if (amounts().invests) {
-<span class="amount" [class.gain]="amounts().invests > 0" [class.spending]="amounts().invests < 0">
+<span class="amount gain">
     {{ signedInvests() }}
 </span>
+}
+@if (amounts().engagement; as engagement) {
+<span class="engagement">{{ investsHeldBack(engagement) }}</span>
 }
 @if (amounts().experience) {
 <span class="experience-badge">+{{ amounts().experience }} XP</span>
