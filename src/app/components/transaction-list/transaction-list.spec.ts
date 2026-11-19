@@ -235,7 +235,7 @@ describe('TransactionList', () => {
       expect(fixture.nativeElement.querySelector('.desktop-table .party-key[open]')?.textContent).toContain(unknownKey);
     });
 
-    it('should leave the desktop sender and receiver cells empty for the daily creation', () => {
+    it('should spread the type of the daily creation over the sender and receiver columns of the desktop table', () => {
       fakeAccount.blockchain.getHistory = () => [
         { date: new Date(2026, 0, 16), type: 2, signer: MY_PK, target: '', money: [1], invests: [] },
       ];
@@ -243,8 +243,16 @@ describe('TransactionList', () => {
       fixture.detectChanges();
 
       const cells = fixture.nativeElement.querySelectorAll('.desktop-table .transaction-row td');
-      expect(cells[2].textContent.trim()).toBe('');
-      expect(cells[3].textContent.trim()).toBe('');
+      expect(cells.length).toBe(3);
+      expect(cells[1].textContent).toContain('Création du jour');
+      expect(cells[1].getAttribute('colspan')).toBe('3');
+    });
+
+    it('should keep the sender and receiver columns of the desktop table for a payment', () => {
+      const cells = fixture.nativeElement.querySelectorAll('.desktop-table .transaction-row td');
+
+      expect(cells.length).toBe(5);
+      expect(cells[1].getAttribute('colspan')).toBeNull();
     });
   });
 });

@@ -35,6 +35,12 @@ function typesFoundIn(rows: DisplayRow[]): string[] {
   return [...new Set(rows.map((row) => row.label))]
 }
 
+const PARTY_COLUMNS = ['source', 'target']
+
+function isRowWithoutParties(entry: HistoryEntry): boolean {
+  return !isMonthHeading(entry) && entry.parties === null
+}
+
 @Component({
   selector: 'app-transaction-list',
   imports: [
@@ -56,7 +62,9 @@ export class TransactionList {
   userService = inject(ConnectedUserService)
 
   user: any
-  displayedColumns: string[] = ['date', 'type', 'source', 'target', 'amount']
+  displayedColumns: string[] = ['date', 'type', ...PARTY_COLUMNS, 'amount']
+  columnsWithoutParties: string[] = ['date', 'type', 'amount']
+  typeSpanWithoutParties = 1 + PARTY_COLUMNS.length
   rows: DisplayRow[] = []
   typeChoices: string[] = []
   search = signal('')
@@ -79,6 +87,7 @@ export class TransactionList {
 
   isMonthHeading = isMonthHeading
   isMonthHeadingRow = (_index: number, entry: HistoryEntry) => isMonthHeading(entry)
+  isRowWithoutParties = (_index: number, entry: HistoryEntry) => isRowWithoutParties(entry)
 
   constructor(private router: Router) {
     this.user = this.userService.getConnectedUser()
