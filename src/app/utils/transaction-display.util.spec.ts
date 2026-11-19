@@ -55,11 +55,24 @@ describe('toDisplayRow', () => {
     expect(row.amounts.invests).toBe(0);
   });
 
-  it('should tell how many invests an engagement holds back per day, and for how many days', () => {
+  it('should tell how many invests an engagement holds back, and over how many days', () => {
     const twoPerDayForTwoDays = [202601159000, 202601159001, 202601169000, 202601169001];
     const tx = aTransaction({ type: 4, target: 'eco-pk', invests: twoPerDayForTwoDays });
     const row = toDisplayRow(tx, 'my-pk', []);
-    expect(row.amounts.engagement).toEqual({ investsPerDay: 2, days: 2 });
+    expect(row.amounts.engagement).toEqual({ invests: 4, days: 2, isSpreadEvenly: true });
+  });
+
+  it('should tell an engagement whose days hold different counts of invests is not spread evenly', () => {
+    const threeThenOne = [202601159000, 202601159001, 202601159002, 202601169000];
+    const tx = aTransaction({ type: 4, target: 'eco-pk', invests: threeThenOne });
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts.engagement).toEqual({ invests: 4, days: 2, isSpreadEvenly: false });
+  });
+
+  it('should tell no invests held back for an engagement of money only', () => {
+    const tx = aTransaction({ type: 4, target: 'eco-pk', money: [202601169000] });
+    const row = toDisplayRow(tx, 'my-pk', []);
+    expect(row.amounts.engagement).toBeNull();
   });
 
   it('should count no invests of mine for a payer order, which spends those of the ecosystem', () => {

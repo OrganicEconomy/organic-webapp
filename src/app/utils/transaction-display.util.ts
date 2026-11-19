@@ -64,8 +64,9 @@ export interface Parties {
 }
 
 export interface Engagement {
-  investsPerDay: number
+  invests: number
   days: number
+  isSpreadEvenly: boolean
 }
 
 export interface Amounts {
@@ -95,7 +96,7 @@ function partyOf(pk: string, myPublicKey: string, contacts: any[]): Party {
 }
 
 function receiverKeyOf(tx: any, myPublicKey: string): string {
-  return tx.type === TxType.PAPER ? myPublicKey : tx.target
+  return isBillCashedByMe(tx, myPublicKey) ? myPublicKey : tx.target
 }
 
 function partiesOf(tx: any, myPublicKey: string, contacts: any[]): Parties {
@@ -143,12 +144,25 @@ function experienceOf(tx: any, myPublicKey: string): number {
   return 0
 }
 
+function countsPerDay(unitIds: number[]): number[] {
+  const counts = new Map<number, number>()
+  for (const id of unitIds) {
+    const day = unitIdToDateInt(id)
+    counts.set(day, (counts.get(day) ?? 0) + 1)
+  }
+  return [...counts.values()]
+}
+
 function engagementOf(tx: any): Engagement | null {
   if (tx.type !== TxType.ENGAGE || tx.invests.length === 0) {
     return null
   }
-  const days = new Set(tx.invests.map(unitIdToDateInt)).size
-  return { investsPerDay: tx.invests.length / days, days }
+  const counts = countsPerDay(tx.invests)
+  return {
+    invests: tx.invests.length,
+    days: counts.length,
+    isSpreadEvenly: counts.every((count) => count === counts[0]),
+  }
 }
 
 function amountsOf(tx: any, myPublicKey: string): Amounts {

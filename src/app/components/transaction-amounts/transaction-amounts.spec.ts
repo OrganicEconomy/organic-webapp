@@ -27,15 +27,21 @@ describe('TransactionAmounts', () => {
     });
 
     it('should show an engagement as the invests it holds back per day, without any sign', () => {
-      const shown = showAmounts({ money: 0, invests: 0, experience: 0, engagement: { investsPerDay: 2, days: 5 } });
+      const shown = showAmounts({ money: 0, invests: 0, experience: 0, engagement: { invests: 10, days: 5, isSpreadEvenly: true } });
 
       expect(shown.querySelector('.engagement')?.textContent?.trim()).toBe('2 investissements/jour pendant 5 jours');
     });
 
     it('should write a single invest held back for a single day in the singular', () => {
-      const shown = showAmounts({ money: 0, invests: 0, experience: 0, engagement: { investsPerDay: 1, days: 1 } });
+      const shown = showAmounts({ money: 0, invests: 0, experience: 0, engagement: { invests: 1, days: 1, isSpreadEvenly: true } });
 
       expect(shown.querySelector('.engagement')?.textContent?.trim()).toBe('1 investissement/jour pendant 1 jour');
+    });
+
+    it('should show an engagement spread unevenly over its days as its total, without a rounded daily count', () => {
+      const shown = showAmounts({ money: 0, invests: 0, experience: 0, engagement: { invests: 4, days: 2, isSpreadEvenly: false } });
+
+      expect(shown.querySelector('.engagement')?.textContent?.trim()).toBe('4 investissements sur 2 jours');
     });
 
     it('should show the money and invests of a creation as gains', () => {
