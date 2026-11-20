@@ -72,6 +72,17 @@ describe('SignupPage', () => {
     expect(submitButton.disabled).toBeTrue()
   });
 
+  it('should disable the submit button while the signup is on its way', async () => {
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+    await component.signup()
+    fixture.detectChanges()
+
+    const submitButton: HTMLButtonElement = fixture.nativeElement.querySelector('button[type="submit"]')
+
+    expect(submitButton.disabled).toBeTrue()
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
+  });
+
   it('should not register when the form is invalid (e.g. an empty field)', async () => {
     component.signupForm.setValue({ email: '', name: 'Alice', birthdate: '01/01/2000', password: 'a-password' })
 
@@ -117,6 +128,42 @@ describe('SignupPage', () => {
     )
 
     expect(alertSpy).toHaveBeenCalledWith('Cette adresse mail est déjà utilisée par un autre compte.')
+  });
+
+  it('should register only once when the button is pressed again while the signup is on its way', async () => {
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+
+    await Promise.all([component.signup(), component.signup()])
+
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
+  });
+
+  it('should keep the generic message when the server refuses the signup for another reason', async () => {
+    const alertSpy = spyOn(window, 'alert')
+
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+    await component.signup()
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`).flush(
+      { error: 'Invalid blockchain' },
+      { status: 400, statusText: 'Bad Request' },
+    )
+
+    expect(alertSpy).toHaveBeenCalledWith('Utilisateur ou mot de passe invalide')
+  });
+
+  it('should let the citizen try again once the server refused the signup', async () => {
+    spyOn(window, 'alert')
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+    await component.signup()
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`).flush(
+      { error: 'This mail is already used by another account.' },
+      { status: 409, statusText: 'Conflict' },
+    )
+
+    component.signupForm.patchValue({ email: 'camille.martin@ex.fr' })
+    await component.signup()
+
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
   });
 
   it('should store the new account even if another tab announced that key', async () => {
