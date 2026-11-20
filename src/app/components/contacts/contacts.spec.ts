@@ -338,6 +338,14 @@ describe('Contacts', () => {
   });
 
   describe('template', () => {
+    it('should explain what contacts are for and how to add one', () => {
+      createComponent();
+      
+      expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
+        "Vos contacts sont les citoyens et les écosystèmes que vous payez.",
+      );
+    });
+
     it('should say that no contact matches the search', () => {
       account.contacts = ['fanny'].map(contactNamed);
       createComponent();

@@ -570,6 +570,12 @@ describe('Pay', () => {
     expect(fixture.nativeElement.textContent).not.toContain('lecture seule');
   });
 
+  it('should explain how to pay, online and offline', () => {
+    expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
+      "Choisissez un contact et un montant, puis « Payer ».",
+    );
+  });
+
   describe('Historique card', () => {
     it('should show at most the 5 most recent transactions', () => {
       const tx = (n: number) => ({ date: new Date(2026, 0, n), type: 3, signer: MY_PK, target: MY_PK, money: [1], invests: [], signature: `tx-${n}` });

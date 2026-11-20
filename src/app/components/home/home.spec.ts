@@ -224,6 +224,14 @@ describe('Home', () => {
     expect(identityCard.textContent).toContain('Création du jour : 3');
   });
 
+  it('should explain how money is created and how the level rises', () => {
+    createComponent();
+
+    expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
+      "Chaque jour, vous recevez autant d'unités que votre niveau.",
+    );
+  });
+
   it('should title the pending-payments card "Paiements à encaisser"', () => {
     createComponent();
     expect(fixture.nativeElement.querySelector('.pending-card mat-card-title').textContent).toContain('Paiements à encaisser');

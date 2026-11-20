@@ -12,6 +12,7 @@ import { hasContactWithKey, offlineRefusal } from '../../utils/contact-refusal.u
 import type { Contact } from '../../models/account';
 import { ContactsFileError, contactsFile, contactsFromFile } from '../../utils/contacts-file.util';
 import { offerToDownload } from '../../utils/download.util';
+import { HelpPanel } from '../help-panel/help-panel';
 
 const MAX_CONTACTS_FILE_SIZE = 1_000_000
 
@@ -41,6 +42,7 @@ interface TriageResult {
     MatFormFieldModule,
     MatInputModule,
     MatIconModule,
+    HelpPanel,
   ],
   templateUrl: './contacts.html',
   styleUrl: './contacts.css',
