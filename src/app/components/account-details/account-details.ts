@@ -82,7 +82,7 @@ export class AccountDetails {
     this.displayMessage('Lien copié : envoie-le à ton contact.')
   }
 
-  async copyMyKey(): Promise<void> {
+  async copyMyPublicKey(): Promise<void> {
     try {
       await navigator.clipboard.writeText(this.publickey)
     } catch (error) {

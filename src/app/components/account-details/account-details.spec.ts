@@ -207,10 +207,10 @@ describe('AccountDetails', () => {
       component.publickey = wholeKey;
       fixture.detectChanges();
 
-      const keyElement = innermostElementShowing(wholeKey);
+      const shownKey = innermostElementShowing(wholeKey);
 
-      expect(keyElement).toBeDefined();
-      expect(keyElement!.scrollWidth).toBeLessThanOrEqual(keyElement!.clientWidth);
+      expect(shownKey).toBeDefined();
+      expect(shownKey!.scrollWidth).toBeLessThanOrEqual(shownKey!.clientWidth);
     });
 
     it('should keep my whole key inside its card', () => {
@@ -218,21 +218,21 @@ describe('AccountDetails', () => {
       component.publickey = wholeKey;
       fixture.detectChanges();
 
-      const keyElement = innermostElementShowing(wholeKey)!;
-      const card = keyElement.closest('mat-card')!;
+      const shownKey = innermostElementShowing(wholeKey)!;
+      const card = shownKey.closest('mat-card')!;
 
-      expect(keyElement.getBoundingClientRect().right).toBeLessThanOrEqual(card.getBoundingClientRect().right);
+      expect(shownKey.getBoundingClientRect().right).toBeLessThanOrEqual(card.getBoundingClientRect().right);
     });
 
     it('should copy my key from the « Copier ma clé » button', () => {
-      const copyMyKey = spyOn(component, 'copyMyKey').and.resolveTo();
+      const copyMyPublicKey = spyOn(component, 'copyMyPublicKey').and.resolveTo();
       const copyButton = Array.from(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)
         .find((button) => button.textContent?.includes('Copier ma clé'));
 
       expect(copyButton).toBeDefined();
       copyButton!.click();
 
-      expect(copyMyKey).toHaveBeenCalled();
+      expect(copyMyPublicKey).toHaveBeenCalled();
     });
   });
 
@@ -260,12 +260,12 @@ describe('AccountDetails', () => {
     });
   });
 
-  describe('copyMyKey', () => {
+  describe('copyMyPublicKey', () => {
     it('should copy my public key to the clipboard, and say so', async () => {
       const writeText = spyOn(navigator.clipboard, 'writeText').and.resolveTo();
       spyOn(component, 'displayMessage');
 
-      await component.copyMyKey();
+      await component.copyMyPublicKey();
 
       expect(writeText).toHaveBeenCalledWith('alice-pk');
       expect(component.displayMessage).toHaveBeenCalledWith('Clé copiée.');
@@ -277,7 +277,7 @@ describe('AccountDetails', () => {
       spyOn(component, 'displayMessage');
       const logError = spyOn(console, 'error');
 
-      await component.copyMyKey();
+      await component.copyMyPublicKey();
 
       expect(component.displayMessage).toHaveBeenCalledWith('Impossible de copier la clé.');
       expect(logError).toHaveBeenCalledWith(refusal);
@@ -288,7 +288,7 @@ describe('AccountDetails', () => {
       spyOn(component, 'displayMessage');
       spyOn(console, 'error');
 
-      await component.copyMyKey();
+      await component.copyMyPublicKey();
 
       expect(component.displayMessage).toHaveBeenCalledWith('Impossible de copier la clé.');
     });
