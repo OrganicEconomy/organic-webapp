@@ -81,6 +81,10 @@ export class Home {
     this.remainingBeforeNextLevel = bc.getMoneyBeforeNextLevel()
   }
 
+  get dailyCreation(): number {
+    return this.level
+  }
+
   private createDailyMoney() {
     const sk = this.userService.getSecretKey()
     const oldLevel = this.user.blockchain.getLevel()
