@@ -12,7 +12,9 @@
     <mat-slider [max]="max" [min]="0" [step]="1" [showTickMarks]="true">
       <input matSliderThumb [(ngModel)]="dailyAmount">
     </mat-slider>
-    @if (isEverythingAlreadyEngaged) {
+    @if (isNotYetAnActiveCitizen) {
+    <p class="hint">Il faut être citoyen actif, au compte validé, pour investir.</p>
+    } @else if (isEverythingAlreadyEngaged) {
     <p class="hint">Tous vos investissements d'aujourd'hui sont déjà engagés.</p>
     } @else {
     <p class="hint">Maximum : {{ max }} / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.</p>
