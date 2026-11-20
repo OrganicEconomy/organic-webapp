@@ -25,7 +25,7 @@ describe('HelpPanel', () => {
 
   describe('template', () => {
     it('should offer to explain how the page works', () => {
-      expect(fixture.nativeElement.textContent).toContain('Comment ça marche ?');
+      expect(fixture.nativeElement.textContent).toContain('Comment ça marche\u00a0?');
     });
   });
 });

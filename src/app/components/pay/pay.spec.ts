@@ -572,7 +572,7 @@ describe('Pay', () => {
 
   it('should explain how to pay, online and offline', () => {
     expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
-      "Choisissez un contact et un montant, puis « Payer ».",
+      "Choisissez un contact et un montant, puis «\u00a0Payer\u00a0».",
     );
   });
 

@@ -44,6 +44,12 @@ describe('TransactionList', () => {
     expect(component).toBeTruthy();
   });
 
+  it('should explain what the history lists and how to search it', () => {
+    expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
+      "Toutes les opérations de votre compte, de la plus récente à la plus ancienne",
+    );
+  });
+
   it('should read the source contact from tx.signer, not the nonexistent tx.source', () => {
     expect(component.rows[0].parties?.source.label).toBe('Alice');
   });

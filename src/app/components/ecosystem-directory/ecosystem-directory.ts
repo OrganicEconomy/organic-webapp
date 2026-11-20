@@ -7,6 +7,7 @@ import { ConnectedUserService } from '../../services/connected-user.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { GeolocationService } from '../../services/geolocation.service';
 import type { EcosystemListEntry } from 'organic-protocol';
+import { HelpPanel } from '../help-panel/help-panel';
 
 @Component({
   selector: 'app-ecosystem-directory',
@@ -14,6 +15,7 @@ import type { EcosystemListEntry } from 'organic-protocol';
     RouterLink,
     MatCardModule,
     MatButtonModule,
+    HelpPanel,
   ],
   templateUrl: './ecosystem-directory.html',
   styleUrl: './ecosystem-directory.css',
