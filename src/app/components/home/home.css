@@ -37,6 +37,19 @@ mat-card-title {
     color: var(--mat-sys-primary);
 }
 
+.daily-creation {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 0 8px 0;
+    font-size: 0.95rem;
+}
+
+.daily-creation mat-icon {
+    width: 16px;
+    height: 16px;
+}
+
 mat-progress-bar {
     width: 100%;
     margin: 12px 0;
@@ -67,7 +80,8 @@ mat-progress-bar {
     height: 30px;
 }
 
-.identity-card .xp-line {
+.identity-card .xp-line,
+.identity-card .daily-creation {
     color: rgba(250, 247, 243, 0.75);
 }
 
