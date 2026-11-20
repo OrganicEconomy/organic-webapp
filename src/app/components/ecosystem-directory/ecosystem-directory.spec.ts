@@ -56,15 +56,6 @@ describe('EcosystemDirectory', () => {
     await fixture.whenStable();
   }
 
-  it('should explain what an ecosystem is and how to take part', async () => {
-    await createComponent();
-    httpMock.expectOne((r) => r.url === LIST_URL).flush([]);
-
-    expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
-      "Un écosystème est un projet collectif",
-    );
-  });
-
   it('should redirect to /user-selection if there is no connected user', async () => {
     stubConnectedUserService.getConnectedUser = () => null;
 
@@ -132,6 +123,15 @@ describe('EcosystemDirectory', () => {
       backBtn.click();
 
       expect(location.back).toHaveBeenCalled();
+    });
+
+    it('should explain the page in a help panel', async () => {
+      await createComponent();
+      httpMock.expectOne((r) => r.url === LIST_URL).flush([]);
+
+      expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
+        'Un écosystème est un projet collectif',
+      );
     });
   });
 });

@@ -27,5 +27,9 @@ describe('HelpPanel', () => {
     it('should offer to explain how the page works', () => {
       expect(fixture.nativeElement.textContent).toContain('Comment ça marche\u00a0?');
     });
+
+    it('should show the explanation the page gives', () => {
+      expect(fixture.nativeElement.textContent).toContain('Each day, you receive as many units as your level.');
+    });
   });
 });

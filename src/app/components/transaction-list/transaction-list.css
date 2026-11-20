@@ -24,6 +24,12 @@ mat-card-content {
     padding: 16px !important;
 }
 
+app-help-panel {
+    max-width: none;
+    padding: 0 16px;
+    box-sizing: border-box;
+}
+
 .history-filters {
     display: flex;
     flex-wrap: wrap;

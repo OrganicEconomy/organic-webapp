@@ -224,7 +224,7 @@ describe('Home', () => {
     expect(identityCard.textContent).toContain('Création du jour : 3');
   });
 
-  it('should explain how money is created and how the level rises', () => {
+  it('should explain the page in a help panel', () => {
     createComponent();
 
     expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(

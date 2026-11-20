@@ -338,11 +338,11 @@ describe('Contacts', () => {
   });
 
   describe('template', () => {
-    it('should explain what contacts are for and how to add one', () => {
+    it('should explain the page in a help panel', () => {
       createComponent();
 
       expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
-        "Vos contacts sont les citoyens et les écosystèmes que vous payez.",
+        'Vos contacts sont les citoyens et les écosystèmes que vous payez.',
       );
     });
 
