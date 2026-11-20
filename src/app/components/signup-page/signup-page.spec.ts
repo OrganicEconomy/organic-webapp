@@ -106,6 +106,19 @@ describe('SignupPage', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/restore-account'], { queryParams: { server: SERVER_URL } })
   });
 
+  it('should say that the mail is already used when the server refuses it for that reason', async () => {
+    const alertSpy = spyOn(window, 'alert')
+
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+    await component.signup()
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`).flush(
+      { error: 'This mail is already used by another account.' },
+      { status: 409, statusText: 'Conflict' },
+    )
+
+    expect(alertSpy).toHaveBeenCalledWith('Cette adresse mail est déjà utilisée par un autre compte.')
+  });
+
   it('should store the new account even if another tab announced that key', async () => {
     const tabs = TestBed.inject(AccountTabsService)
     let takenBack = false
