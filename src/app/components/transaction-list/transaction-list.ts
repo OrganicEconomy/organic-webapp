@@ -20,6 +20,7 @@ import {
 } from '../../utils/history-entries.util';
 import { TransactionAmounts } from '../transaction-amounts/transaction-amounts';
 import type { Contact, LoadedAccount } from '../../models/account';
+import { HelpPanel } from '../help-panel/help-panel';
 
 function partiesKnownBy(user: LoadedAccount): Contact[] {
   const myEcosystems = (user.myEcosystems ?? []).map((ecosystem): Contact => ({
@@ -54,6 +55,7 @@ function isRowWithoutParties(entry: HistoryEntry): boolean {
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    HelpPanel,
   ],
   templateUrl: './transaction-list.html',
   styleUrl: './transaction-list.css',

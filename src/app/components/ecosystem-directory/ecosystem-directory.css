@@ -1,7 +1,8 @@
 :host {
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
   min-height: 100vh;
   padding: 24px 16px;
   box-sizing: border-box;
@@ -11,6 +12,10 @@ mat-card {
   width: 100%;
   max-width: 640px;
   border-radius: 16px !important;
+}
+
+app-help-panel {
+  max-width: 640px;
 }
 
 mat-card-header {
