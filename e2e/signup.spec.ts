@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { ensureCoreGuardian } from './support/core-guardian';
 import { fillTheDeviceStorage } from './support/full-device';
-import { signUpApprovedCitizen, signUpThroughApp } from './support/signup';
+import { emailOf, signUpApprovedCitizen, signUpThroughApp } from './support/signup';
 
 test.describe('signup', () => {
   test('should show the pending validation page to a new citizen', async ({ page }) => {
@@ -30,5 +30,21 @@ test.describe('signup', () => {
     expect(alert.message()).toContain("cet appareil n'a pas pu l'enregistrer");
     await alert.accept();
     await expect(page).toHaveURL(/\/restore-account\?server=/);
+  });
+
+  test('should say that the mail is already used when another account was created with it', async ({ page, browser }) => {
+    await ensureCoreGuardian();
+    await signUpThroughApp(page, 'Alice Fontaine');
+    await expect(page).toHaveURL(/\/pending-validation$/);
+    const otherDevice = await browser.newContext();
+    const otherPage = await otherDevice.newPage();
+    const alertShown = otherPage.waitForEvent('dialog');
+
+    await signUpThroughApp(otherPage, 'Alice Moreau', emailOf('Alice Fontaine'));
+
+    const alert = await alertShown;
+    expect(alert.message()).toBe('Cette adresse mail est déjà utilisée par un autre compte.');
+    await alert.accept();
+    await otherDevice.close();
   });
 });

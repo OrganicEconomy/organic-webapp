@@ -64,7 +64,7 @@
             }
           </mat-form-field>
 
-          <button mat-flat-button color="primary" type="submit" class="full-width submit-btn" [disabled]="signupForm.invalid">
+          <button mat-flat-button color="primary" type="submit" class="full-width submit-btn" [disabled]="signupForm.invalid || signingUp">
             Créer mon compte
           </button>
 
