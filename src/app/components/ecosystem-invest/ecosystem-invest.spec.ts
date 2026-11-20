@@ -33,6 +33,7 @@ describe('EcosystemInvest', () => {
     fakeBlockchain = {
       engageInvests: jasmine.createSpy('engageInvests').and.returnValue(fakeTx),
       getAffordableInvestAmount: jasmine.createSpy('getAffordableInvestAmount').and.returnValue(12),
+      getLevel: () => 12,
     };
     fakeAccount = { serverUrl: SERVER_URL, blockchain: fakeBlockchain };
     stubConnectedUserService = {
@@ -105,6 +106,17 @@ describe('EcosystemInvest', () => {
       component.engage();
 
       expect(fakeBlockchain.engageInvests).not.toHaveBeenCalled();
+    });
+
+    it('should say the daily cap, and not engage, when the amount is above it', () => {
+      spyOn(component, 'displayMessage');
+      component.dailyAmount = 13;
+      component.days = 1;
+
+      component.engage();
+
+      expect(fakeBlockchain.engageInvests).not.toHaveBeenCalled();
+      expect(component.displayMessage).toHaveBeenCalledWith('Vous ne pouvez pas engager plus de 12 par jour.');
     });
 
     it('should not engage when the session is read-only', () => {
@@ -338,6 +350,22 @@ describe('EcosystemInvest', () => {
   });
 
   describe('template', () => {
+    it('should say where the daily cap comes from', () => {
+      expect(fixture.nativeElement.textContent).toContain(
+        "Maximum : 12 / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.",
+      );
+    });
+
+    it('should say that only an active citizen can invest, rather than that everything is engaged', () => {
+      fakeBlockchain.getLevel = () => 0;
+      fakeBlockchain.getAffordableInvestAmount.and.returnValue(0);
+
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain('Il faut être citoyen actif, au compte validé, pour investir.');
+      expect(fixture.nativeElement.textContent).not.toContain('déjà engagés');
+    });
+
     it("should say that every invest of today is already engaged when nothing is left", () => {
       fakeBlockchain.getAffordableInvestAmount.and.returnValue(0);
 
@@ -352,12 +380,6 @@ describe('EcosystemInvest', () => {
       fixture.detectChanges();
 
       expect(fixture.nativeElement.querySelector('button[mat-flat-button]').disabled).toBeTrue();
-    });
-
-    it('should say where the daily cap comes from', () => {
-      expect(fixture.nativeElement.textContent).toContain(
-        "Maximum : 12 / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.",
-      );
     });
 
     it('should go back in history when "Retour" is clicked, not to a fixed route', () => {

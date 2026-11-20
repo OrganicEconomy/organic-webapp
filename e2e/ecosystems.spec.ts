@@ -5,7 +5,13 @@ import { signUpApprovedCitizen, signUpThroughApp } from './support/signup';
 
 async function corePk(): Promise<string> {
   const response = await fetch(`${SERVER_URL}/api/v1/info`);
+  if (!response.ok) {
+    throw new Error(`/info answered ${response.status}`);
+  }
   const info = await response.json();
+  if (!info.corePk) {
+    throw new Error('This server has no core ecosystem yet');
+  }
   return info.corePk;
 }
 
@@ -35,6 +41,9 @@ test.describe('ecosystems', () => {
 
     await page.goto(`/ecosystems/${core}/invest`);
     await expect(page.getByText("Maximum : 1 / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.")).toBeVisible();
+    await page.getByLabel('Montant par jour').fill('2');
+    await page.getByRole('button', { name: 'Engager' }).click();
+    await expect(page.getByText('Vous ne pouvez pas engager plus de 1 par jour.')).toBeVisible();
     await engageInvests(page, core, 1);
 
     await page.goto(`/ecosystems/${core}/invest`);
