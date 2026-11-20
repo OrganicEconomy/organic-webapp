@@ -338,6 +338,28 @@ describe('EcosystemInvest', () => {
   });
 
   describe('template', () => {
+    it("should say that every invest of today is already engaged when nothing is left", () => {
+      fakeBlockchain.getAffordableInvestAmount.and.returnValue(0);
+
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain("Tous vos investissements d'aujourd'hui sont déjà engagés.");
+    });
+
+    it('should disable the Engager button when every invest of today is already engaged', () => {
+      fakeBlockchain.getAffordableInvestAmount.and.returnValue(0);
+
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('button[mat-flat-button]').disabled).toBeTrue();
+    });
+
+    it('should say where the daily cap comes from', () => {
+      expect(fixture.nativeElement.textContent).toContain(
+        "Maximum : 12 / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.",
+      );
+    });
+
     it('should go back in history when "Retour" is clicked, not to a fixed route', () => {
       const backBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.back-btn');
       backBtn.click();

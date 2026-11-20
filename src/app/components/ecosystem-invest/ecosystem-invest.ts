@@ -57,6 +57,10 @@ export class EcosystemInvest {
     return this.user.blockchain.getAffordableInvestAmount(new Date());
   }
 
+  get isEverythingAlreadyEngaged(): boolean {
+    return this.max <= 0;
+  }
+
   engage(): void {
     if (this.submitting) return;
     if (this.dailyAmount <= 0) {
