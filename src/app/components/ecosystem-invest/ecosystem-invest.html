@@ -12,7 +12,13 @@
     <mat-slider [max]="max" [min]="0" [step]="1" [showTickMarks]="true">
       <input matSliderThumb [(ngModel)]="dailyAmount">
     </mat-slider>
-    <p class="hint">Maximum : {{ max }} / jour</p>
+    @if (isNotYetAnActiveCitizen) {
+    <p class="hint">Il faut être citoyen actif, au compte validé, pour investir.</p>
+    } @else if (isEverythingAlreadyEngaged) {
+    <p class="hint">Tous vos investissements d'aujourd'hui sont déjà engagés.</p>
+    } @else {
+    <p class="hint">Maximum : {{ max }} / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.</p>
+    }
 
     <mat-form-field>
       <mat-label>Nombre de jours</mat-label>
@@ -21,7 +27,7 @@
   </mat-card-content>
 
   <mat-card-actions>
-    <button mat-flat-button (click)="engage()" [disabled]="submitting || userService.isReadOnlySession()">Engager</button>
+    <button mat-flat-button (click)="engage()" [disabled]="submitting || isEverythingAlreadyEngaged || userService.isReadOnlySession()">Engager</button>
     <button mat-stroked-button class="back-btn" (click)="goBack()">
       <i class="bi bi-arrow-left"></i> Retour
     </button>

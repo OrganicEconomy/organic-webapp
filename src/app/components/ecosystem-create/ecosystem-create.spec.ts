@@ -126,14 +126,29 @@ describe('EcosystemCreate', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/ecosystems', 'eco-pk']);
     });
 
-    it('should show an inline error and not navigate when the server rejects the creation', async () => {
+    it('should say that only an active citizen can create an ecosystem when the server refuses the founder', async () => {
+      component.name = 'Boulangerie associative';
+
+      await component.create();
+
+      expectAuthenticated(httpMock, (r) => r.url === CREATE_URL).flush(
+        { error: 'Founder must be an active citizen', code: 'UNKNOWN_USER' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+
+      expect(component.actionError).toBe("Il faut être citoyen actif, au compte validé, pour créer un écosystème.");
+    });
+
+    it('should show the generic failure, log why, and not navigate when the creation fails for another reason', async () => {
+      const logError = spyOn(console, 'error');
       component.name = 'Boulangerie associative';
 
       await component.create();
 
       expectAuthenticated(httpMock, (r) => r.url === CREATE_URL).error(new ProgressEvent('network error'));
 
-      expect(component.actionError).toBeTruthy();
+      expect(component.actionError).toBe('Échec de la création.');
+      expect(logError).toHaveBeenCalled();
       expect(router.navigate).not.toHaveBeenCalledWith(['/ecosystems', 'eco-pk']);
     });
   });
