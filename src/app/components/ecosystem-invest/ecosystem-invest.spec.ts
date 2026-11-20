@@ -39,6 +39,7 @@ describe('EcosystemInvest', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => SK,
       isReadOnlySession: () => false,
+      readOnlyMessage: () => 'Read-only for the reason of this session',
     };
     serverSpy = jasmine.createSpyObj('ServerConnexionService', ['sendEcosystemTx']);
     serverSpy.sendEcosystemTx.and.returnValue(of({}));
@@ -114,6 +115,17 @@ describe('EcosystemInvest', () => {
       component.engage();
 
       expect(fakeBlockchain.engageInvests).not.toHaveBeenCalled();
+    });
+
+    it('should say why it cannot engage, with the reason of the read-only session', () => {
+      stubConnectedUserService.isReadOnlySession = () => true;
+      component.dailyAmount = 3;
+      component.days = 5;
+      spyOn(component, 'displayMessage');
+
+      component.engage();
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Read-only for the reason of this session');
     });
 
     it('should call engageInvests with the daily amount and number of days', () => {

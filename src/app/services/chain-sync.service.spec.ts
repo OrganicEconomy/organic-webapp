@@ -64,7 +64,6 @@ describe('ChainSyncService', () => {
     getConnectedUser: () => any;
     getSecretKey: () => string;
     markOutOfSync: jasmine.Spy;
-    readOnlyMessage: () => string;
   };
   let connected: { account: any; secretKey: string } | null;
   let readOnly: boolean;
@@ -88,7 +87,6 @@ describe('ChainSyncService', () => {
       getConnectedUser: () => connected?.account ?? null,
       getSecretKey: () => connected?.secretKey ?? '',
       markOutOfSync: jasmine.createSpy('markOutOfSync'),
-      readOnlyMessage: () => "Ce téléphone et le serveur ne sont plus d'accord sur des paiements.",
     };
     TestBed.configureTestingModule({
       providers: [
@@ -297,10 +295,16 @@ describe('ChainSyncService', () => {
 
       expect(account.blockchain.export()).toEqual(deviceChain);
       expect(userServiceStub.markOutOfSync).toHaveBeenCalled();
-      expect(snackBarSpy.open).toHaveBeenCalledWith(
-        "Ce téléphone et le serveur ne sont plus d'accord sur des paiements.",
-        'Fermer',
-      );
+    });
+
+    it('should leave to the read-only banner the explanation of the disagreement', async () => {
+      const { account, secretKey } = accountWithMoney();
+      serverHolds(chainAfterAPayment(account, secretKey, OTHER_RECIPIENT_PK));
+      account.blockchain = new CitizenBlockchain(chainAfterAPayment(account, secretKey));
+
+      await service.syncWithServer(account, secretKey);
+
+      expect(snackBarSpy.open).not.toHaveBeenCalled();
     });
 
     it('should keep the payments of the device, read-only, when the server refuses them', async () => {

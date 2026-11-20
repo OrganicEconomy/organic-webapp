@@ -48,6 +48,7 @@ describe('PayOffline', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => 'the-real-sk',
       isReadOnlySession: () => false,
+      readOnlyMessage: () => 'Read-only for the reason of this session',
     };
     backupSpy = jasmine.createSpyObj('BackupService', ['applyAndRecord']);
     backupSpy.applyAndRecord.and.callFake(async (_account, _sk, change) => change());
@@ -194,6 +195,25 @@ describe('PayOffline', () => {
     component.payOffline();
 
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
+  it('should say why it cannot pay, with the reason of the read-only session', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    component.target = CONTACT_PK;
+    component.amount = 5;
+    spyOn(component, 'displayMessage');
+
+    component.payOffline();
+
+    expect(component.displayMessage).toHaveBeenCalledWith('Read-only for the reason of this session');
+  });
+
+  it('should leave to the shared banner the reason why the session is read-only', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    fixture = TestBed.createComponent(PayOffline);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('lecture seule');
   });
 
   it('"revoir" should redisplay a past QR without calling pay() again', () => {

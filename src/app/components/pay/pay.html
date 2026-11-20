@@ -26,9 +26,6 @@
 
         <section>
             <button mat-flat-button class="pay-btn" (click)="pay()" [disabled]="userService.isReadOnlySession() || checkingRecipient || paying">Payer</button>
-            @if (userService.isReadOnlySession()) {
-            <p class="read-only-notice">Ce compte est actif sur un autre appareil — lecture seule.</p>
-            }
         </section>
     </mat-card-content>
 </mat-card>

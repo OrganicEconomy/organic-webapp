@@ -45,6 +45,7 @@ describe('ReceiveOffline', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => 'the-real-sk',
       isReadOnlySession: () => false,
+      readOnlyMessage: () => 'Read-only for the reason of this session',
     };
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', ['verifyTransaction']);
     serverDBSpy.verifyTransaction.and.returnValue(of({ status: 'pending' }));
@@ -125,6 +126,23 @@ describe('ReceiveOffline', () => {
 
     expect(fakeBlockchain.receivePay).not.toHaveBeenCalled();
     expect(fakeAccount.pendingOfflineTx.length).toBe(0);
+  });
+
+  it('should say why it cannot receive, with the reason of the read-only session', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    const qr = encodeOfflineTxQr({ tx: makePayTxWire(), url: PAYER_URL });
+
+    component.scanSuccessHandler(qr);
+
+    expect(component.scanError).toBe('Read-only for the reason of this session');
+  });
+
+  it('should leave to the shared banner the reason why the session is read-only', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    fixture = TestBed.createComponent(ReceiveOffline);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('lecture seule');
   });
 
   it('verifyAll() should call verifyTransaction for each pending entry using its own payer url', () => {

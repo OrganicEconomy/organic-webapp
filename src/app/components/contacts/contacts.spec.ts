@@ -54,7 +54,7 @@ describe('Contacts', () => {
             getConnectedUser: () => connectedAccount,
             getSecretKey: () => '',
             isReadOnlySession: () => readOnly,
-            readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
+            readOnlyMessage: () => "Compte ouvert dans un autre onglet : celui-ci est en lecture seule.",
           },
         },
         { provide: LocalDatabaseService, useValue: localDBSpy },
@@ -192,7 +192,7 @@ describe('Contacts', () => {
       await component.importContacts(fileOf([contactNamed('Zoé')]));
 
       expect(localDBSpy.saveUser).not.toHaveBeenCalled();
-      expect(component.importError()).toBe("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
+      expect(component.importError()).toBe("Compte ouvert dans un autre onglet : celui-ci est en lecture seule.");
     });
 
     it('should add a contact listed twice in the file only once', async () => {

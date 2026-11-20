@@ -29,7 +29,14 @@ describe('MainLayout', () => {
           ...PAYMENT_PAGES.map((path) => ({ path, component: EmptyPage })),
           { path: 'contacts', component: EmptyPage },
         ]),
-        { provide: ConnectedUserService, useValue: { readOnlyReason: () => readOnlyReason, useThisTab: takeTheAccountBack } },
+        {
+          provide: ConnectedUserService,
+          useValue: {
+            readOnlyReason: () => readOnlyReason,
+            readOnlyMessage: () => `Read-only because of ${readOnlyReason}`,
+            useThisTab: takeTheAccountBack,
+          },
+        },
         { provide: MatSnackBar, useValue: snackBarSpy },
       ],
     }).compileComponents();
@@ -38,8 +45,8 @@ describe('MainLayout', () => {
     fixture.detectChanges();
   });
 
-  function otherTabBanner(): HTMLElement | null {
-    return fixture.nativeElement.querySelector('.other-tab-banner');
+  function readOnlyBanner(): HTMLElement | null {
+    return fixture.nativeElement.querySelector('.read-only-banner');
   }
 
   it('should create', () => {
@@ -61,11 +68,43 @@ describe('MainLayout', () => {
       readOnlyReason = 'other-tab';
       fixture.detectChanges();
 
-      expect(otherTabBanner()?.textContent).toContain('Compte ouvert dans un autre onglet');
+      expect(readOnlyBanner()?.textContent).toContain('Read-only because of other-tab');
     });
 
-    it('should show no such banner while this tab holds the account', () => {
-      expect(otherTabBanner()).toBeNull();
+    it('should say on every page that another device took the account over', () => {
+      readOnlyReason = 'other-device';
+      fixture.detectChanges();
+
+      expect(readOnlyBanner()?.textContent).toContain('Read-only because of other-device');
+    });
+
+    it('should say on every page that this device and the server no longer agree', () => {
+      readOnlyReason = 'out-of-sync';
+      fixture.detectChanges();
+
+      expect(readOnlyBanner()?.textContent).toContain('Read-only because of out-of-sync');
+    });
+
+    it('should offer to use this tab only when the account is in use in another tab', () => {
+      readOnlyReason = 'other-tab';
+      fixture.detectChanges();
+      const buttonForTheOtherTab = readOnlyBanner()?.querySelector('button');
+      readOnlyReason = 'other-device';
+      fixture.detectChanges();
+
+      expect(buttonForTheOtherTab?.textContent).toContain('Utiliser cet onglet');
+      expect(readOnlyBanner()?.querySelector('button')).toBeNull();
+    });
+
+    it('should leave a locked session to the password dialog, without a banner', () => {
+      readOnlyReason = 'locked';
+      fixture.detectChanges();
+
+      expect(readOnlyBanner()).toBeNull();
+    });
+
+    it('should show no read-only banner while this tab can change the account', () => {
+      expect(readOnlyBanner()).toBeNull();
     });
 
     it('should mark the Pay tab active on the history, a page of the payments', async () => {

@@ -143,7 +143,7 @@ export class EcosystemRoles {
   private sendRoleTx(buildTx: () => any): void {
     if (this.submitting) return;
     if (this.userService.isReadOnlySession()) {
-      this.displayMessage("Ce compte est actif sur un autre appareil — lecture seule.");
+      this.displayMessage(this.userService.readOnlyMessage());
       return;
     }
     this.submitting = true;

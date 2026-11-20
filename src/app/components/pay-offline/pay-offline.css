@@ -110,13 +110,6 @@ mat-card-actions a {
     border-radius: 8px !important;
 }
 
-.read-only-notice {
-    margin: 8px 0 0 0;
-    font-size: 0.85rem;
-    color: var(--mat-sys-error);
-    text-align: center;
-}
-
 .sent-row {
     display: flex;
     align-items: center;

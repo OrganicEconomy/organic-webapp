@@ -51,6 +51,7 @@ describe('EcosystemOrder', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => SK,
       isReadOnlySession: () => false,
+      readOnlyMessage: () => 'Read-only for the reason of this session',
     };
     stubViewedEcosystemService = {
       setViewedEcosystem: jasmine.createSpy('setViewedEcosystem'),
@@ -146,6 +147,17 @@ describe('EcosystemOrder', () => {
       component.submitOrder();
 
       expect(fakeCitizenBlockchain.payerOrder).not.toHaveBeenCalled();
+    });
+
+    it('should say why it cannot submit, with the reason of the read-only session', () => {
+      stubConnectedUserService.isReadOnlySession = () => true;
+      component.targetPk = 'contact-pk';
+      component.amount = 2;
+      spyOn(component, 'displayMessage');
+
+      component.submitOrder();
+
+      expect(component.displayMessage).toHaveBeenCalledWith('Read-only for the reason of this session');
     });
 
     it('should call payerOrder with the chosen beneficiary and the first matching invests', () => {

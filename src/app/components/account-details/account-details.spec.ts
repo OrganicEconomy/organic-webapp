@@ -39,7 +39,7 @@ describe('AccountDetails', () => {
     stubConnectedUserService = {
       getConnectedUser: () => fakeAccount,
       isReadOnlySession: () => false,
-      readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
+      readOnlyMessage: () => "Compte ouvert dans un autre onglet : celui-ci est en lecture seule.",
     };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser']);
     localDBSpy.saveUser.and.callFake(async (account) => account);
@@ -99,7 +99,7 @@ describe('AccountDetails', () => {
     await component.changePassword();
 
     expect(serverDBSpy.changePassword).not.toHaveBeenCalled();
-    expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
+    expect(component.displayMessage).toHaveBeenCalledWith("Compte ouvert dans un autre onglet : celui-ci est en lecture seule.");
   });
 
   it('changePassword() should reject a wrong old password without calling the server', async () => {

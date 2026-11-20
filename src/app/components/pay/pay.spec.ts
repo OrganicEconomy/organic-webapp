@@ -57,6 +57,7 @@ describe('Pay', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => 'the-real-sk',
       isReadOnlySession: () => false,
+      readOnlyMessage: () => 'Read-only for the reason of this session',
     };
     serverDBSpy = jasmine.createSpyObj('ServerConnexionService', [
       'sendTransaction',
@@ -541,6 +542,17 @@ describe('Pay', () => {
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
   });
 
+  it('should say why it cannot pay, with the reason of the read-only session', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    component.target = MY_PK;
+    component.amount = 5;
+    spyOn(component, 'displayMessage');
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith('Read-only for the reason of this session');
+  });
+
   it('should disable the Payer button when the session is read-only', () => {
     stubConnectedUserService.isReadOnlySession = () => true;
     fixture = TestBed.createComponent(Pay);
@@ -548,6 +560,14 @@ describe('Pay', () => {
 
     const payBtn: HTMLButtonElement = fixture.nativeElement.querySelector('.pay-btn');
     expect(payBtn.disabled).toBeTrue();
+  });
+
+  it('should leave to the shared banner the reason why the session is read-only', () => {
+    stubConnectedUserService.isReadOnlySession = () => true;
+    fixture = TestBed.createComponent(Pay);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('lecture seule');
   });
 
   describe('Historique card', () => {

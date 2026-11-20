@@ -28,7 +28,7 @@ describe('AddContact', () => {
       getConnectedUser: () => fakeAccount,
       getSecretKey: () => '',
       isReadOnlySession: () => false,
-      readOnlyMessage: () => "Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.",
+      readOnlyMessage: () => "Compte ouvert dans un autre onglet : celui-ci est en lecture seule.",
     };
     localDBSpy = jasmine.createSpyObj('LocalDatabaseService', ['saveUser', 'saveWithNewContacts']);
     localDBSpy.saveWithNewContacts.and.callFake((user, contacts) =>
@@ -137,7 +137,7 @@ describe('AddContact', () => {
     await component.addContact();
 
     expect(localDBSpy.saveUser).not.toHaveBeenCalled();
-    expect(component.formError).toBe("Compte ouvert dans un autre onglet : rien n'est enregistré dans celui-ci.");
+    expect(component.formError).toBe("Compte ouvert dans un autre onglet : celui-ci est en lecture seule.");
   });
 
   it('should add a contact whose pasted key has surrounding spaces', async () => {
