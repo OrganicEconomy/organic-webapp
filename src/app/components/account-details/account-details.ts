@@ -74,10 +74,23 @@ export class AccountDetails {
     const link = contactLink(document.baseURI, { pk: this.publickey, url: this.user.serverUrl, name: this.name })
     try {
       await navigator.clipboard.writeText(link)
-      this.displayMessage('Lien copié : envoie-le à ton contact.')
-    } catch {
+    } catch (error) {
+      console.error(error)
       this.displayMessage("Impossible de copier le lien.")
+      return
     }
+    this.displayMessage('Lien copié : envoie-le à ton contact.')
+  }
+
+  async copyMyPublicKey(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.publickey)
+    } catch (error) {
+      console.error(error)
+      this.displayMessage('Impossible de copier la clé.')
+      return
+    }
+    this.displayMessage('Clé copiée.')
   }
 
   private async keepNewKeyOnThisDevice(newEncryptedKey: string): Promise<void> {

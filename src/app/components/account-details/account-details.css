@@ -21,6 +21,22 @@ mat-card-content {
     padding: 16px !important;
 }
 
+.my-key {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0 16px;
+}
+
+.my-key-value {
+    font-family: monospace;
+    overflow-wrap: anywhere;
+}
+
+.my-key-copy {
+    align-self: flex-start;
+}
+
 qrcode {
     display: flex;
     justify-content: center;
