@@ -47,4 +47,18 @@ test.describe('signup', () => {
     await alert.accept();
     await otherDevice.close();
   });
+
+  test('should say that the server does not answer when the signup cannot reach it', async ({ page }) => {
+    await ensureCoreGuardian();
+    await page.route('**/users/register', (route) => route.abort());
+    const alerts: string[] = [];
+    page.on('dialog', (alert) => {
+      alerts.push(alert.message());
+      void alert.accept();
+    });
+
+    await signUpThroughApp(page, 'Clara Vidal');
+
+    await expect.poll(() => alerts).toEqual(['Le serveur ne répond pas : vérifie ta connexion, puis réessaie.']);
+  });
 });

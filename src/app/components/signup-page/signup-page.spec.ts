@@ -138,7 +138,17 @@ describe('SignupPage', () => {
     httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
   });
 
-  it('should keep the generic message when the server refuses the signup for another reason', async () => {
+  it('should say that the server does not answer when it cannot be reached', async () => {
+    const alertSpy = spyOn(window, 'alert')
+
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+    await component.signup()
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`).error(new ProgressEvent('network error'))
+
+    expect(alertSpy).toHaveBeenCalledWith('Le serveur ne répond pas : vérifie ta connexion, puis réessaie.')
+  });
+
+  it('should say that the signup failed when the server refuses it for another reason', async () => {
     const alertSpy = spyOn(window, 'alert')
 
     component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
@@ -148,7 +158,7 @@ describe('SignupPage', () => {
       { status: 400, statusText: 'Bad Request' },
     )
 
-    expect(alertSpy).toHaveBeenCalledWith('Utilisateur ou mot de passe invalide')
+    expect(alertSpy).toHaveBeenCalledWith("L'inscription a échoué : réessaie plus tard.")
   });
 
   it('should let the citizen try again once the server refused the signup', async () => {

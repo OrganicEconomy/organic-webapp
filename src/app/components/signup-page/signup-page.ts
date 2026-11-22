@@ -78,11 +78,18 @@ export class SignupPage {
     return error.status === HttpStatusCode.Conflict
   }
 
+  private isServerUnreachable(error: HttpErrorResponse): boolean {
+    return error.status === 0
+  }
+
   private refusalMessage(error: HttpErrorResponse): string {
+    if (this.isServerUnreachable(error)) {
+      return 'Le serveur ne répond pas : vérifie ta connexion, puis réessaie.'
+    }
     if (this.isMailAlreadyUsed(error)) {
       return 'Cette adresse mail est déjà utilisée par un autre compte.'
     }
-    return 'Utilisateur ou mot de passe invalide'
+    return "L'inscription a échoué : réessaie plus tard."
   }
 
   async signup() {
