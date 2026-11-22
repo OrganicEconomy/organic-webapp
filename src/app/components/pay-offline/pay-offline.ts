@@ -76,7 +76,7 @@ export class PayOffline {
 
   payOffline(): void {
     if (!this.target) {
-      this.displayMessage('Choisis qui tu paies.')
+      this.displayMessage("Choisis qui tu paies.")
       return
     }
     if (!isWellFormedPublicKey(this.target)) {

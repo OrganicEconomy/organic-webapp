@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { Location } from '@angular/common';
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting, HttpTestingController } from '@angular/common/http/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
@@ -397,7 +397,7 @@ describe('EcosystemDetail', () => {
       expectAuthenticated(httpMock, DISTRIBUTE_URL).error(new ProgressEvent('network error'));
 
       expect(component.displayMessage).toHaveBeenCalledWith('La distribution a échoué — réessaie plus tard.');
-      expect(logError).toHaveBeenCalled();
+      expect(logError).toHaveBeenCalledWith(jasmine.any(HttpErrorResponse));
     });
 
     it('should not open the dialog when the session is read-only', () => {
