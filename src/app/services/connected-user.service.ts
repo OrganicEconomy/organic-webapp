@@ -12,7 +12,7 @@ export type ReadOnlyReason = 'other-device' | 'out-of-sync' | 'other-tab' | 'loc
 const READ_ONLY_MESSAGES: Record<ReadOnlyReason, string> = {
     'other-device': 'Ce compte est actif sur un autre appareil — lecture seule.',
     'out-of-sync':
-        "Ce téléphone et le serveur ne sont plus d'accord sur des paiements : lecture seule, rien n'a été effacé. Contacte l'administrateur de ton serveur.",
+        "Cet appareil et le serveur ne sont plus d'accord sur des paiements : lecture seule, rien n'a été effacé. Contacte la personne qui gère ta monnaie locale.",
     'other-tab': 'Compte ouvert dans un autre onglet : celui-ci est en lecture seule.',
     'locked': 'Session verrouillée : saisis ton mot de passe pour continuer.',
 }

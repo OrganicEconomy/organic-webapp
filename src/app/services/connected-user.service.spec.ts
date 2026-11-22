@@ -357,7 +357,7 @@ describe('ConnectedUserService', () => {
 
       expect(service.readOnlyReason()).toBe('out-of-sync');
       expect(service.readOnlyMessage()).toBe(
-        "Ce téléphone et le serveur ne sont plus d'accord sur des paiements : lecture seule, rien n'a été effacé. Contacte l'administrateur de ton serveur.",
+        "Cet appareil et le serveur ne sont plus d'accord sur des paiements : lecture seule, rien n'a été effacé. Contacte la personne qui gère ta monnaie locale.",
       );
     });
   });
