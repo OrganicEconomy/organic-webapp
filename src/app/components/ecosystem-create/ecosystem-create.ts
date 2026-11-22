@@ -45,12 +45,12 @@ export class EcosystemCreate {
     }
   }
 
-  private isRefusedAsNotActiveCitizen(error: any): boolean {
+  private isFounderRefusedAsNotActiveCitizen(error: any): boolean {
     return error?.error?.code === 'UNKNOWN_USER';
   }
 
-  private refusalMessage(error: any): string {
-    if (this.isRefusedAsNotActiveCitizen(error)) {
+  private creationFailureMessage(error: any): string {
+    if (this.isFounderRefusedAsNotActiveCitizen(error)) {
       return "Il faut être citoyen actif, au compte validé, pour créer un écosystème.";
     }
     return "Échec de la création.";
@@ -83,7 +83,7 @@ export class EcosystemCreate {
       },
       error: (error) => {
         console.error(error);
-        this.actionError = this.refusalMessage(error);
+        this.actionError = this.creationFailureMessage(error);
       },
     });
   }

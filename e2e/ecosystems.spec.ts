@@ -3,7 +3,7 @@ import { SERVER_URL } from '../playwright.config';
 import { ensureCoreGuardian } from './support/core-guardian';
 import { signUpApprovedCitizen, signUpThroughApp } from './support/signup';
 
-async function corePk(): Promise<string> {
+async function fetchCorePublicKey(): Promise<string> {
   const response = await fetch(`${SERVER_URL}/api/v1/info`);
   if (!response.ok) {
     throw new Error(`/info answered ${response.status}`);
@@ -46,16 +46,16 @@ test.describe('ecosystems', () => {
 
   test('should tell a citizen how much they can invest each day, and when nothing is left', async ({ page }) => {
     await signUpApprovedCitizen(page, 'Margot Blanc');
-    const core = await corePk();
+    const corePublicKey = await fetchCorePublicKey();
 
-    await page.goto(`/ecosystems/${core}/invest`);
+    await page.goto(`/ecosystems/${corePublicKey}/invest`);
     await expect(page.getByText("Maximum : 1 / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.")).toBeVisible();
     await page.getByLabel('Montant par jour').fill('2');
     await page.getByRole('button', { name: 'Engager' }).click();
     await expect(page.getByText('Vous ne pouvez pas engager plus de 1 par jour.')).toBeVisible();
-    await engageInvests(page, core, 1);
+    await engageInvests(page, corePublicKey, 1);
 
-    await page.goto(`/ecosystems/${core}/invest`);
+    await page.goto(`/ecosystems/${corePublicKey}/invest`);
     await expect(page.getByText("Tous vos investissements d'aujourd'hui sont déjà engagés.")).toBeVisible();
     await expect(page.getByRole('button', { name: 'Engager' })).toBeDisabled();
   });

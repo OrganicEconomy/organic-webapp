@@ -77,13 +77,13 @@ describe('EcosystemInvest', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/user-selection']);
   });
 
-  describe('max', () => {
+  describe('affordableDailyAmount', () => {
     it('should read the invests daily cap', () => {
-      expect(component.max).toBe(12);
+      expect(component.affordableDailyAmount).toBe(12);
     });
 
     it("should ask for today's affordable invests, not every invest ever engaged in the open block", () => {
-      void component.max;
+      void component.affordableDailyAmount;
 
       expect(fakeBlockchain.getAffordableInvestAmount).toHaveBeenCalledWith(jasmine.any(Date));
     });
