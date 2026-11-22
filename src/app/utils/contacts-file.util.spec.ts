@@ -90,7 +90,7 @@ describe('contactsFromFile', () => {
   it('should reject a file written by a newer version of the app', () => {
     expect(() => contactsFromFile(fileWith({ version: 2 }))).toThrowError(
       ContactsFileError,
-      "Ce fichier de contacts vient d'une version plus récente de l'application : mettez-la à jour.",
+      "Ce fichier de contacts vient d'une version plus récente de l'application : mets-la à jour.",
     );
   });
 

@@ -189,7 +189,7 @@ describe('LocalDatabaseService', () => {
       await service.saveUserInBackground(makeDefaultAccount(uniquePk('full')));
 
       expect(snackBarSpy.open).toHaveBeenCalledWith(
-        "Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée.",
+        "Cet appareil n'a pas pu enregistrer le compte : libère de la place, ou quitte la navigation privée.",
         'Fermer',
       );
     });

@@ -1,7 +1,7 @@
 <mat-card appearance="outlined">
   <mat-card-header>
     <mat-card-title>Économie organique</mat-card-title>
-    <mat-card-subtitle>Choisissez votre serveur</mat-card-subtitle>
+    <mat-card-subtitle>Choisis ton serveur</mat-card-subtitle>
   </mat-card-header>
 
   <mat-card-content>
@@ -48,7 +48,7 @@
         @if (useCustom) {
           @if (!hasKnownServer) {
             <p class="admin-hint">
-              Aucun serveur n'a été trouvé automatiquement. Demandez l'adresse à la personne qui gère votre monnaie locale.
+              Aucun serveur n'a été trouvé automatiquement. Demande l'adresse à la personne qui gère ta monnaie locale.
             </p>
           } @else {
             <button mat-button class="use-list-link" (click)="backToServerChoice()">

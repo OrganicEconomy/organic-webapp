@@ -18,7 +18,7 @@ export function offlineRefusal(contact: Contact, contacts: Contact[]): string | 
   }
   const existing = contactWithKey(contact.pk, contacts);
   if (existing) {
-    return `Cette clé est déjà dans vos contacts, sous le nom ${existing.name}.`;
+    return `Cette clé est déjà dans tes contacts, sous le nom ${existing.name}.`;
   }
   return null;
 }

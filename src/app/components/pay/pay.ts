@@ -247,7 +247,7 @@ export class Pay {
       error: (err) => {
         this.paying = false
         console.log(err)
-        this.displayMessage("Paiement enregistré mais non transmis au destinataire — réessayez plus tard.")
+        this.displayMessage("Paiement enregistré mais non transmis au destinataire — réessaie plus tard.")
       },
     })
   }

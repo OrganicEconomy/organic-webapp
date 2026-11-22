@@ -22,7 +22,7 @@ const SYNC_IMPOSSIBLE_MESSAGE_DURATION_MS = 8_000;
 const SYNC_IMPOSSIBLE_MESSAGE =
   "Synchronisation impossible avec le serveur : ce téléphone garde sa copie pour l'instant.";
 const SYNC_FAILED_MESSAGE =
-  'La synchronisation a échoué : ce téléphone garde sa copie. Rechargez la page pour réessayer.';
+  'La synchronisation a échoué : ce téléphone garde sa copie. Recharge la page pour réessayer.';
 const MONEY_MOVEMENTS = [TxType.PAY, TxType.ENGAGE, TxType.PAPER, TxType.PAYERORDER, TxType.EARN];
 
 function transactionsOf(chain: BlockWire[]): TxWire[] {

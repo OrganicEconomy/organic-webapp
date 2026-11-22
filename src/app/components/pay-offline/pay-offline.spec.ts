@@ -167,7 +167,7 @@ describe('PayOffline', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain(
-      'ⓘ Dès que vous retrouvez le réseau, rechargez la page pour que le destinataire puisse vérifier ce paiement.',
+      'ⓘ Dès que tu retrouves le réseau, recharge la page pour que le destinataire puisse vérifier ce paiement.',
     );
   });
 

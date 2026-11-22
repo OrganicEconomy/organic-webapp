@@ -244,7 +244,7 @@ describe('EcosystemRoles', () => {
 
       component.removeRole('actor', 'actor-pk');
 
-      expect(component.displayMessage).toHaveBeenCalledWith('Action enregistrée mais non transmise — réessayez plus tard.');
+      expect(component.displayMessage).toHaveBeenCalledWith('Action enregistrée mais non transmise — réessaie plus tard.');
     });
 
     it('should not remove when the session is read-only', () => {
@@ -270,7 +270,7 @@ describe('EcosystemRoles', () => {
 
       component.removeRole('admin', 'admin-pk');
 
-      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
+      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessaie demain.");
     });
 
     it('should not start a second action while the first one is being saved', () => {
@@ -475,7 +475,7 @@ describe('EcosystemRoles', () => {
 
       component.addRole();
 
-      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
+      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessaie demain.");
     });
   });
 

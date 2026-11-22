@@ -395,7 +395,7 @@ describe('EcosystemDetail', () => {
       component.distributeSalary();
       expectAuthenticated(httpMock, DISTRIBUTE_URL).error(new ProgressEvent('network error'));
 
-      expect(component.displayMessage).toHaveBeenCalledWith('La distribution a échoué — réessayez plus tard.');
+      expect(component.displayMessage).toHaveBeenCalledWith('La distribution a échoué — réessaie plus tard.');
     });
 
     it('should not open the dialog when the session is read-only', () => {

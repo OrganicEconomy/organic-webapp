@@ -12,7 +12,7 @@ export class LocalReadError extends Error {}
 export class InUseElsewhereError extends Error {}
 
 export const ACCOUNT_NOT_STORED_MESSAGE =
-    "Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée."
+    "Cet appareil n'a pas pu enregistrer le compte : libère de la place, ou quitte la navigation privée."
 
 export const CONTACT_NOT_STORED_MESSAGE = "Cet appareil n'a pas pu enregistrer ce contact."
 

@@ -289,7 +289,7 @@ describe('Home', () => {
     createComponent();
 
     const card: HTMLElement = fixture.nativeElement.querySelector('.ecosystems-card');
-    expect(card.textContent).toContain("Vous ne participez à aucun écosystème pour l'instant.");
+    expect(card.textContent).toContain("Tu ne participes à aucun écosystème pour l'instant.");
     expect(card.querySelector('a[href="/ecosystems"]')).toBeTruthy();
   });
 });

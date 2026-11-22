@@ -47,7 +47,7 @@ export class MainLayout {
       await this.userService.useThisTab();
     } catch (error) {
       console.error(error);
-      this.snackBar.open("Impossible de reprendre le compte dans cet onglet : reconnectez-vous depuis l'écran de connexion.", 'Fermer');
+      this.snackBar.open("Impossible de reprendre le compte dans cet onglet : reconnecte-toi depuis l'écran de connexion.", 'Fermer');
       return;
     }
     await this.pageReopener.reopenCurrentPage();

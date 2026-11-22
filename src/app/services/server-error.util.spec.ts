@@ -31,7 +31,7 @@ describe('server-error.util', () => {
     it('should return a clear message for a duplicate-transaction error', () => {
       const err = new InvalidTransactionError('Transaction duplicate abc123');
 
-      expect(duplicateTransactionMessage(err)).toBe("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
+      expect(duplicateTransactionMessage(err)).toBe("Cette action a déjà été tentée aujourd'hui — réessaie demain.");
     });
 
     it('should return null for an InvalidTransactionError with a different message', () => {

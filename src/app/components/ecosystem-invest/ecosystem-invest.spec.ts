@@ -116,7 +116,7 @@ describe('EcosystemInvest', () => {
       component.engage();
 
       expect(fakeBlockchain.engageInvests).not.toHaveBeenCalled();
-      expect(component.displayMessage).toHaveBeenCalledWith('Vous ne pouvez pas engager plus de 12 par jour.');
+      expect(component.displayMessage).toHaveBeenCalledWith('Tu ne peux pas engager plus de 12 par jour.');
     });
 
     it('should not engage when the session is read-only', () => {
@@ -345,14 +345,14 @@ describe('EcosystemInvest', () => {
 
       component.engage();
 
-      expect(component.displayMessage).toHaveBeenCalledWith('Engagement enregistré mais non transmis — réessayez plus tard.');
+      expect(component.displayMessage).toHaveBeenCalledWith('Engagement enregistré mais non transmis — réessaie plus tard.');
     });
   });
 
   describe('template', () => {
     it('should say where the daily cap comes from', () => {
       expect(fixture.nativeElement.textContent).toContain(
-        "Maximum : 12 / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.",
+        "Maximum : 12 / jour. C'est ton niveau, moins ce que tu as déjà engagé pour aujourd'hui.",
       );
     });
 
@@ -371,7 +371,7 @@ describe('EcosystemInvest', () => {
 
       fixture.detectChanges();
 
-      expect(fixture.nativeElement.textContent).toContain("Tous vos investissements d'aujourd'hui sont déjà engagés.");
+      expect(fixture.nativeElement.textContent).toContain("Tous tes investissements d'aujourd'hui sont déjà engagés.");
     });
 
     it('should disable the Engager button when every invest of today is already engaged', () => {

@@ -112,7 +112,7 @@ describe('SignupPage', () => {
     await waitUntil(() => alertSpy.calls.count() > 0)
 
     expect(alertSpy).toHaveBeenCalledWith(
-      "Votre compte est créé, mais cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis restaurez-le.",
+      "Ton compte est créé, mais cet appareil n'a pas pu l'enregistrer. Libère de la place, puis restaure-le.",
     )
     expect(router.navigate).toHaveBeenCalledWith(['/restore-account'], { queryParams: { server: SERVER_URL } })
   });

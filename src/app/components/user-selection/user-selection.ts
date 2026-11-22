@@ -22,7 +22,7 @@ export interface DialogData {
 import type { Account } from '../../models/account';
 
 const ACCOUNTS_NOT_READ_MESSAGE =
-  "Cet appareil n'a pas pu lire ses comptes. Quittez la navigation privée, ou vérifiez que le site peut enregistrer des données.";
+  "Cet appareil n'a pas pu lire ses comptes. Quitte la navigation privée, ou vérifie que le site peut enregistrer des données.";
 
 @Component({
   selector: 'app-user-selection',
