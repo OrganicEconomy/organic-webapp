@@ -221,7 +221,7 @@ describe('Home', () => {
     const identityCard: HTMLElement = fixture.nativeElement.querySelector('.identity-card');
 
     expect(component.dailyCreation).toBe(3);
-    expect(identityCard.textContent).toContain('Création du jour : 3');
+    expect(identityCard.textContent).toContain('Création par jour : 3');
   });
 
   it('should title the pending-payments card "Paiements à encaisser"', () => {
