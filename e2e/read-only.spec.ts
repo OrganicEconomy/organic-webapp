@@ -1,7 +1,9 @@
 import { Browser, expect, Page, test } from '@playwright/test';
 import { SERVER_URL } from '../playwright.config';
 import { emailOf, signUpApprovedCitizen } from './support/signup';
-import { closeTheLevelUpDialog, payOneself } from './support/payments';
+import { closeTheLevelUpDialog, payContact, payOneself } from './support/payments';
+import { addContact } from './support/contacts';
+import { ensureCoreGuardian } from './support/core-guardian';
 import { openTheTab } from './support/navigation';
 
 const OTHER_DEVICE_BANNER = 'Ce compte est actif sur un autre appareil — lecture seule.';
@@ -50,6 +52,26 @@ test.describe('read-only banner', () => {
     await page.getByLabel('Mot de passe').fill('secret');
     await page.getByRole('button', { name: 'Déverrouiller' }).click();
     await expect(page.getByText('Session verrouillée')).toHaveCount(0);
+
+    await expect(page.getByText(OTHER_DEVICE_BANNER)).toBeVisible();
+  });
+
+  test('should stay read-only once the citizen connects again to the account another device took over', async ({
+    page,
+    browser,
+  }) => {
+    const guardian = await ensureCoreGuardian();
+    await signUpApprovedCitizen(page, 'Léon Barbier');
+    await addContact(page, 'Gardien', guardian.publickey);
+    await restoreOnAnotherDevice(browser, 'Léon Barbier');
+    await payContact(page, 'Gardien', 1);
+    await expect(page.getByText(OTHER_DEVICE_BANNER)).toBeVisible();
+
+    await page.goto('/logout');
+    await page.getByRole('button', { name: 'Léon Barbier' }).click();
+    await page.getByLabel('Il faut ton mot de passe pour cette action').fill('secret');
+    await page.getByRole('button', { name: 'OK' }).click();
+    await expect(page).toHaveURL(/\/home$/);
 
     await expect(page.getByText(OTHER_DEVICE_BANNER)).toBeVisible();
   });
