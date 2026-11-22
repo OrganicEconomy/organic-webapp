@@ -275,11 +275,13 @@ describe('Home', () => {
     expect(card.querySelector('a[routerLink="/ecosystems"]')).toBeTruthy();
   });
 
-  it('should hide the Écosystèmes card entirely when the account has no ecosystems, to avoid overwhelming beginners', () => {
+  it('should still lead to the directory when the account has no ecosystem, so a beginner finds where to create or invest', () => {
     fakeAccount.myEcosystems = [];
 
     createComponent();
 
-    expect(fixture.nativeElement.querySelector('.ecosystems-card')).toBeFalsy();
+    const card: HTMLElement = fixture.nativeElement.querySelector('.ecosystems-card');
+    expect(card.textContent).toContain("Vous ne participez à aucun écosystème pour l'instant.");
+    expect(card.querySelector('a[href="/ecosystems"]')).toBeTruthy();
   });
 });

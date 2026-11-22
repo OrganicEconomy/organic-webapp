@@ -53,8 +53,16 @@ export class EcosystemInvest {
     this.location.back();
   }
 
-  get max(): number {
+  get affordableDailyAmount(): number {
     return this.user.blockchain.getAffordableInvestAmount(new Date());
+  }
+
+  get isNotYetAnActiveCitizen(): boolean {
+    return this.user.blockchain.getLevel() === 0;
+  }
+
+  get isEverythingAlreadyEngaged(): boolean {
+    return this.affordableDailyAmount <= 0;
   }
 
   engage(): void {
@@ -65,6 +73,10 @@ export class EcosystemInvest {
     }
     if (this.days <= 0) {
       this.displayMessage("Le nombre de jours doit être supérieur à zéro.");
+      return;
+    }
+    if (this.dailyAmount > this.affordableDailyAmount) {
+      this.displayMessage(`Vous ne pouvez pas engager plus de ${this.affordableDailyAmount} par jour.`);
       return;
     }
     if (this.userService.isReadOnlySession()) {

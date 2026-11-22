@@ -45,6 +45,17 @@ export class EcosystemCreate {
     }
   }
 
+  private isFounderRefusedAsNotActiveCitizen(error: any): boolean {
+    return error?.error?.code === 'UNKNOWN_USER';
+  }
+
+  private creationFailureMessage(error: any): string {
+    if (this.isFounderRefusedAsNotActiveCitizen(error)) {
+      return "Il faut être citoyen actif, au compte validé, pour créer un écosystème.";
+    }
+    return "Échec de la création.";
+  }
+
   async create(): Promise<void> {
     const sk = this.userService.getSecretKey();
     let lat: number | undefined;
@@ -70,7 +81,10 @@ export class EcosystemCreate {
         this.userService.refreshMyEcosystems();
         this.router.navigate(['/ecosystems', response.publickey]);
       },
-      error: () => { this.actionError = "Échec de la création."; },
+      error: (error) => {
+        console.error(error);
+        this.actionError = this.creationFailureMessage(error);
+      },
     });
   }
 }
