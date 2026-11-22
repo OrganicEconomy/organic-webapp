@@ -1,3 +1,4 @@
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http'
 import { Component, inject } from '@angular/core'
 import { FormGroup, FormBuilder, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms'
 import { ActivatedRoute, Router, RouterLink } from '@angular/router'
@@ -41,6 +42,7 @@ function dateInputValidator(control: AbstractControl): ValidationErrors | null {
 export class SignupPage {
   public signupForm !: FormGroup
   public hidePassword = true
+  public signingUp = false
 
   server = inject(ServerConnexionService)
   localDB = inject(LocalDatabaseService)
@@ -72,8 +74,20 @@ export class SignupPage {
     }
   }
 
+  private isMailAlreadyUsed(error: HttpErrorResponse): boolean {
+    return error.status === HttpStatusCode.Conflict
+  }
+
+  private refusalMessage(error: HttpErrorResponse): string {
+    if (this.isMailAlreadyUsed(error)) {
+      return 'Cette adresse mail est déjà utilisée par un autre compte.'
+    }
+    return 'Utilisateur ou mot de passe invalide'
+  }
+
   async signup() {
-    if (this.signupForm.invalid) return
+    if (this.signupForm.invalid || this.signingUp) return
+    this.signingUp = true
 
     const { name, email, birthdate, password } = this.signupForm.value
     const serverUrl = this.route.snapshot.queryParamMap.get('server') ?? environment.serverUrl
@@ -121,9 +135,10 @@ export class SignupPage {
           this.router.navigate(['/home']);
         }
       },
-      error: (err) => {
-        alert("Utilisateur ou mot de passe invalide")
-        console.log(err)
+      error: (error: HttpErrorResponse) => {
+        this.signingUp = false
+        alert(this.refusalMessage(error))
+        console.error(error)
       }
     })
   }
