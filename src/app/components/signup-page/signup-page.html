@@ -38,6 +38,8 @@
             <mat-icon matSuffix>person</mat-icon>
             @if (signupForm.get('name')?.hasError('required')) {
               <mat-error>Ce champ est obligatoire.</mat-error>
+            } @else if (signupForm.get('name')?.hasError('maxlength')) {
+              <mat-error>{{ nameMaxLength }} caractères au plus.</mat-error>
             }
           </mat-form-field>
 

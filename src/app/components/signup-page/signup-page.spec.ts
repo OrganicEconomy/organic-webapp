@@ -91,6 +91,31 @@ describe('SignupPage', () => {
     expect(() => httpMock.expectNone(`${SERVER_URL}/api/v1/users/register`)).not.toThrow()
   });
 
+  it('should not register a name longer than the server accepts', async () => {
+    component.signupForm.setValue({ email: 'alice@ex.fr', name: 'A'.repeat(101), birthdate: '01/01/2000', password: 'a-password' })
+
+    await component.signup()
+
+    expect(() => httpMock.expectNone(`${SERVER_URL}/api/v1/users/register`)).not.toThrow()
+  });
+
+  it('should say how long the name can be', () => {
+    component.signupForm.get('name')!.setValue('A'.repeat(101))
+    component.signupForm.get('name')!.markAsTouched()
+    fixture.detectChanges()
+
+    expect(fixture.nativeElement.textContent).toContain('100 caractères au plus.')
+  });
+
+  it('should not register a mail longer than the server accepts', async () => {
+    const longDomain = ('b'.repeat(60) + '.').repeat(4) + 'fr'
+    component.signupForm.setValue({ email: 'a'.repeat(60) + '@' + longDomain, name: 'Alice', birthdate: '01/01/2000', password: 'a-password' })
+
+    await component.signup()
+
+    expect(() => httpMock.expectNone(`${SERVER_URL}/api/v1/users/register`)).not.toThrow()
+  });
+
   it('should not register when the birthdate is not a real calendar date (e.g. 31 April)', async () => {
     component.signupForm.setValue({ email: 'alice@ex.fr', name: 'Alice', birthdate: '31/04/2026', password: 'a-password' })
 
@@ -127,7 +152,7 @@ describe('SignupPage', () => {
       { status: 409, statusText: 'Conflict' },
     )
 
-    expect(alertSpy).toHaveBeenCalledWith('Cette adresse mail est déjà utilisée par un autre compte.')
+    expect(alertSpy).toHaveBeenCalledWith("Cette adresse mail est déjà utilisée. Si c'est la tienne, restaure ton compte.")
   });
 
   it('should register only once when the button is pressed again while the signup is on its way', async () => {
@@ -138,7 +163,30 @@ describe('SignupPage', () => {
     httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`)
   });
 
-  it('should keep the generic message when the server refuses the signup for another reason', async () => {
+  it('should say that the server does not answer when it cannot be reached', async () => {
+    const alertSpy = spyOn(window, 'alert')
+
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+    await component.signup()
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`).error(new ProgressEvent('network error'))
+
+    expect(alertSpy).toHaveBeenCalledWith('Le serveur ne répond pas : vérifie ta connexion, puis réessaie.')
+  });
+
+  it('should say that there were too many attempts from this network when the server limits them', async () => {
+    const alertSpy = spyOn(window, 'alert')
+
+    component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
+    await component.signup()
+    httpMock.expectOne(`${SERVER_URL}/api/v1/users/register`).flush(
+      { error: 'Too many requests' },
+      { status: 429, statusText: 'Too Many Requests' },
+    )
+
+    expect(alertSpy).toHaveBeenCalledWith('Trop de tentatives depuis ce réseau : réessaie dans une minute.')
+  });
+
+  it('should say that the signup failed when the server refuses it for another reason', async () => {
     const alertSpy = spyOn(window, 'alert')
 
     component.signupForm.setValue({ email: 'camille@ex.fr', name: 'Camille', birthdate: '01/01/2000', password: 'a-password' })
@@ -148,7 +196,7 @@ describe('SignupPage', () => {
       { status: 400, statusText: 'Bad Request' },
     )
 
-    expect(alertSpy).toHaveBeenCalledWith('Utilisateur ou mot de passe invalide')
+    expect(alertSpy).toHaveBeenCalledWith("L'inscription a échoué — réessaie plus tard.")
   });
 
   it('should let the citizen try again once the server refused the signup', async () => {
