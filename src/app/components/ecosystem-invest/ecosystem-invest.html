@@ -7,9 +7,9 @@
   <mat-card-content>
     <mat-form-field>
       <mat-label>Montant par jour</mat-label>
-      <input matInput type="number" [(ngModel)]="dailyAmount" [max]="max" min="0">
+      <input matInput type="number" [(ngModel)]="dailyAmount" [max]="affordableDailyAmount" min="0">
     </mat-form-field>
-    <mat-slider [max]="max" [min]="0" [step]="1" [showTickMarks]="true">
+    <mat-slider [max]="affordableDailyAmount" [min]="0" [step]="1" [showTickMarks]="true">
       <input matSliderThumb [(ngModel)]="dailyAmount">
     </mat-slider>
     @if (isNotYetAnActiveCitizen) {
@@ -17,7 +17,7 @@
     } @else if (isEverythingAlreadyEngaged) {
     <p class="hint">Tous vos investissements d'aujourd'hui sont déjà engagés.</p>
     } @else {
-    <p class="hint">Maximum : {{ max }} / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.</p>
+    <p class="hint">Maximum : {{ affordableDailyAmount }} / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.</p>
     }
 
     <mat-form-field>
