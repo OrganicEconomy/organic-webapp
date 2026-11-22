@@ -43,18 +43,17 @@ test.describe('signup', () => {
     await signUpThroughApp(otherPage, 'Alice Moreau', emailOf('Alice Fontaine'));
 
     const alert = await alertShown;
-    expect(alert.message()).toBe('Cette adresse mail est déjà utilisée par un autre compte.');
+    expect(alert.message()).toBe("Cette adresse mail est déjà utilisée. Si c'est la tienne, restaure ton compte.");
     await alert.accept();
     await otherDevice.close();
   });
 
   test('should say that the server does not answer when the signup cannot reach it', async ({ page }) => {
-    await ensureCoreGuardian();
     await page.route('**/users/register', (route) => route.abort());
     const alerts: string[] = [];
-    page.on('dialog', (alert) => {
+    page.on('dialog', async (alert) => {
       alerts.push(alert.message());
-      void alert.accept();
+      await alert.accept();
     });
 
     await signUpThroughApp(page, 'Clara Vidal');

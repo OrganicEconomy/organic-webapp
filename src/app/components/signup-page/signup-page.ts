@@ -25,6 +25,8 @@ function dateInputValidator(control: AbstractControl): ValidationErrors | null {
   return parseDateInput(control.value) ? null : { invalidDate: true }
 }
 
+const NAME_MAX_LENGTH = 100
+
 @Component({
   selector: 'app-signup-page',
   imports: [
@@ -43,6 +45,7 @@ export class SignupPage {
   public signupForm !: FormGroup
   public hidePassword = true
   public signingUp = false
+  public readonly nameMaxLength = NAME_MAX_LENGTH
 
   server = inject(ServerConnexionService)
   localDB = inject(LocalDatabaseService)
@@ -59,7 +62,7 @@ export class SignupPage {
   ngOnInit(): void {
     this.signupForm = this.formBuilder.group({
       email: ["", [Validators.required, Validators.email]],
-      name: ["", Validators.required],
+      name: ["", [Validators.required, Validators.maxLength(NAME_MAX_LENGTH)]],
       birthdate: ["", [Validators.required, dateInputValidator]],
       password: ["", Validators.required],
     })
@@ -74,20 +77,27 @@ export class SignupPage {
     }
   }
 
-  private isMailAlreadyUsed(error: HttpErrorResponse): boolean {
-    return error.status === HttpStatusCode.Conflict
-  }
-
   private isServerUnreachable(error: HttpErrorResponse): boolean {
     return error.status === 0
+  }
+
+  private isLimitingTheAttempts(error: HttpErrorResponse): boolean {
+    return error.status === HttpStatusCode.TooManyRequests
+  }
+
+  private isMailAlreadyUsed(error: HttpErrorResponse): boolean {
+    return error.status === HttpStatusCode.Conflict
   }
 
   private refusalMessage(error: HttpErrorResponse): string {
     if (this.isServerUnreachable(error)) {
       return 'Le serveur ne répond pas : vérifie ta connexion, puis réessaie.'
     }
+    if (this.isLimitingTheAttempts(error)) {
+      return 'Trop de tentatives depuis ce réseau : réessaie dans une minute.'
+    }
     if (this.isMailAlreadyUsed(error)) {
-      return 'Cette adresse mail est déjà utilisée par un autre compte.'
+      return "Cette adresse mail est déjà utilisée. Si c'est la tienne, restaure ton compte."
     }
     return "L'inscription a échoué : réessaie plus tard."
   }
