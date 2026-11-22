@@ -342,7 +342,7 @@ describe('Contacts', () => {
       createComponent();
 
       expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
-        'Vos contacts sont les citoyens et les écosystèmes que vous payez.',
+        'Tes contacts sont les citoyens et les écosystèmes que tu paies.',
       );
     });
 

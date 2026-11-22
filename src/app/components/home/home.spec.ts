@@ -228,7 +228,7 @@ describe('Home', () => {
     createComponent();
 
     expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
-      "Chaque jour, vous recevez autant d'unités que votre niveau.",
+      "Chaque jour, tu reçois autant d'unités que ton niveau.",
     );
   });
 

@@ -572,7 +572,7 @@ describe('Pay', () => {
 
   it('should explain the page in a help panel', () => {
     expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
-      "Choisissez un contact et un montant, puis «\u00a0Payer\u00a0».",
+      "Choisis un contact et un montant, puis «\u00a0Payer\u00a0».",
     );
   });
 

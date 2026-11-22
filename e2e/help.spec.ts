@@ -3,10 +3,10 @@ import { signUpApprovedCitizen } from './support/signup';
 import { openTheHelp } from './support/navigation';
 
 const FIRST_SENTENCE_OF_EACH_PAGE = [
-  { path: '/home', sentence: "Chaque jour, vous recevez autant d'unités que votre niveau." },
-  { path: '/contacts', sentence: 'Vos contacts sont les citoyens et les écosystèmes que vous payez.' },
-  { path: '/pay', sentence: 'Choisissez un contact et un montant' },
-  { path: '/transactions', sentence: 'Toutes les opérations de votre compte' },
+  { path: '/home', sentence: "Chaque jour, tu reçois autant d'unités que ton niveau." },
+  { path: '/contacts', sentence: 'Tes contacts sont les citoyens et les écosystèmes que tu paies.' },
+  { path: '/pay', sentence: 'Choisis un contact et un montant' },
+  { path: '/transactions', sentence: 'Toutes les opérations de ton compte' },
   { path: '/ecosystems', sentence: 'Un écosystème est un projet collectif' },
 ];
 

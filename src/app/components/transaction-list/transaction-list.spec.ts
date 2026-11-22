@@ -123,7 +123,7 @@ describe('TransactionList', () => {
   describe('template', () => {
     it('should explain the page in a help panel', () => {
       expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
-        'Toutes les opérations de votre compte, de la plus récente à la plus ancienne',
+        'Toutes les opérations de ton compte, de la plus récente à la plus ancienne',
       );
     });
 
