@@ -196,7 +196,7 @@ describe('SignupPage', () => {
       { status: 400, statusText: 'Bad Request' },
     )
 
-    expect(alertSpy).toHaveBeenCalledWith("L'inscription a échoué : réessaie plus tard.")
+    expect(alertSpy).toHaveBeenCalledWith("L'inscription a échoué — réessaie plus tard.")
   });
 
   it('should let the citizen try again once the server refused the signup', async () => {
