@@ -76,7 +76,7 @@ export class PayOffline {
 
   payOffline(): void {
     if (!this.target) {
-      this.displayMessage("Le champs 'À qui ?' est obligatoire.")
+      this.displayMessage("Choisis qui tu paies.")
       return
     }
     if (!isWellFormedPublicKey(this.target)) {

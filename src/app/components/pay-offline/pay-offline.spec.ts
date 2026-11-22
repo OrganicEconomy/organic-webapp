@@ -95,6 +95,16 @@ describe('PayOffline', () => {
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
   });
 
+  it('should ask who to pay when nobody is chosen', () => {
+    spyOn(component, 'displayMessage');
+    component.target = '';
+    component.amount = 5;
+
+    component.payOffline();
+
+    expect(component.displayMessage).toHaveBeenCalledWith('Choisis qui tu paies.');
+  });
+
   it('should not pay a contact whose public key is malformed, so nothing is debited', () => {
     const snackBar = TestBed.inject(MatSnackBar);
     spyOn(snackBar, 'open');

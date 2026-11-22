@@ -213,15 +213,18 @@ describe('EcosystemInvest', () => {
       expect(component.displayMessage).toHaveBeenCalledWith("Engagement annulé : cet appareil n'a pas pu l'enregistrer.");
     });
 
-    it('should cancel the engagement when the server could not save it', () => {
+    it('should cancel the engagement when the server could not save it, and log why', () => {
+      const refusal = new HttpErrorResponse({ status: 0 });
+      const logError = spyOn(console, 'error');
       spyOn(component, 'displayMessage');
-      backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+      backupSpy.applyAndSave.and.returnValue(throwError(() => refusal));
       component.dailyAmount = 3;
       component.days = 5;
 
       component.engage();
 
       expect(component.displayMessage).toHaveBeenCalledWith("Engagement annulé : rien n'a été enregistré.");
+      expect(logError).toHaveBeenCalledWith(refusal);
     });
 
     it('should cancel the engagement when this device was revoked by a newer login', () => {
@@ -337,15 +340,18 @@ describe('EcosystemInvest', () => {
       expect(component.displayMessage).toHaveBeenCalledWith('Unsufficient funds.');
     });
 
-    it('should fall back to a generic message when the rejection carries no server message', () => {
+    it('should fall back to a generic message when the rejection carries no server message, and log why', () => {
+      const refusal = { status: 0 };
+      const logError = spyOn(console, 'error');
       spyOn(component, 'displayMessage');
-      serverSpy.sendEcosystemTx.and.returnValue(throwError(() => ({ status: 0 })));
+      serverSpy.sendEcosystemTx.and.returnValue(throwError(() => refusal));
       component.dailyAmount = 3;
       component.days = 5;
 
       component.engage();
 
       expect(component.displayMessage).toHaveBeenCalledWith('Engagement enregistré mais non transmis — réessaie plus tard.');
+      expect(logError).toHaveBeenCalledWith(refusal);
     });
   });
 

@@ -101,7 +101,7 @@ export class Pay {
       return;
     }
     if (!this.target) {
-      this.displayMessage("Le  champs 'Qui est-ce qu'on paye ?' est obligatoire.")
+      this.displayMessage("Choisis qui tu paies.")
       return;
     }
     if (!isWellFormedPublicKey(this.target)) {
@@ -213,7 +213,7 @@ export class Pay {
         next: (tx) => this.send(tx, oldLevel),
         error: (err) => {
           this.paying = false
-          console.log(err)
+          console.error(err)
           this.displayMessage(this.cancelledPaymentMessage(err))
         },
       })
@@ -246,7 +246,7 @@ export class Pay {
       },
       error: (err) => {
         this.paying = false
-        console.log(err)
+        console.error(err)
         this.displayMessage("Paiement enregistré mais non transmis au destinataire — réessaie plus tard.")
       },
     })

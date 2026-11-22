@@ -23,4 +23,23 @@ test.describe('pay', () => {
     await page.getByRole('link', { name: 'Retour' }).click();
     await expect(page).toHaveURL(/\/pay$/);
   });
+
+  test('should ask who to pay when the citizen pays without choosing anybody', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Romain Fournier');
+    await page.getByRole('navigation').getByRole('link', { name: 'Paiement' }).click();
+
+    await page.getByRole('button', { name: 'Payer', exact: true }).click();
+
+    await expect(page.getByText('Choisis qui tu paies.')).toBeVisible();
+  });
+
+  test('should ask who to pay when the citizen pays by QR without choosing anybody', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Lina Perret');
+    await page.getByRole('navigation').getByRole('link', { name: 'Paiement' }).click();
+    await page.getByRole('link', { name: 'Payer par QR (hors-ligne)' }).click();
+
+    await page.getByRole('button', { name: 'Payer par QR' }).click();
+
+    await expect(page.getByText('Choisis qui tu paies.')).toBeVisible();
+  });
 });

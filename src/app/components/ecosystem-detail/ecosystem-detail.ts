@@ -151,7 +151,7 @@ export class EcosystemDetail {
           this.fetchAndPopulate();
         },
         error: (err) => {
-          console.log(err);
+          console.error(err);
           this.displayMessage(extractServerErrorMessage(err) ?? "La distribution a échoué — réessaie plus tard.");
         },
       });

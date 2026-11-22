@@ -157,6 +157,21 @@ describe('AccountDetails', () => {
     );
   });
 
+  it('changePassword() should say that the password could not be changed, and log why', async () => {
+    const refusal = new Error('server down');
+    serverDBSpy.changePassword.and.returnValue(throwError(() => refusal));
+    spyOn(component, 'displayMessage');
+    const logError = spyOn(console, 'error');
+    component.oldPassword = 'old-password';
+    component.newPassword = 'new-password';
+    component.newPasswordConfirm = 'new-password';
+
+    await component.changePassword();
+
+    expect(component.displayMessage).toHaveBeenCalledWith('Erreur lors du changement de mot de passe.');
+    expect(logError).toHaveBeenCalledWith(refusal);
+  });
+
   it('changePassword() should not call the server when the confirmation does not match', async () => {
     component.oldPassword = 'old-password';
     component.newPassword = 'new-password';

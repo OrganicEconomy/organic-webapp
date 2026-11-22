@@ -153,7 +153,7 @@ export class EcosystemRoles {
         next: (wire) => this.send(wire),
         error: (err) => {
           this.submitting = false;
-          console.log(err);
+          console.error(err);
           this.displayMessage(this.cancelledActionMessage(err));
         },
       });
@@ -168,7 +168,7 @@ export class EcosystemRoles {
       },
       error: (err) => {
         this.submitting = false;
-        console.log(err);
+        console.error(err);
         this.displayMessage(extractServerErrorMessage(err) ?? "Action enregistrée mais non transmise — réessaie plus tard.");
       },
     });

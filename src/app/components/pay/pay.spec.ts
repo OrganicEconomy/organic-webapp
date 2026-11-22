@@ -197,8 +197,10 @@ describe('Pay', () => {
     );
   });
 
-  it('should cancel the payment when the server could not save it', () => {
-    backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
+  it('should cancel the payment when the server could not save it, and log why', () => {
+    const refusal = new HttpErrorResponse({ status: 0 });
+    const logError = spyOn(console, 'error');
+    backupSpy.applyAndSave.and.returnValue(throwError(() => refusal));
     spyOn(component, 'displayMessage');
     component.target = SOMEONE_ELSES_PK;
     component.amount = 5;
@@ -208,6 +210,7 @@ describe('Pay', () => {
     expect(component.displayMessage).toHaveBeenCalledWith(
       "Paiement annulé : il n'a pas pu être enregistré sur le serveur. Rien n'a été débité.",
     );
+    expect(logError).toHaveBeenCalledWith(refusal);
   });
 
   it('should not blame the server when the payment itself is impossible', () => {
@@ -341,6 +344,20 @@ describe('Pay', () => {
     component.pay();
 
     expect(backupSpy.applyAndSave).toHaveBeenCalledTimes(2);
+  });
+
+  it('should say that the payment was not sent to the recipient yet, and log why', () => {
+    serverDBSpy.sendTransaction.and.returnValue(throwError(() => refusal));
+    spyOn(component, 'displayMessage');
+    const refusal = new HttpErrorResponse({ status: 0 });
+    const logError = spyOn(console, 'error');
+    component.target = SOMEONE_ELSES_PK;
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith('Paiement enregistré mais non transmis au destinataire — réessaie plus tard.');
+    expect(logError).toHaveBeenCalledWith(refusal);
   });
 
   it('should allow paying again once the send has failed', () => {
@@ -491,6 +508,16 @@ describe('Pay', () => {
 
     expect(dialogSpy.open).not.toHaveBeenCalled();
     expect(fakeBlockchain.pay).not.toHaveBeenCalled();
+  });
+
+  it('should ask who to pay when nobody is chosen', () => {
+    spyOn(component, 'displayMessage');
+    component.target = '';
+    component.amount = 5;
+
+    component.pay();
+
+    expect(component.displayMessage).toHaveBeenCalledWith('Choisis qui tu paies.');
   });
 
   it('should not pay when the amount is zero', () => {
