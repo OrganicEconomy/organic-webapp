@@ -12,7 +12,7 @@ export interface TabSession {
   publickey: string;
   secretKey: string | null;
   lastActivityAt: number;
-  revokedByAnotherDevice?: boolean;
+  revokedDevicetoken?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -56,8 +56,8 @@ export class TabSessionService {
     this.update({ lastActivityAt: Date.now() });
   }
 
-  noteRevokedByAnotherDevice(): void {
-    this.update({ revokedByAnotherDevice: true });
+  noteRevokedDevicetoken(revokedDevicetoken: string): void {
+    this.update({ revokedDevicetoken });
   }
 
   forget(): void {

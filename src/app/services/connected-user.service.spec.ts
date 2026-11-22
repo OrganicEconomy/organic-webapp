@@ -87,6 +87,7 @@ describe('ConnectedUserService', () => {
   });
 
   it('should become read-only after setReadOnly()', () => {
+    service.setConnectedUser({ ...makeDefaultAccount('pk-read-only'), devicetoken: 'revoked-token' } as any, 'sk');
     service.setReadOnly();
     expect(service.isReadOnlySession()).toBeTrue();
   });
@@ -115,7 +116,7 @@ describe('ConnectedUserService', () => {
 
     beforeEach(async () => {
       pk = `pk-${Date.now()}-${Math.random().toString(36).slice(2)}-resumed`;
-      await TestBed.inject(LocalDatabaseService).saveUser({ ...makeDefaultAccount(pk), name: 'Alice' });
+      await TestBed.inject(LocalDatabaseService).saveUser({ ...makeDefaultAccount(pk), name: 'Alice', devicetoken: 'token-of-this-device' });
       tabSession = TestBed.inject(TabSessionService);
     });
 
@@ -156,12 +157,23 @@ describe('ConnectedUserService', () => {
     it('should keep, through a reload, that another device took the account over', async () => {
       sessionStorage.setItem(
         'organic-session',
-        JSON.stringify({ publickey: pk, secretKey: 'alice-sk', lastActivityAt: Date.now(), revokedByAnotherDevice: true }),
+        JSON.stringify({ publickey: pk, secretKey: 'alice-sk', lastActivityAt: Date.now(), revokedDevicetoken: 'token-of-this-device' }),
       );
 
       await service.resumeTabSession();
 
       expect(service.readOnlyReason()).toBe('other-device');
+    });
+
+    it('should let the tab write again when the account was restored with a new device key before the reload', async () => {
+      sessionStorage.setItem(
+        'organic-session',
+        JSON.stringify({ publickey: pk, secretKey: 'alice-sk', lastActivityAt: Date.now(), revokedDevicetoken: 'token-revoked-before' }),
+      );
+
+      await service.resumeTabSession();
+
+      expect(service.isReadOnlySession()).toBeFalse();
     });
 
     it('should not take the account from the other tabs before the password is given', async () => {
@@ -201,11 +213,29 @@ describe('ConnectedUserService', () => {
   });
 
   describe('setConnectedUser after a revocation', () => {
-    it('should let this device write again once the citizen logs in afresh', () => {
-      service.setConnectedUser(makeDefaultAccount('pk-again') as any, 'sk');
+    it('should keep read-only an account connected again with the device key that was revoked', () => {
+      service.setConnectedUser({ ...makeDefaultAccount('pk-again'), devicetoken: 'revoked-token' } as any, 'sk');
       service.setReadOnly();
 
-      service.setConnectedUser(makeDefaultAccount('pk-again') as any, 'sk');
+      service.setConnectedUser({ ...makeDefaultAccount('pk-again'), devicetoken: 'revoked-token' } as any, 'sk');
+
+      expect(service.readOnlyReason()).toBe('other-device');
+    });
+
+    it('should let this device write again once the account is restored here with a new device key', () => {
+      service.setConnectedUser({ ...makeDefaultAccount('pk-again'), devicetoken: 'revoked-token' } as any, 'sk');
+      service.setReadOnly();
+
+      service.setConnectedUser({ ...makeDefaultAccount('pk-again'), devicetoken: 'new-token' } as any, 'sk');
+
+      expect(service.isReadOnlySession()).toBeFalse();
+    });
+
+    it('should let another account of this device write', () => {
+      service.setConnectedUser({ ...makeDefaultAccount('pk-revoked'), devicetoken: 'revoked-token' } as any, 'sk');
+      service.setReadOnly();
+
+      service.setConnectedUser({ ...makeDefaultAccount('pk-other'), devicetoken: 'token-of-the-other' } as any, 'sk');
 
       expect(service.isReadOnlySession()).toBeFalse();
     });
@@ -213,11 +243,11 @@ describe('ConnectedUserService', () => {
 
   describe('setReadOnly', () => {
     it('should note in the tab session that another device took the account over', () => {
-      service.setConnectedUser(makeDefaultAccount('pk-revoked') as any, 'sk');
+      service.setConnectedUser({ ...makeDefaultAccount('pk-revoked'), devicetoken: 'revoked-token' } as any, 'sk');
 
       service.setReadOnly();
 
-      expect(TestBed.inject(TabSessionService).stored()?.revokedByAnotherDevice).toBeTrue();
+      expect(TestBed.inject(TabSessionService).stored()?.revokedDevicetoken).toBe('revoked-token');
     });
   });
 
@@ -252,7 +282,7 @@ describe('ConnectedUserService', () => {
 
     beforeEach(async () => {
       pk = `pk-${Date.now()}-${Math.random().toString(36).slice(2)}-unlock`;
-      const account: any = { ...makeDefaultAccount(pk), secretkey: await encryptSecretKey(SK, 'the-password') };
+      const account: any = { ...makeDefaultAccount(pk), devicetoken: 'revoked-token', secretkey: await encryptSecretKey(SK, 'the-password') };
       await TestBed.inject(LocalDatabaseService).saveUser(account);
       service.setConnectedUser(account, SK);
       service.lock();
@@ -291,6 +321,43 @@ describe('ConnectedUserService', () => {
       await TestBed.inject(LocalDatabaseService).saveUser({ ...makeDefaultAccount(pk), secretkey: 'not an encrypted key' });
 
       await expectAsync(service.unlock('the-password')).toBeRejected();
+    });
+
+    it('should keep read-only an account that another device took over', async () => {
+      service.setReadOnly();
+
+      await service.unlock('the-password');
+
+      expect(service.readOnlyReason()).toBe('other-device');
+    });
+
+    it('should still know after a reload that another device took the account over', async () => {
+      service.setReadOnly();
+
+      await service.unlock('the-password');
+
+      expect(TestBed.inject(TabSessionService).stored()?.revokedDevicetoken).toBe('revoked-token');
+    });
+
+    it('should let this tab write again when the account was restored meanwhile in another tab', async () => {
+      service.setReadOnly();
+      await TestBed.inject(LocalDatabaseService).saveUser({
+        ...makeDefaultAccount(pk),
+        devicetoken: 'token-of-the-restore',
+        secretkey: await encryptSecretKey(SK, 'the-password'),
+      });
+
+      await service.unlock('the-password');
+
+      expect(service.isReadOnlySession()).toBeFalse();
+    });
+
+    it('should leave to the next sync to tell again whether the account agrees with the server', async () => {
+      service.markOutOfSync();
+
+      await service.unlock('the-password');
+
+      expect(service.readOnlyReason()).toBeNull();
     });
 
     it('should stay locked with a wrong password', async () => {
@@ -404,6 +471,18 @@ describe('ConnectedUserService', () => {
       expect(service.isReadOnlySession()).toBeFalse();
       expect(service.getConnectedUser().name).toBe('Stored by the other tab');
       expect(service.getSecretKey()).toBe('unlocked-sk');
+    });
+
+    it('should keep read-only an account that another device took over', async () => {
+      const pk = `pk-${Date.now()}-taken-over`;
+      await TestBed.inject(LocalDatabaseService).saveUser(makeDefaultAccount(pk));
+      service.setConnectedUser(makeDefaultAccount(pk) as any, 'unlocked-sk');
+      service.setReadOnly();
+      accountsInUseElsewhere.add(pk);
+
+      await service.useThisTab();
+
+      expect(service.readOnlyReason()).toBe('other-device');
     });
 
     it('should leave this tab read-only when the account can no longer be read from this device', async () => {
