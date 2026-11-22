@@ -124,5 +124,14 @@ describe('EcosystemDirectory', () => {
 
       expect(location.back).toHaveBeenCalled();
     });
+
+    it('should explain the page in a help panel', async () => {
+      await createComponent();
+      httpMock.expectOne((r) => r.url === LIST_URL).flush([]);
+
+      expect(fixture.nativeElement.querySelector('app-help-panel').textContent).toContain(
+        'Un écosystème est un projet collectif',
+      );
+    });
   });
 });

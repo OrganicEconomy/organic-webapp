@@ -24,6 +24,7 @@ import { Observable, catchError, finalize, map, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { lookupFailure } from '../../utils/lookup-failure.util';
 import { MALFORMED_PUBLIC_KEY_MESSAGE, isWellFormedPublicKey } from '../../utils/public-key.util';
+import { HelpPanel } from '../help-panel/help-panel';
 
 function originOf(url: string): string {
   try {
@@ -46,6 +47,7 @@ function originOf(url: string): string {
     MatIconModule,
     FormsModule,
     TransactionAmounts,
+    HelpPanel,
   ],
   templateUrl: './pay.html',
   styleUrl: './pay.css',

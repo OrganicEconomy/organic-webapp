@@ -1,0 +1,15 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+}
+
+.help-panel {
+  border-radius: 16px !important;
+}
+
+mat-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -12,6 +12,7 @@ import { BackupService } from '../../services/backup.service';
 import { ServerConnexionService } from '../../services/server-connection.service';
 import { LevelUpService } from '../../services/level-up.service';
 import { DailyMoneyDialog, DailyMoneyDialogData } from '../daily-money-dialog/daily-money-dialog';
+import { HelpPanel } from '../help-panel/help-panel';
 import type { ValidationListEntry, MyEcosystemEntry } from 'organic-protocol';
 import { TXTYPE } from 'organic-money/src/Transaction.js';
 
@@ -23,6 +24,7 @@ import { TXTYPE } from 'organic-money/src/Transaction.js';
     MatProgressBarModule,
     MatCardModule,
     MatIconModule,
+    HelpPanel,
   ],
   templateUrl: './home.html',
   styleUrl: './home.css',
