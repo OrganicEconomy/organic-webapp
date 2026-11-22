@@ -70,7 +70,6 @@
     </mat-card-content>
 </mat-card>
 
-@if (myEcosystems.length > 0) {
 <mat-card appearance="outlined" class="ecosystems-card">
     <mat-card-header>
         <mat-card-title>Mes écosystèmes</mat-card-title>
@@ -84,6 +83,8 @@
                 <span class="ecosystem-name">{{ eco.name }}</span>
                 <span class="ecosystem-role">{{ eco.role }}</span>
             </a>
+            } @empty {
+            <p class="empty">Vous ne participez à aucun écosystème pour l'instant.</p>
             }
         </div>
     </mat-card-content>
@@ -92,4 +93,3 @@
         <a mat-button routerLink="/ecosystems"><i class="bi bi-compass"></i> Annuaire</a>
     </mat-card-actions>
 </mat-card>
-}

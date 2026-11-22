@@ -23,6 +23,15 @@ async function engageInvests(page: Page, ecosystemPk: string, dailyAmount: numbe
 }
 
 test.describe('ecosystems', () => {
+  test('should lead a new citizen from home to the directory, where they can create an ecosystem', async ({ page }) => {
+    await signUpApprovedCitizen(page, 'Jules Mercier');
+
+    await page.getByRole('link', { name: 'Annuaire' }).click();
+
+    await expect(page).toHaveURL(/\/ecosystems$/);
+    await expect(page.getByRole('link', { name: 'Créer le mien' })).toBeVisible();
+  });
+
   test('should tell a citizen awaiting validation that only an active citizen can create an ecosystem', async ({ page }) => {
     await ensureCoreGuardian();
     await signUpThroughApp(page, 'Hugo Lefèvre');
