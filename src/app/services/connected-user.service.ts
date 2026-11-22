@@ -28,28 +28,18 @@ export class ConnectedUserService {
 
     private connectedUser = null
     private secretKey = ''
-    /** Set once a save gets a 409 DEVICE_REVOKED — this account is active on another device. */
-    private revokedByAnotherDevice = false
+    private revokedDevicetoken: string | null = null
     private outOfSync = false
-
-    private forgetWhyItWasReadOnly(): void {
-        this.revokedByAnotherDevice = false
-        this.outOfSync = false
-    }
-
-    public setConnectedUser(user: any, secretKey: string) {
-        this.forgetWhyItWasReadOnly()
-        this.connect(user, secretKey)
-    }
 
     private rememberInThisTab(user: any, secretKey: string): void {
         this.tabSession.remember(user.publickey, secretKey)
-        if (this.revokedByAnotherDevice) {
-            this.tabSession.noteRevokedByAnotherDevice()
+        if (this.revokedDevicetoken !== null) {
+            this.tabSession.noteRevokedDevicetoken(this.revokedDevicetoken)
         }
     }
 
-    private connect(user: any, secretKey: string): void {
+    public setConnectedUser(user: any, secretKey: string) {
+        this.outOfSync = false
         this.rememberInThisTab(user, secretKey)
         this.tabs.takeBack(user.publickey)
         this.connectedUser = user
@@ -108,8 +98,13 @@ export class ConnectedUserService {
     }
 
     public setReadOnly(): void {
-        this.revokedByAnotherDevice = true
-        this.tabSession.noteRevokedByAnotherDevice()
+        this.revokedDevicetoken = (this.connectedUser as any).devicetoken
+        this.tabSession.noteRevokedDevicetoken(this.revokedDevicetoken as string)
+    }
+
+    private isTakenOverByAnotherDevice(): boolean {
+        const user = this.connectedUser as any
+        return user !== null && this.revokedDevicetoken !== null && user.devicetoken === this.revokedDevicetoken
     }
 
     private isInUseInAnotherTab(): boolean {
@@ -126,7 +121,7 @@ export class ConnectedUserService {
     }
 
     public readOnlyReason(): ReadOnlyReason | null {
-        if (this.revokedByAnotherDevice) {
+        if (this.isTakenOverByAnotherDevice()) {
             return 'other-device'
         }
         if (this.outOfSync) {
@@ -151,7 +146,7 @@ export class ConnectedUserService {
 
     public async useThisTab(): Promise<void> {
         const account = await this.storedAccount((this.connectedUser as any).publickey)
-        this.connect(account, this.secretKey)
+        this.setConnectedUser(account, this.secretKey)
     }
 
     public readOnlyMessage(): string {
@@ -173,7 +168,7 @@ export class ConnectedUserService {
             }
             throw error
         }
-        this.connect(account, secretKey)
+        this.setConnectedUser(account, secretKey)
         return true
     }
 
@@ -198,13 +193,11 @@ export class ConnectedUserService {
             this.tabSession.forget()
             return
         }
+        this.revokedDevicetoken = session.revokedDevicetoken ?? null
         if (this.isStillUnlocked(session)) {
             this.setConnectedUser(account, session.secretKey)
         } else {
             this.connectLocked(account)
-        }
-        if (session.revokedByAnotherDevice) {
-            this.setReadOnly()
         }
     }
 
