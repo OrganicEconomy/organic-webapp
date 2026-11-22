@@ -37,4 +37,20 @@ test.describe('read-only banner', () => {
     await openTheTab(page, 'Mon compte');
     await expect(page.getByText(OTHER_DEVICE_BANNER)).toBeVisible();
   });
+
+  test('should stay read-only once the citizen unlocks a session that another device took over', async ({
+    page,
+    browser,
+  }) => {
+    await signUpApprovedCitizen(page, 'Agathe Roy');
+    await restoreOnAnotherDevice(browser, 'Agathe Roy');
+    await discoverTheTakeoverBySaving(page);
+
+    await page.clock.fastForward('15:30');
+    await page.getByLabel('Mot de passe').fill('secret');
+    await page.getByRole('button', { name: 'Déverrouiller' }).click();
+    await expect(page.getByText('Session verrouillée')).toHaveCount(0);
+
+    await expect(page.getByText(OTHER_DEVICE_BANNER)).toBeVisible();
+  });
 });

@@ -32,10 +32,25 @@ export class ConnectedUserService {
     private revokedByAnotherDevice = false
     private outOfSync = false
 
-    public setConnectedUser(user: any, secretKey: string) {
+    private forgetWhyItWasReadOnly(): void {
         this.revokedByAnotherDevice = false
         this.outOfSync = false
+    }
+
+    public setConnectedUser(user: any, secretKey: string) {
+        this.forgetWhyItWasReadOnly()
+        this.connect(user, secretKey)
+    }
+
+    private rememberInThisTab(user: any, secretKey: string): void {
         this.tabSession.remember(user.publickey, secretKey)
+        if (this.revokedByAnotherDevice) {
+            this.tabSession.noteRevokedByAnotherDevice()
+        }
+    }
+
+    private connect(user: any, secretKey: string): void {
+        this.rememberInThisTab(user, secretKey)
         this.tabs.takeBack(user.publickey)
         this.connectedUser = user
         this.secretKey = secretKey
@@ -136,7 +151,7 @@ export class ConnectedUserService {
 
     public async useThisTab(): Promise<void> {
         const account = await this.storedAccount((this.connectedUser as any).publickey)
-        this.setConnectedUser(account, this.secretKey)
+        this.connect(account, this.secretKey)
     }
 
     public readOnlyMessage(): string {
@@ -158,7 +173,7 @@ export class ConnectedUserService {
             }
             throw error
         }
-        this.setConnectedUser(account, secretKey)
+        this.connect(account, secretKey)
         return true
     }
 

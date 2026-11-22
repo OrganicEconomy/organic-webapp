@@ -293,6 +293,30 @@ describe('ConnectedUserService', () => {
       await expectAsync(service.unlock('the-password')).toBeRejected();
     });
 
+    it('should keep read-only an account that another device took over', async () => {
+      service.setReadOnly();
+
+      await service.unlock('the-password');
+
+      expect(service.readOnlyReason()).toBe('other-device');
+    });
+
+    it('should still know after a reload that another device took the account over', async () => {
+      service.setReadOnly();
+
+      await service.unlock('the-password');
+
+      expect(TestBed.inject(TabSessionService).stored()?.revokedByAnotherDevice).toBeTrue();
+    });
+
+    it('should keep read-only an account that no longer agrees with the server', async () => {
+      service.markOutOfSync();
+
+      await service.unlock('the-password');
+
+      expect(service.readOnlyReason()).toBe('out-of-sync');
+    });
+
     it('should stay locked with a wrong password', async () => {
       expect(await service.unlock('a-wrong-password')).toBeFalse();
       expect(service.getSecretKey()).toBe('');
@@ -404,6 +428,18 @@ describe('ConnectedUserService', () => {
       expect(service.isReadOnlySession()).toBeFalse();
       expect(service.getConnectedUser().name).toBe('Stored by the other tab');
       expect(service.getSecretKey()).toBe('unlocked-sk');
+    });
+
+    it('should keep read-only an account that another device took over', async () => {
+      const pk = `pk-${Date.now()}-taken-over`;
+      await TestBed.inject(LocalDatabaseService).saveUser(makeDefaultAccount(pk));
+      service.setConnectedUser(makeDefaultAccount(pk) as any, 'unlocked-sk');
+      service.setReadOnly();
+      accountsInUseElsewhere.add(pk);
+
+      await service.useThisTab();
+
+      expect(service.readOnlyReason()).toBe('other-device');
     });
 
     it('should leave this tab read-only when the account can no longer be read from this device', async () => {
