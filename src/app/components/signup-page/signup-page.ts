@@ -89,7 +89,7 @@ export class SignupPage {
     return error.status === HttpStatusCode.Conflict
   }
 
-  private refusalMessage(error: HttpErrorResponse): string {
+  private signupFailureMessage(error: HttpErrorResponse): string {
     if (this.isServerUnreachable(error)) {
       return 'Le serveur ne répond pas : vérifie ta connexion, puis réessaie.'
     }
@@ -99,7 +99,7 @@ export class SignupPage {
     if (this.isMailAlreadyUsed(error)) {
       return "Cette adresse mail est déjà utilisée. Si c'est la tienne, restaure ton compte."
     }
-    return "L'inscription a échoué : réessaie plus tard."
+    return "L'inscription a échoué — réessaie plus tard."
   }
 
   async signup() {
@@ -154,7 +154,7 @@ export class SignupPage {
       },
       error: (error: HttpErrorResponse) => {
         this.signingUp = false
-        alert(this.refusalMessage(error))
+        alert(this.signupFailureMessage(error))
         console.error(error)
       }
     })
