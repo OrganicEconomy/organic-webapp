@@ -14,7 +14,7 @@ const READ_ONLY_MESSAGES: Record<ReadOnlyReason, string> = {
     'out-of-sync':
         "Ce téléphone et le serveur ne sont plus d'accord sur des paiements : lecture seule, rien n'a été effacé. Contacte l'administrateur de ton serveur.",
     'other-tab': 'Compte ouvert dans un autre onglet : celui-ci est en lecture seule.',
-    'locked': 'Session verrouillée : entre ton mot de passe pour continuer.',
+    'locked': 'Session verrouillée : saisis ton mot de passe pour continuer.',
 }
 
 @Injectable({

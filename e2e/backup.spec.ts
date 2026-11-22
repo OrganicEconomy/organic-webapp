@@ -16,7 +16,7 @@ async function payByQr(page: Page, contactName: string, amount: number): Promise
   await page.locator('input.amount-input').fill(String(amount));
   await page.getByRole('button', { name: 'Payer par QR' }).click();
   await page.getByRole('button', { name: 'Confirmer' }).click();
-  await expect(page.getByText('Faites scanner ce code')).toBeVisible();
+  await expect(page.getByText('Fais scanner ce code')).toBeVisible();
 }
 
 async function signUpWithTheGuardianAsContact(page: Page, name: string): Promise<void> {

@@ -331,7 +331,7 @@ describe('ConnectedUserService', () => {
       service.setConnectedUser(makeDefaultAccount('pk-locked-message') as any, 'sk');
       service.lock();
 
-      expect(service.readOnlyMessage()).toBe('Session verrouillée : entre ton mot de passe pour continuer.');
+      expect(service.readOnlyMessage()).toBe('Session verrouillée : saisis ton mot de passe pour continuer.');
     });
 
     it('should name the other tab when another tab holds the account', () => {
