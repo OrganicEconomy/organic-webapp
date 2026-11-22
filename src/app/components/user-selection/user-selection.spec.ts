@@ -88,6 +88,22 @@ describe('UserSelection', () => {
     expect(router.navigate).not.toHaveBeenCalled();
   });
 
+  it('should list two accounts of the same name, each under its own key', async () => {
+    getUserListSpy.and.resolveTo([
+      { name: 'Alice Dupont', publickey: 'pk-of-the-first' },
+      { name: 'Alice Dupont', publickey: 'pk-of-the-second' },
+    ]);
+    const warn = spyOn(console, 'warn');
+
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const buttons = fixture.nativeElement.querySelectorAll('mat-list-item button');
+    expect(buttons.length).toBe(2);
+    expect(warn).not.toHaveBeenCalledWith(jasmine.stringContaining('NG0955'));
+  });
+
   it('should say that this device could not read its accounts, instead of starting over', async () => {
     getUserListSpy.and.rejectWith(new LocalReadError('blocked'));
     spyOn(console, 'error');
