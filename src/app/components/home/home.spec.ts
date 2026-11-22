@@ -214,6 +214,16 @@ describe('Home', () => {
     expect(component.percent).toBe(40);
   });
 
+  it('should show how many units are created each day, which is the level', () => {
+    fakeBlockchain.getLevel = () => 3;
+    createComponent();
+
+    const identityCard: HTMLElement = fixture.nativeElement.querySelector('.identity-card');
+
+    expect(component.dailyCreation).toBe(3);
+    expect(identityCard.textContent).toContain('Création par jour : 3');
+  });
+
   it('should title the pending-payments card "Paiements à encaisser"', () => {
     createComponent();
     expect(fixture.nativeElement.querySelector('.pending-card mat-card-title').textContent).toContain('Paiements à encaisser');

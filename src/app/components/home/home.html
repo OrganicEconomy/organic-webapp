@@ -7,6 +7,9 @@
         <div class="solde-row">
             <span class="solde-value">{{ solde }}</span> <mat-icon svgIcon="currency-mark"></mat-icon>
         </div>
+        <p class="daily-creation">
+            Création par jour : {{ dailyCreation }} <mat-icon svgIcon="currency-mark"></mat-icon>
+        </p>
 
         <mat-progress-bar mode="determinate" [value]="percent"></mat-progress-bar>
         <p class="xp-line">
