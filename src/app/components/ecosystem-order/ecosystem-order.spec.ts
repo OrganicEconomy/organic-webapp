@@ -282,7 +282,7 @@ describe('EcosystemOrder', () => {
 
       component.submitOrder();
 
-      expect(component.displayMessage).toHaveBeenCalledWith('Ordre enregistré mais non transmis — réessayez plus tard.');
+      expect(component.displayMessage).toHaveBeenCalledWith('Ordre enregistré mais non transmis — réessaie plus tard.');
     });
 
     it('should show a clear message when the exact same order was already made today', () => {
@@ -293,7 +293,7 @@ describe('EcosystemOrder', () => {
 
       component.submitOrder();
 
-      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessayez demain.");
+      expect(component.displayMessage).toHaveBeenCalledWith("Cette action a déjà été tentée aujourd'hui — réessaie demain.");
     });
 
     it('should not build a second order while the first is still pending (double-click guard)', () => {

@@ -94,7 +94,7 @@ export class PayOffline {
 
     const recipient = displayNameOf(this.target, this.user.blockchain.getMyPublicKey(), this.contacts)
     const dialogRef = this.dialog.open(ConfirmDialog, {
-      data: { title: 'Payer par QR', message: `Payer ${this.amount} à ${recipient} par QR ? Les unités seront immédiatement retirées de votre solde.` },
+      data: { title: 'Payer par QR', message: `Payer ${this.amount} à ${recipient} par QR ? Les unités seront immédiatement retirées de ton solde.` },
     });
     dialogRef.afterClosed().subscribe((confirmed: boolean) => {
       if (!confirmed) return;

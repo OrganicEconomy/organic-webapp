@@ -74,7 +74,7 @@ export class EcosystemOrder {
   submitOrder(): void {
     if (this.submitting) return;
     if (!this.targetPk) {
-      this.displayMessage("Choisissez un bénéficiaire.");
+      this.displayMessage("Choisis un bénéficiaire.");
       return;
     }
     if (this.amount <= 0) {
@@ -113,7 +113,7 @@ export class EcosystemOrder {
       error: (err) => {
         this.submitting = false;
         console.log(err);
-        this.displayMessage(extractServerErrorMessage(err) ?? "Ordre enregistré mais non transmis — réessayez plus tard.");
+        this.displayMessage(extractServerErrorMessage(err) ?? "Ordre enregistré mais non transmis — réessaie plus tard.");
       },
     });
   }

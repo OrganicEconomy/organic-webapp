@@ -232,6 +232,16 @@ describe('PendingValidation', () => {
   }));
 
   describe('template', () => {
+    it('should tell a citizen awaiting validation that a core member will validate them from the app', () => {
+      createComponent();
+      expectAuthenticated(httpMock, isMyValidationRequest).flush({ status: 'pending-validation' });
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.textContent).toContain(
+        'Sinon, un membre du cœur validera ta demande depuis son appli. Encore un peu de patience !',
+      );
+    });
+
     it('should log out through the logout page, which forgets the session', () => {
       createComponent();
       expectAuthenticated(httpMock, isMyValidationRequest).flush({ status: 'pending-validation' });

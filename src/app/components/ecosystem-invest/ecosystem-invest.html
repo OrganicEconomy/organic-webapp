@@ -15,9 +15,9 @@
     @if (isNotYetAnActiveCitizen) {
     <p class="hint">Il faut être citoyen actif, au compte validé, pour investir.</p>
     } @else if (isEverythingAlreadyEngaged) {
-    <p class="hint">Tous vos investissements d'aujourd'hui sont déjà engagés.</p>
+    <p class="hint">Tous tes investissements d'aujourd'hui sont déjà engagés.</p>
     } @else {
-    <p class="hint">Maximum : {{ affordableDailyAmount }} / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.</p>
+    <p class="hint">Maximum : {{ affordableDailyAmount }} / jour. C'est ton niveau, moins ce que tu as déjà engagé pour aujourd'hui.</p>
     }
 
     <mat-form-field>

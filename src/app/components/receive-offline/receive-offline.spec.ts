@@ -114,7 +114,7 @@ describe('ReceiveOffline', () => {
     await component.scanSuccessHandler(qr);
 
     expect(component.scanError).toBe(
-      "Paiement non reçu : cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis scannez le QR à nouveau.",
+      "Paiement non reçu : cet appareil n'a pas pu l'enregistrer. Libère de la place, puis scanne le QR à nouveau.",
     );
   });
 

@@ -25,7 +25,7 @@ describe('offlineRefusal', () => {
 
   it('should refuse a key already among the contacts, naming that contact', () => {
     expect(offlineRefusal(contact({ name: 'Basile bis' }), [contact()])).toBe(
-      'Cette clé est déjà dans vos contacts, sous le nom Basile.',
+      'Cette clé est déjà dans tes contacts, sous le nom Basile.',
     );
   });
 

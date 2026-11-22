@@ -331,7 +331,7 @@ describe('ConnectedUserService', () => {
       service.setConnectedUser(makeDefaultAccount('pk-locked-message') as any, 'sk');
       service.lock();
 
-      expect(service.readOnlyMessage()).toBe('Session verrouillée : entrez votre mot de passe pour continuer.');
+      expect(service.readOnlyMessage()).toBe('Session verrouillée : saisis ton mot de passe pour continuer.');
     });
 
     it('should name the other tab when another tab holds the account', () => {
@@ -357,7 +357,7 @@ describe('ConnectedUserService', () => {
 
       expect(service.readOnlyReason()).toBe('out-of-sync');
       expect(service.readOnlyMessage()).toBe(
-        "Ce téléphone et le serveur ne sont plus d'accord sur des paiements : lecture seule, rien n'a été effacé. Contactez l'administrateur de votre serveur.",
+        "Cet appareil et le serveur ne sont plus d'accord sur des paiements : lecture seule, rien n'a été effacé. Contacte la personne qui gère ta monnaie locale.",
       );
     });
   });

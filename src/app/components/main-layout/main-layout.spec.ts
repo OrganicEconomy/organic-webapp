@@ -161,7 +161,7 @@ describe('MainLayout', () => {
       await fixture.componentInstance.useThisTab();
 
       expect(snackBarSpy.open).toHaveBeenCalledWith(
-        "Impossible de reprendre le compte dans cet onglet : reconnectez-vous depuis l'écran de connexion.",
+        "Impossible de reprendre le compte dans cet onglet : reconnecte-toi depuis l'écran de connexion.",
         'Fermer',
       );
       expect(navigateByUrl).not.toHaveBeenCalled();

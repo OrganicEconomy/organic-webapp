@@ -167,7 +167,7 @@ describe('AddContact', () => {
     await component.addContact();
 
     expect(fakeAccount.contacts).toEqual([basile]);
-    expect(component.formError).toBe('Cette clé est déjà dans vos contacts, sous le nom Basile.');
+    expect(component.formError).toBe('Cette clé est déjà dans tes contacts, sous le nom Basile.');
   });
 
   it('should refuse a citizen key unknown to the contact server', async () => {

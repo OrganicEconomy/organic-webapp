@@ -330,7 +330,7 @@ describe('ChainSyncService', () => {
 
       expect(account.blockchain.export()).toEqual(serverChain);
       expect(snackBarSpy.open).toHaveBeenCalledWith(
-        "Ce téléphone n'était plus d'accord avec le serveur : sa copie a été reprise, et 1 opération faite ici n'a pas été gardée.",
+        "Cet appareil n'était plus d'accord avec le serveur : sa copie a été reprise, et 1 opération faite ici n'a pas été gardée.",
         'Fermer',
       );
     });
@@ -360,7 +360,7 @@ describe('ChainSyncService', () => {
 
       expect(account.blockchain.export()).toEqual(deviceChain);
       expect(snackBarSpy.open).toHaveBeenCalledWith(
-        "Synchronisation impossible avec le serveur : ce téléphone garde sa copie pour l'instant.",
+        "Synchronisation impossible avec le serveur : cet appareil garde sa copie pour l'instant.",
         'Fermer',
         { duration: 8_000 },
       );

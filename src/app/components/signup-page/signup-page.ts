@@ -124,7 +124,7 @@ export class SignupPage {
         this.tabs.takeBack(account.publickey)
         const user = await this.trySaveOnDevice(account)
         if (user === null) {
-          alert("Votre compte est créé, mais cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis restaurez-le.")
+          alert("Ton compte est créé, mais cet appareil n'a pas pu l'enregistrer. Libère de la place, puis restaure-le.")
           this.router.navigate(['/restore-account'], { queryParams: { server: serverUrl } })
           return
         }

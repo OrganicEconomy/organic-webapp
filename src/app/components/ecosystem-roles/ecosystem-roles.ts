@@ -115,7 +115,7 @@ export class EcosystemRoles {
 
   addRole(): void {
     if (!this.targetPk) {
-      this.displayMessage("Choisissez un contact.");
+      this.displayMessage("Choisis un contact.");
       return;
     }
     if (this.roleType === 'actor' && this.isInvalidRatioOrCap(this.ratio)) {
@@ -169,7 +169,7 @@ export class EcosystemRoles {
       error: (err) => {
         this.submitting = false;
         console.log(err);
-        this.displayMessage(extractServerErrorMessage(err) ?? "Action enregistrée mais non transmise — réessayez plus tard.");
+        this.displayMessage(extractServerErrorMessage(err) ?? "Action enregistrée mais non transmise — réessaie plus tard.");
       },
     });
   }

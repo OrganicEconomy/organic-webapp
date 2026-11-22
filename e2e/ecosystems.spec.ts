@@ -49,14 +49,14 @@ test.describe('ecosystems', () => {
     const corePublicKey = await fetchCorePublicKey();
 
     await page.goto(`/ecosystems/${corePublicKey}/invest`);
-    await expect(page.getByText("Maximum : 1 / jour. C'est votre niveau, moins ce que vous avez déjà engagé pour aujourd'hui.")).toBeVisible();
+    await expect(page.getByText("Maximum : 1 / jour. C'est ton niveau, moins ce que tu as déjà engagé pour aujourd'hui.")).toBeVisible();
     await page.getByLabel('Montant par jour').fill('2');
     await page.getByRole('button', { name: 'Engager' }).click();
-    await expect(page.getByText('Vous ne pouvez pas engager plus de 1 par jour.')).toBeVisible();
+    await expect(page.getByText('Tu ne peux pas engager plus de 1 par jour.')).toBeVisible();
     await engageInvests(page, corePublicKey, 1);
 
     await page.goto(`/ecosystems/${corePublicKey}/invest`);
-    await expect(page.getByText("Tous vos investissements d'aujourd'hui sont déjà engagés.")).toBeVisible();
+    await expect(page.getByText("Tous tes investissements d'aujourd'hui sont déjà engagés.")).toBeVisible();
     await expect(page.getByRole('button', { name: 'Engager' })).toBeDisabled();
   });
 });

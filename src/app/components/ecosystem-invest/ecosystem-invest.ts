@@ -76,7 +76,7 @@ export class EcosystemInvest {
       return;
     }
     if (this.dailyAmount > this.affordableDailyAmount) {
-      this.displayMessage(`Vous ne pouvez pas engager plus de ${this.affordableDailyAmount} par jour.`);
+      this.displayMessage(`Tu ne peux pas engager plus de ${this.affordableDailyAmount} par jour.`);
       return;
     }
     if (this.userService.isReadOnlySession()) {
@@ -121,7 +121,7 @@ export class EcosystemInvest {
       error: (err) => {
         this.submitting = false;
         console.log(err);
-        this.displayMessage(extractServerErrorMessage(err) ?? "Engagement enregistré mais non transmis — réessayez plus tard.");
+        this.displayMessage(extractServerErrorMessage(err) ?? "Engagement enregistré mais non transmis — réessaie plus tard.");
       },
     });
   }

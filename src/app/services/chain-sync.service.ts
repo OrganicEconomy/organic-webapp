@@ -20,9 +20,9 @@ const SERVER_ANSWER_TIMEOUT_MS = 5_000;
 const SERVER_RECEPTION_TIMEOUT_MS = 10_000;
 const SYNC_IMPOSSIBLE_MESSAGE_DURATION_MS = 8_000;
 const SYNC_IMPOSSIBLE_MESSAGE =
-  "Synchronisation impossible avec le serveur : ce téléphone garde sa copie pour l'instant.";
+  "Synchronisation impossible avec le serveur : cet appareil garde sa copie pour l'instant.";
 const SYNC_FAILED_MESSAGE =
-  'La synchronisation a échoué : ce téléphone garde sa copie. Rechargez la page pour réessayer.';
+  'La synchronisation a échoué : cet appareil garde sa copie. Recharge la page pour réessayer.';
 const MONEY_MOVEMENTS = [TxType.PAY, TxType.ENGAGE, TxType.PAPER, TxType.PAYERORDER, TxType.EARN];
 
 function transactionsOf(chain: BlockWire[]): TxWire[] {
@@ -66,7 +66,7 @@ function lostOperationsMessage(numberOfLostOperations: number): string {
     numberOfLostOperations > 1
       ? `${numberOfLostOperations} opérations faites ici n'ont pas été gardées`
       : `${numberOfLostOperations} opération faite ici n'a pas été gardée`;
-  return `Ce téléphone n'était plus d'accord avec le serveur : sa copie a été reprise, et ${whatWasLost}.`;
+  return `Cet appareil n'était plus d'accord avec le serveur : sa copie a été reprise, et ${whatWasLost}.`;
 }
 
 function cannotReachTheServer(error: unknown): boolean {

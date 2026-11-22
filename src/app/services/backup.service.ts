@@ -11,7 +11,7 @@ import { CitizenBlockchain } from 'organic-money/src/index.js';
 export class UndoNotStoredError extends Error {}
 
 const UNDO_NOT_STORED_MESSAGE =
-  "Opération refusée par le serveur, mais cet appareil n'a pas pu enregistrer son annulation : rechargez la page pour reprendre la copie du serveur."
+  "Opération refusée par le serveur, mais cet appareil n'a pas pu enregistrer son annulation : recharge la page pour reprendre la copie du serveur."
 
 interface AccountSnapshot {
   chain: unknown

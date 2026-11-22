@@ -24,7 +24,7 @@
             <mat-label>Adresse mail</mat-label>
             <input matInput type="email" formControlName="email" placeholder="turlututu@chapeau.tu">
             <mat-icon matSuffix>email</mat-icon>
-            <mat-hint>Votre email ne sera jamais partagé.</mat-hint>
+            <mat-hint>Ton email ne sera jamais partagé.</mat-hint>
             @if (signupForm.get('email')?.hasError('required')) {
               <mat-error>Ce champ est obligatoire.</mat-error>
             } @else if (signupForm.get('email')?.hasError('email')) {

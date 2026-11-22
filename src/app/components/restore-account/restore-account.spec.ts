@@ -80,7 +80,7 @@ describe('RestoreAccount', () => {
     httpMock.expectOne(`${SERVER_URL}/api/v1/users/login`).flush({ publickey: TEST_PK, name: 'Alice', mail: 'alice@ex.fr', secretkey: secretkeyForCorrectPassword, status: 'active', blocks: [], devicetoken: 'dt-1' })
     await waitUntil(() => component.error !== '')
 
-    expect(component.error).toBe("Cet appareil n'a pas pu enregistrer le compte : libérez de la place, ou quittez la navigation privée.")
+    expect(component.error).toBe("Cet appareil n'a pas pu enregistrer le compte : libère de la place, ou quitte la navigation privée.")
     expect(component.restoring).toBeFalse()
     expect(router.navigate).not.toHaveBeenCalled()
   });

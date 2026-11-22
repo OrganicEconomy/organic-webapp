@@ -162,7 +162,7 @@ describe('CashPapers', () => {
     await fixture.whenStable();
 
     expect(component.displayMessage).toHaveBeenCalledWith(
-      "Billets encaissés sur le serveur, mais cet appareil n'a pas pu les enregistrer : rechargez la page pour reprendre la copie du serveur.",
+      "Billets encaissés sur le serveur, mais cet appareil n'a pas pu les enregistrer : recharge la page pour reprendre la copie du serveur.",
     );
     expect(component.displayMessage).not.toHaveBeenCalledWith(jasmine.stringMatching(/Paf, j'encaisse/));
   });

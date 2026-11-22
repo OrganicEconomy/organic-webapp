@@ -70,7 +70,7 @@ export class ReceiveOffline {
   private refusedPaymentMessage(err: unknown): string {
     if (err instanceof LocalSaveError) {
       console.error(err)
-      return "Paiement non reçu : cet appareil n'a pas pu l'enregistrer. Libérez de la place, puis scannez le QR à nouveau."
+      return "Paiement non reçu : cet appareil n'a pas pu l'enregistrer. Libère de la place, puis scanne le QR à nouveau."
     }
     return "Ce paiement n'est pas valide (signature ou destinataire incorrect)."
   }

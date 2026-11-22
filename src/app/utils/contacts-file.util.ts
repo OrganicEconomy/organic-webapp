@@ -65,7 +65,7 @@ export function contactsFromFile(text: string): Contact[] {
   }
   if (isWrittenByNewerVersion(file)) {
     throw new ContactsFileError(
-      "Ce fichier de contacts vient d'une version plus récente de l'application : mettez-la à jour.",
+      "Ce fichier de contacts vient d'une version plus récente de l'application : mets-la à jour.",
     );
   }
   file.contacts.forEach(assertIsReadable);
