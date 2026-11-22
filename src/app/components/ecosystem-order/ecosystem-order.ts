@@ -97,7 +97,7 @@ export class EcosystemOrder {
         next: (wire) => this.send(wire),
         error: (err) => {
           this.submitting = false;
-          console.log(err);
+          console.error(err);
           this.displayMessage(this.cancelledOrderMessage(err));
         },
       });
@@ -112,7 +112,7 @@ export class EcosystemOrder {
       },
       error: (err) => {
         this.submitting = false;
-        console.log(err);
+        console.error(err);
         this.displayMessage(extractServerErrorMessage(err) ?? "Ordre enregistré mais non transmis — réessaie plus tard.");
       },
     });

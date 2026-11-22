@@ -191,7 +191,8 @@ describe('EcosystemOrder', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/ecosystems', ECO_PK]);
     });
 
-    it('should cancel the order when the server could not save it', () => {
+    it('should cancel the order when the server could not save it, and log why', () => {
+      const logError = spyOn(console, 'error');
       spyOn(component, 'displayMessage');
       backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
       component.targetPk = 'contact-pk';
@@ -200,6 +201,7 @@ describe('EcosystemOrder', () => {
       component.submitOrder();
 
       expect(component.displayMessage).toHaveBeenCalledWith("Ordre annulé : rien n'a été enregistré.");
+      expect(logError).toHaveBeenCalled();
     });
 
     it('should say how to recover when this device could not store the undo of a refused order', () => {
@@ -274,7 +276,8 @@ describe('EcosystemOrder', () => {
       expect(component.displayMessage).toHaveBeenCalledWith('Order exceeds payer capacity.');
     });
 
-    it('should fall back to a generic message when the rejection carries no server message', () => {
+    it('should fall back to a generic message when the rejection carries no server message, and log why', () => {
+      const logError = spyOn(console, 'error');
       spyOn(component, 'displayMessage');
       serverSpy.sendEcosystemTx.and.returnValue(throwError(() => ({ status: 0 })));
       component.targetPk = 'contact-pk';
@@ -283,6 +286,7 @@ describe('EcosystemOrder', () => {
       component.submitOrder();
 
       expect(component.displayMessage).toHaveBeenCalledWith('Ordre enregistré mais non transmis — réessaie plus tard.');
+      expect(logError).toHaveBeenCalled();
     });
 
     it('should show a clear message when the exact same order was already made today', () => {

@@ -187,13 +187,15 @@ describe('EcosystemRoles', () => {
       expect(component.displayMessage).toHaveBeenCalledWith("Action annulée : cet appareil n'a pas pu l'enregistrer.");
     });
 
-    it('should cancel the action when the server could not save it', () => {
+    it('should cancel the action when the server could not save it, and log why', () => {
+      const logError = spyOn(console, 'error');
       spyOn(component, 'displayMessage');
       backupSpy.applyAndSave.and.returnValue(throwError(() => new HttpErrorResponse({ status: 0 })));
 
       component.removeRole('admin', 'admin-pk');
 
       expect(component.displayMessage).toHaveBeenCalledWith("Action annulée : rien n'a été enregistré.");
+      expect(logError).toHaveBeenCalled();
     });
 
     it('should cancel the action when this device was revoked by a newer login', () => {
@@ -238,13 +240,15 @@ describe('EcosystemRoles', () => {
       expect(component.displayMessage).toHaveBeenCalledWith('Cannot remove actor who is still payer.');
     });
 
-    it('should fall back to a generic message when the rejection carries no server message', () => {
+    it('should fall back to a generic message when the rejection carries no server message, and log why', () => {
+      const logError = spyOn(console, 'error');
       spyOn(component, 'displayMessage');
       serverSpy.sendEcosystemTx.and.returnValue(throwError(() => ({ status: 0 })));
 
       component.removeRole('actor', 'actor-pk');
 
       expect(component.displayMessage).toHaveBeenCalledWith('Action enregistrée mais non transmise — réessaie plus tard.');
+      expect(logError).toHaveBeenCalled();
     });
 
     it('should not remove when the session is read-only', () => {

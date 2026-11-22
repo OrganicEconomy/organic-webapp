@@ -130,7 +130,7 @@ export class AccountDetails {
     this.serverDB.changePassword(this.user.serverUrl, this.user.publickey, this.newPassword, newEncrypted, sk).subscribe({
       next: () => this.keepNewKeyOnThisDevice(newEncrypted),
       error: (err: any) => {
-        console.log(err)
+        console.error(err)
         this.displayMessage("Erreur lors du changement de mot de passe.")
       },
     })

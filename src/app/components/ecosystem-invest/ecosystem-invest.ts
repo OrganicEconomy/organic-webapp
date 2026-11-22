@@ -90,7 +90,7 @@ export class EcosystemInvest {
         next: (tx) => this.send(tx),
         error: (err) => {
           this.submitting = false;
-          console.log(err);
+          console.error(err);
           this.displayMessage(this.cancelledEngagementMessage(err));
         },
       });
@@ -120,7 +120,7 @@ export class EcosystemInvest {
       },
       error: (err) => {
         this.submitting = false;
-        console.log(err);
+        console.error(err);
         this.displayMessage(extractServerErrorMessage(err) ?? "Engagement enregistré mais non transmis — réessaie plus tard.");
       },
     });

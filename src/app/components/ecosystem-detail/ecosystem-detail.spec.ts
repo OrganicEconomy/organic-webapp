@@ -389,13 +389,15 @@ describe('EcosystemDetail', () => {
       expect(component.displayMessage).toHaveBeenCalledWith('Only admins can distribute salaries.');
     });
 
-    it('should fall back to a generic message when the rejection carries no server message', () => {
+    it('should fall back to a generic message when the rejection carries no server message, and log why', () => {
+      const logError = spyOn(console, 'error');
       spyOn(component, 'displayMessage');
 
       component.distributeSalary();
       expectAuthenticated(httpMock, DISTRIBUTE_URL).error(new ProgressEvent('network error'));
 
       expect(component.displayMessage).toHaveBeenCalledWith('La distribution a échoué — réessaie plus tard.');
+      expect(logError).toHaveBeenCalled();
     });
 
     it('should not open the dialog when the session is read-only', () => {
